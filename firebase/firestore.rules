@@ -3,7 +3,8 @@ rules_version = '2';
  * RJ Inventory & Sales — Firestore Security Rules.
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
  * Scope: Phase 2 (owner bootstrap, users, usernames, settings), Phase 4 (items, inventoryMovements, stockCounts,
- * activityLogs), Phase 5 (customers) and Phases 6–7 (counters, sales, installments, payments).
+ * activityLogs), Phase 5 (customers), Phases 6–7 (counters, sales, installments, payments), Phase 8 (suppliers, restocks,
+ * expenses) and Phase 9 (calendarEvents).
  * Every other path is denied until its phase adds rules.
  * Cross-document consistency (item quantity == sum of its movements) is enforced by client transactions (KI-003, D-016);
  * these rules enforce per-document shape and invariants.
@@ -156,7 +157,7 @@ service cloud.firestore {
     // Sequence counters (BR-030, BR-050): sale-YYYY and payment-YYYY; each write takes exactly the next number.
     match /counters/{name} {
       allow read: if isActive();
-      allow create: if isOwner() && name.matches('^(sale|payment)-[0-9]{4}$')
+      allow create: if isOwner() && name.matches('^(sale|payment|restock)-[0-9]{4}$')
         && request.resource.data.keys().hasOnly(['next']) && request.resource.data.next is int && request.resource.data.next >= 2;
       allow update: if isOwner() && request.resource.data.keys().hasOnly(['next'])
         && request.resource.data.next == resource.data.next + 1;
@@ -247,6 +248,79 @@ service cloud.firestore {
         && request.resource.data.status == 'VOIDED'
         && request.resource.data.void.reason is string && request.resource.data.void.reason.size() > 0;
       allow delete: if false;
+    }
+
+    // ---- Phase 8: suppliers, restocks, expenses ------------------------------------------------------------
+    function validSupplier(d) {
+      return d.keys().hasAll(['name', 'nameLower', 'status'])
+        && d.keys().hasOnly(['name', 'nameLower', 'contactPerson', 'contactNumber', 'email', 'address', 'notes', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120 && d.nameLower == d.name.lower()
+        && d.status in ['ACTIVE', 'ARCHIVED'];
+    }
+    match /suppliers/{id} {
+      allow read: if isActive();
+      allow create: if isOwner() && validSupplier(request.resource.data);
+      allow update: if isOwner() && validSupplier(request.resource.data);
+      allow delete: if false;                // suppliers keep their restock history
+    }
+
+    // BR-060: ORDERED → PARTIALLY_RECEIVED → RECEIVED, or CANCELLED only while nothing was received. Receipts only grow.
+    function validRestock(d) {
+      return d.keys().hasOnly(['restockNo', 'supplierId', 'supplierName', 'orderDate', 'expectedDate', 'status', 'lines', 'receipts', 'totalCostC',
+             'notes', 'cancel', 'closed', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.supplierId is string && isDate(d.orderDate) && optDate(d.expectedDate)
+        && d.status in ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED']
+        && d.lines is list && d.lines.size() > 0 && d.lines.size() <= 40
+        && d.receipts is list && nonNegInt(d.totalCostC);
+    }
+    match /restocks/{id} {
+      allow read: if isActive();
+      allow create: if isOwner() && validRestock(request.resource.data)
+        && id.matches('^RS-[0-9]{4}-[0-9]{5}$') && request.resource.data.restockNo == id
+        && request.resource.data.status == 'ORDERED' && request.resource.data.receipts.size() == 0
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isOwner() && validRestock(request.resource.data)
+        && resource.data.status in ['ORDERED', 'PARTIALLY_RECEIVED']               // received and cancelled orders are final
+        && request.resource.data.restockNo == resource.data.restockNo
+        && request.resource.data.receipts.size() >= resource.data.receipts.size()
+        && (request.resource.data.status != 'CANCELLED'
+            || (resource.data.status == 'ORDERED' && resource.data.receipts.size() == 0
+                && request.resource.data.receipts.size() == 0
+                && request.resource.data.cancel.reason is string && request.resource.data.cancel.reason.size() > 0))
+        && (request.resource.data.status != 'ORDERED' || request.resource.data.receipts.size() == 0);
+      allow delete: if false;
+    }
+
+    // BR-063: expenses are corrected by voiding, never edited or deleted.
+    match /expenses/{id} {
+      allow read: if isActive();
+      allow create: if isOwner()
+        && request.resource.data.keys().hasOnly(['date', 'category', 'amountC', 'note', 'status', 'void', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && isDate(request.resource.data.date)
+        && request.resource.data.category in ['Delivery/Fuel', 'Rent', 'Wages', 'Utilities', 'Supplies', 'Other']
+        && request.resource.data.amountC is int && request.resource.data.amountC > 0
+        && optString(request.resource.data.note)
+        && request.resource.data.status == 'ACTIVE' && request.resource.data.void == null
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isOwner() && resource.data.status == 'ACTIVE'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'void', 'updatedAt', 'updatedBy'])
+        && request.resource.data.status == 'VOIDED'
+        && request.resource.data.void.reason is string && request.resource.data.void.reason.size() > 0;
+      allow delete: if false;
+    }
+
+    // ---- Phase 9: custom calendar events (reminders; may be edited and deleted) ----------------------------
+    function validEvent(d) {
+      return d.keys().hasOnly(['title', 'date', 'time', 'note', 'category', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.title is string && d.title.size() > 0 && d.title.size() <= 120
+        && isDate(d.date)
+        && (d.time == '' || (d.time is string && d.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')))
+        && optString(d.note) && d.category == 'OTHER';
+    }
+    match /calendarEvents/{id} {
+      allow read: if isActive();
+      allow create, update: if isOwner() && validEvent(request.resource.data);
+      allow delete: if isOwner();
     }
 
     // ---- Activity log (BR-093): append-only ---------------------------------------------------------------

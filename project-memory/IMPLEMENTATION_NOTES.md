@@ -88,3 +88,14 @@ See root CLAUDE.md "Release procedure".
 - Routes: `/sales/new` (`?customer=` preselects), `/sales`, `/sales/:id`, `/collections`, `/collections/:tab` (overdue, today, week, later, no-date), `/settings/sales`.
 - E2E helper: the Combobox is driven by clicking its input, typing, then clicking `.combobox-option`.
 - Rules: counters accept only `sale-YYYY` / `payment-YYYY` and only `next + 1`; sales are locked except payment totals, delivery, notes and cancellation; installments keep `paidC ≤ amountC` and a status that matches; payments only ACTIVE → VOIDED.
+
+## Phases 8–10 notes
+- `src/domain/purchasing.js` — supplier/restock/expense validation, `planReceipt` (received ≤ remaining, status), `statusFromLines`, `costDiffers` (BR-062), `EXPENSE_CATEGORIES`.
+- `src/data/purchasingService.js` — suppliers (create/update/archive), restocks (`createRestock` with counter `restock-YYYY`, `updateRestock`, `receiveRestock` → RESTOCK_RECEIPT movements via `writeItemMovement` from salesService + optional cost update, `cancelRestock`, `closeRestock` D-038), expenses (`createExpense`, `voidExpense`). Receipt `at` is a client ISO string (no serverTimestamp inside arrays).
+- `src/domain/calendar.js` — `monthGrid`, `gridRange`, `buildEvents` (derived entries, D-040), `eventsByDate`, `validateEventForm`. `src/data/calendarService.js` — custom events create/update/delete.
+- `src/domain/reports.js` — all report aggregation (BUSINESS_RULES §7), `netLineRevenue` (D-042), `receivablesAging`, `movementReport`, `restocksBySupplier`, `dailySeries`, `presets`, `toCsv`.
+- `useQuery(adapter, col, null, key)` now means "no listener, rows = []" (reports load only what the open tab needs while keeping hook order fixed).
+- Screens: `src/features/purchasing/` (SuppliersPage + SupplierDetailPage, RestocksPage + RestockFormPage, RestockDetailPage with ReceiveDialog/ReasonDialog, ExpensesPage, PurchasingParts), `src/features/calendar/CalendarPage.jsx`, `src/features/dashboard/DashboardPage.jsx` (`RevenueCashChart`: SVG grouped bars, one axis, hover tooltip, table view; series colours validated with the dataviz validator — light contrast WARN covered by the table view), `src/features/reports/ReportsPage.jsx` (`buildReport` per tab, `downloadText` for CSV with BOM, `ReportDoc` print).
+- Routes: `/` dashboard, `/calendar/:view?m=YYYY-MM`, `/reports/:tab?from&to`, `/suppliers`, `/suppliers/:id`, `/restocks`, `/restocks/new?supplier=`, `/restocks/:id`, `/restocks/:id/edit`, `/expenses`.
+- Restock form and receive rows reuse the `.sale-line` grid from New sale.
+- E2E: `restocks.e2e.js`, `calendar.e2e.js` (dates computed in Asia/Manila), `reports.e2e.js` (uses `acceptDownloads` for CSV).

@@ -56,3 +56,10 @@ Do steps 1–3 in one sitting: until the owner exists, the first person to compl
    No new composite indexes are needed (every new list uses a single-field filter or sort).
 2. Optional: Settings → **Sales** — check the Sale ID prefix (default `RJ-`), first-due-date gap, installment defaults, reminder message and receipt footer.
 3. Optional: Settings → System → **Load sample data** adds 7 sample sales (installments, open balances, a voided payment and a cancelled sale) when the sample items and customers are loaded for the first time.
+
+## Phases 8–10 — restocks, suppliers, expenses, calendar, dashboard and reports on the real database
+1. **Re-publish the rules:** Firestore Database → Rules → replace everything with the current `firebase/firestore.rules` → Publish.
+   (Phase 8 adds rules for `suppliers`, `restocks`, `expenses` and the `restock-YYYY` counter; Phase 9 for `calendarEvents`.
+   Without them those screens, the Calendar and the Dashboard show a permission error.) **No new indexes** are needed (D-041).
+2. Optional: Settings → System → **Load sample data** adds 3 suppliers, 5 restocks, 11 expenses and 2 calendar reminders on a first, complete load.
+3. Try Reports → **Export CSV** and **Print / PDF** once on the store PC (KI-015, KI-019).

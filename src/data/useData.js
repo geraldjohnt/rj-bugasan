@@ -5,6 +5,7 @@
 export function useQuery(adapter, col, query, key = '') {
   const [state, setState] = React.useState({ rows: null, error: null });
   React.useEffect(() => {
+    if (query === null) { setState({ rows: [], error: null }); return undefined; } // nothing to load
     setState({ rows: null, error: null });
     let off = () => {};
     try {
