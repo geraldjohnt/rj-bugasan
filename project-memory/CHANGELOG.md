@@ -27,3 +27,4 @@
 - **Phase 11:** Activity log screen; Backup (download, 7-day reminder, owner-only restore with typed RESTORE); Opening balances (`OB-YYYY-NNNNN`) with own screen, customer-page button, sample data; rules + index.
 - **Phase 12:** in-app User guide (`guide.html`), `npm run deploy:rules`, `npm run verify:release`, go-live checklist.
 - Header "Online" indicator is green.
+- **Release 0.6.0** (Phases 11–12, 2-payment default, green Online) via https://github.com/geraldjohnt/rj-bugasan/pull/7 (merged; minified `/dist`, all release checks passed).

@@ -67,3 +67,4 @@
 - **Tests:** unit/service 104/104, rules 43/43 (mutation-checked), E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 + system 11, smoke on /build.
 - **Problems found and fixed:** new nav item pushed Settings below 768 px (nav items 32 → 30 px); shell E2E still expected the Activity-log placeholder; sales E2E counts changed by the sample OB and had a load-timing race on the Schedule tab.
 - **Not done:** owner go-live steps (publish rules/index, owner account, close sign-up, Windows checks) — cannot be done from the container.
+- Release 0.6.0: merged origin/main, version bumped, `npm run verify:release` passed on `/dist`, PR https://github.com/geraldjohnt/rj-bugasan/pull/7 created and merged to main.
