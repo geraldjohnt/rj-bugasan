@@ -67,3 +67,11 @@ See root CLAUDE.md "Release procedure".
 - Rules test files share one emulator project: run them serially (`--test-concurrency=1`), otherwise `clearFirestore` in one file wipes the other's data.
 - Grid children default to `min-width: auto`; a wide table then pushes the page sideways on phones. `.stack > *, .panel, .page { min-width: 0 }` keeps tables inside their scroll wrapper.
 - E2E field helper: locate inputs by the start of their label text (`.field-label` regex), scoped to `.dialog` or `.toolbar`.
+
+## Phase 5 notes
+- `src/domain/customers.js` — form/contact validation, `upsertContact` (single primary), `matchesCustomer` (search incl. phone digits), `assertEditable`/`assertArchivable`, `WALK_IN` template, reliability label.
+- `src/data/customerService.js` — `ensureWalkIn`, `createCustomer`, `updateCustomer`, `setCustomerStatus`, `saveContact`, `removeContact`; each with an activity-log entry in the same transaction. Summary fields are never written by the customer form (BR-023); Phases 6–7 services own them.
+- `src/features/customers/` — CustomersPage (+ `useCustomers` hook, which calls `ensureWalkIn` once when online), CustomerDetailPage (tab in URL: `#/customers/{id}/{tab}`), CustomerDialogs, CustomerBadges (reliability).
+- Routes: `/customers`, `/customers/:id`, `/customers/:id/:tab` in `src/app/App.jsx`.
+- No composite index is needed for Phase 5 (list query is a single `orderBy nameLower`).
+- Phases 6–7 plan from the earlier draft (D-028), for whoever builds them: store `paymentIds` and `installmentCount` on the sale so cancel/payment transactions can read every related document by id (no queries inside transactions); one movement per item per sale; payments taken when the sale is saved are reversed only by cancelling the sale.

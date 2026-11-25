@@ -31,9 +31,9 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 
 await step('Unauthenticated visit redirects to sign-in', async () => {
-  await page.goto(url + '#/customers');
+  await page.goto(url + '#/collections');
   await page.waitForSelector('h1:has-text("Sign in")');
-  expect(page.url().includes('#/login?next=%2Fcustomers'), 'expected redirect with next=/customers, got ' + page.url());
+  expect(page.url().includes('#/login?next=%2Fcollections'), 'expected redirect with next=/collections, got ' + page.url());
   expect(await page.isVisible('text=Demo mode'), 'demo notice missing');
   await shot(page, '01-login');
 });
@@ -48,15 +48,15 @@ await step('Wrong password shows a clear error and stays signed out', async () =
 await step('Correct sign-in goes to the requested page', async () => {
   await page.fill('input[autocomplete="current-password"]', 'demo1234');
   await page.click('button[type="submit"]');
-  await page.waitForSelector('h1:has-text("Customers")');
-  expect(await page.isVisible('text=scheduled for Phase 5'), 'placeholder text missing');
-  expect(await page.isVisible('.nav-item.is-active:has-text("Customers")'), 'active nav not highlighted');
+  await page.waitForSelector('h1:has-text("Collections")');
+  expect(await page.isVisible('text=scheduled for Phase 7'), 'placeholder text missing');
+  expect(await page.isVisible('.nav-item.is-active:has-text("Collections")'), 'active nav not highlighted');
   await shot(page, '02-shell-placeholder');
 });
 
 await step('Session survives a reload (stays signed in)', async () => {
   await page.reload();
-  await page.waitForSelector('h1:has-text("Customers")');
+  await page.waitForSelector('h1:has-text("Collections")');
 });
 
 await step('Desktop layout: content sits beside the sidebar, not below it', async () => {

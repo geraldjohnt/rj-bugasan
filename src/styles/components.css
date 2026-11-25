@@ -184,3 +184,13 @@
 .stack > *, .panel, .page { min-width: 0; }
 .count-input { margin-left: auto; }
 .stack > .page-header, .stack > div > .page-header { margin-bottom: 0; }
+
+/* ---------- Phase 5: customers ---------- */
+.stat-sub { font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-muted); margin-top: 2px; }
+.stat-sub.delta-out { color: var(--danger); }
+.row-actions { display: inline-flex; gap: 2px; margin-left: auto; }
+.contact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--sp-3); }
+.contact-card { border: 1px solid var(--border); border-radius: var(--radius-panel); padding: var(--sp-3) var(--sp-4); display: grid; gap: var(--sp-2); min-width: 0; }
+.contact-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); }
+.contact-lines { display: grid; gap: 2px; font-size: var(--fs-small); overflow-wrap: anywhere; }
+.contact-lines span { display: inline-flex; align-items: center; gap: 6px; }

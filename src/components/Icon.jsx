@@ -5,6 +5,7 @@ import {
   KeyRound, Lock, Wifi, WifiOff, X, Check, CircleAlert, Info, TriangleAlert, ChevronDown, ChevronsLeft,
   ChevronsRight, Plus, Search, Eye, EyeOff, User, Monitor, Sun, Moon, Construction, Pencil, Archive, ArchiveRestore,
   PackageOpen, SlidersHorizontal, ArrowLeft, Trash2, Save, CircleCheck, Link, Database,
+  Phone, UserPlus, Contact,
 } from 'lucide';
 
 const ICONS = {
@@ -17,6 +18,7 @@ const ICONS = {
   eye: Eye, eyeOff: EyeOff, user: User, system: Monitor, sun: Sun, moon: Moon, planned: Construction,
   edit: Pencil, archive: Archive, restore: ArchiveRestore, openSack: PackageOpen, adjust: SlidersHorizontal,
   back: ArrowLeft, trash: Trash2, save: Save, done: CircleCheck, link: Link, sample: Database,
+  phone: Phone, addCustomer: UserPlus, contact: Contact,
 };
 
 export function Icon({ name, size = 18, className = '', title }) {

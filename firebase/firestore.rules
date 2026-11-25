@@ -2,8 +2,8 @@ rules_version = '2';
 /*
  * RJ Inventory & Sales — Firestore Security Rules.
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
- * Scope: Phase 2 (owner bootstrap, users, usernames, settings) and Phase 4 (items, inventoryMovements, stockCounts,
- * activityLogs). Every other path is denied until its phase adds rules.
+ * Scope: Phase 2 (owner bootstrap, users, usernames, settings), Phase 4 (items, inventoryMovements, stockCounts,
+ * activityLogs) and Phase 5 (customers). Every other path is denied until its phase adds rules.
  * Cross-document consistency (item quantity == sum of its movements) is enforced by client transactions (KI-003, D-016);
  * these rules enforce per-document shape and invariants.
  * Tests: tests/rules/firestore.rules.test.js (Firestore emulator) — `npm run test:rules`.
@@ -111,6 +111,38 @@ service cloud.firestore {
       allow update: if isOwner() && resource.data.status == 'DRAFT'
         && request.resource.data.status in ['DRAFT', 'FINALIZED'] && request.resource.data.lines is list;
       allow delete: if isOwner() && resource.data.status == 'DRAFT';   // finalized counts are read-only (BR-017)
+    }
+
+    // ---- Phase 5: customers ----------------------------------------------------------------------------------
+    // Alternate contacts are embedded (BR-022). Summary fields are kept by the sale/payment services (BR-023).
+    function validCustomer(d) {
+      return d.keys().hasAll(['name', 'nameLower', 'type', 'status', 'outstandingC', 'totalPurchasesC', 'alternateContacts'])
+        && d.keys().hasOnly(['name', 'nameLower', 'type', 'system', 'address', 'contactNumber', 'email', 'facebook', 'notes', 'creditLimitC',
+             'alternateContacts', 'outstandingC', 'totalPurchasesC', 'lastSaleDate', 'paidInstallments', 'paidOnTime', 'status',
+             'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.nameLower == d.name.lower()
+        && d.type in ['Household', 'Store', 'Reseller', 'Carinderia', 'Other']
+        && d.status in ['ACTIVE', 'ARCHIVED']
+        && (d.creditLimitC == null || nonNegInt(d.creditLimitC))
+        && nonNegInt(d.outstandingC) && nonNegInt(d.totalPurchasesC)
+        && (!('paidInstallments' in d) || nonNegInt(d.paidInstallments))
+        && (!('paidOnTime' in d) || nonNegInt(d.paidOnTime))
+        && d.alternateContacts is list && d.alternateContacts.size() <= 20;
+    }
+    match /customers/{id} {
+      allow read: if isActive();
+      // The built-in Walk-in customer (BR-020) is created once with a fixed identity and can never be archived.
+      allow create: if isOwner() && validCustomer(request.resource.data)
+        && (id == 'WALK_IN') == (request.resource.data.get('system', false) == true)
+        && (id != 'WALK_IN' || (request.resource.data.name == 'Walk-in' && request.resource.data.status == 'ACTIVE'));
+      allow update: if isOwner() && validCustomer(request.resource.data)
+        && request.resource.data.get('system', false) == resource.data.get('system', false)
+        && (id != 'WALK_IN' || request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['outstandingC', 'totalPurchasesC', 'lastSaleDate', 'paidInstallments', 'paidOnTime', 'updatedAt', 'updatedBy']))
+        // BR-026: cannot archive while a balance is outstanding
+        && (request.resource.data.status == 'ACTIVE' || request.resource.data.outstandingC == 0);
+      allow delete: if false;
     }
 
     // ---- Activity log (BR-093): append-only ---------------------------------------------------------------
