@@ -11,7 +11,8 @@
   Mock adapter with transactions (8/8 tests pass), Firestore adapter (unverified), foundation screen, offline file:// smoke test (passes in Chromium).
 
 ## Releases
-- 0.1.0 — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/1 (merged). Verified: unit 35/35, rules 15/15, dist smoke, dist E2E 17/17.
+- 0.1.0 — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/1 (merged). Verified: unit 35/35, rules 15/15, dist smoke, dist E2E 16/16 (earlier recorded as 17/17; the script has 16 steps).
+- GitHub Pages deploy — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/2 (merged). `.github/workflows/static.yml` publishes `/dist` on every push to main (D-023). Same checks passed; `/dist` unchanged.
 
 ## Completed 2026-11-25 (later)
 - Phase 3 domain core (27 tests). Phase 2 shell + auth + settings (17-step E2E in demo mode), Firestore rules for Phase 2 (15 emulator tests).
@@ -20,7 +21,7 @@
 - Phase 1: only the Windows-browser check remains (KI-009); otherwise complete.
 
 ## Not started
-- Phases 2–12 (app shell, domain core, all business modules).
+- Phases 4–12 (all business modules).
 
 ## Blockers
 - None.
@@ -34,5 +35,6 @@
 1. ✅ Release 0.1.0 merged to main (2026-11-25, https://github.com/geraldjohnt/rj-bugasan/pull/1). `/dist` on main is the client folder.
 2. Owner: follow FIREBASE_SETUP.md "Phase 2 — go-live of login": publish `firebase/firestore.rules`, create the owner in the app, disable public sign-up (KI-011).
 3. Owner: confirm `/dist` works in Edge/Chrome/Firefox on the store PC (KI-009).
+3a. Owner: set GitHub Settings → Pages → Source to "GitHub Actions" and add `geraldjohnt.github.io` to Firebase Auth authorized domains, then share https://geraldjohnt.github.io/rj-bugasan/ with the client.
 4. Next development: Phase 4 (Inventory) and Phase 5 (Customers).
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).
