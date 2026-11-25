@@ -1,0 +1,4 @@
+firebase 12.13.0
+License: Apache-2.0
+Source: git+https://github.com/firebase/firebase-js-sdk.git
+Full text: https://www.apache.org/licenses/LICENSE-2.0

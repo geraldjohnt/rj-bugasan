@@ -1,0 +1,40 @@
+/* Design tokens — see project-memory/UI_UX_GUIDELINES.md. Components use semantic tokens only. */
+:root {
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --fs-display: 24px; --lh-display: 32px;
+  --fs-title: 18px;   --lh-title: 26px;
+  --fs-subtitle: 15px; --lh-subtitle: 22px;
+  --fs-body: 14px;    --lh-body: 20px;
+  --fs-small: 13px;   --lh-small: 18px;
+  --fs-caption: 12px; --lh-caption: 16px;
+  --fs-kpi: 22px;     --lh-kpi: 28px;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px; --sp-8: 32px; --sp-10: 40px; --sp-12: 48px;
+  --radius-control: 4px; --radius-panel: 6px; --radius-dialog: 8px;
+  --shadow-float: 0 4px 16px rgba(16, 24, 40, 0.12);
+  --control-h: 36px; --row-h: 40px;
+
+  /* Light — Navy */
+  --bg: #F5F6F8; --surface: #FFFFFF; --surface-2: #F0F2F5;
+  --border: #DCE0E6; --border-strong: #C3CAD3;
+  --text: #18202C; --text-muted: #566070; --text-subtle: #868F9C;
+  --primary: #1F3B60; --primary-hover: #182F4D; --primary-subtle: #E7EDF5; --on-primary: #FFFFFF;
+  --success: #1E7547; --success-subtle: #E6F2EB;
+  --warning: #A15C00; --warning-subtle: #FBF0DF;
+  --danger: #B3261E;  --danger-subtle: #FBE9E8;
+  --info: #1F5FA8;    --info-subtle: #E6EFF9;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0E131A; --surface: #151B24; --surface-2: #1B2330;
+  --border: #283240; --border-strong: #364254;
+  --text: #E5E9EF; --text-muted: #A1AAB7; --text-subtle: #758093;
+  --primary: #86A8D8; --primary-hover: #A2BDE3; --primary-subtle: #1D2B40; --on-primary: #0E131A;
+  --success: #5CC28C; --success-subtle: #15291F;
+  --warning: #E3A54B; --warning-subtle: #2D2313;
+  --danger: #F0857E;  --danger-subtle: #301918;
+  --info: #7DB0EA;    --info-subtle: #142538;
+  --shadow-float: 0 4px 16px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+:root[data-density="compact"] { --control-h: 30px; --row-h: 32px; }

@@ -1,0 +1,26 @@
+{
+  "name": "rj-ims",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RJ Inventory and Sales Management System",
+  "scripts": {
+    "build": "node tools/build.cjs",
+    "release": "node tools/build.cjs --release",
+    "test": "node --test \"tests/domain/*.test.js\" \"tests/services/*.test.js\"",
+    "test:build": "node tests/smoke/dist-smoke.js build",
+    "test:dist": "node tests/smoke/dist-smoke.js dist",
+    "test:e2e": "node tests/e2e/shell.e2e.js build",
+    "test:rules": "firebase emulators:exec --only firestore --project demo-rj-ims \"node --test tests/rules/*.test.js\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "@fontsource/inter": "5.3.0",
+    "esbuild": "0.28.2",
+    "firebase": "12.13.0",
+    "firebase-tools": "15.37.0",
+    "lucide": "1.80.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "type": "module"
+}
