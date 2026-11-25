@@ -49,3 +49,10 @@ Do steps 1–3 in one sitting: until the owner exists, the first person to compl
    (Phase 5 adds rules for `customers`; without them the Customers screen shows a permission error.) No new indexes are needed.
 2. Open **Customers** once while online: the built-in **Walk-in** customer is created automatically.
 3. Optional: Settings → System → **Load sample data** adds 5 sample customers with alternate contacts (and the sample items if missing).
+
+## Phases 6–7 — sales, payments and collections on the real database
+1. **Re-publish the rules:** Firestore Database → Rules → replace everything with the current `firebase/firestore.rules` → Publish.
+   (Phases 6–7 add rules for `counters`, `sales`, `installments` and `payments`; without them New sale, Sales and Collections show a permission error.)
+   No new composite indexes are needed (every new list uses a single-field filter or sort).
+2. Optional: Settings → **Sales** — check the Sale ID prefix (default `RJ-`), first-due-date gap, installment defaults, reminder message and receipt footer.
+3. Optional: Settings → System → **Load sample data** adds 7 sample sales (installments, open balances, a voided payment and a cancelled sale) when the sample items and customers are loaded for the first time.

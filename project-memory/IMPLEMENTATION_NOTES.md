@@ -74,4 +74,17 @@ See root CLAUDE.md "Release procedure".
 - `src/features/customers/` — CustomersPage (+ `useCustomers` hook, which calls `ensureWalkIn` once when online), CustomerDetailPage (tab in URL: `#/customers/{id}/{tab}`), CustomerDialogs, CustomerBadges (reliability).
 - Routes: `/customers`, `/customers/:id`, `/customers/:id/:tab` in `src/app/App.jsx`.
 - No composite index is needed for Phase 5 (list query is a single `orderBy nameLower`).
-- Phases 6–7 plan from the earlier draft (D-028), for whoever builds them: store `paymentIds` and `installmentCount` on the sale so cancel/payment transactions can read every related document by id (no queries inside transactions); one movement per item per sale; payments taken when the sale is saved are reversed only by cancelling the sale.
+- (Phases 6–7 followed the plan noted here earlier: `paymentIds` + `installmentCount` on the sale (D-033), one movement per item per sale, at-sale payments reversed only by cancel (D-032).)
+
+## Phases 6–7 notes
+- `src/domain/sales.js` — `planSale()` turns the New Sale form into a validated plan (lines with snapshots, totals, paid now, receivable rows, credit warning). The form calls it live and `createSale` calls it again inside the transaction with fresh item/customer data, so the screen shows exactly what is saved. Also labels, `DEFAULT_SALES_SETTINGS`, `validateSalesSettings`, `paymentStatusOf`, `nextSeq`.
+- `src/domain/collections.js` — `groupCollections` (D-036), `reminderText` (template placeholders), `reliabilityDelta` (D-034), `buildStatement` (closing balance = outstanding).
+- `src/data/salesService.js` — `createSale` (counter, items, movements, payment, rows, sale, customer summary, activity log; creates Walk-in if missing — D-029), `cancelSale`, `updateFulfillment`; helpers `readSale`, `readRows`, `paymentDoc`.
+- `src/data/paymentService.js` — `recordPayment`, `voidPayment`, `reviseSchedule`. Revision `at` is a client ISO string because `serverTimestamp()` is not allowed inside arrays.
+- `src/data/settingsRepo.js` — `loadSalesSettings` / `saveSalesSettings` (`settings/sales`).
+- `src/components/Combobox.jsx` — searchable select (↑/↓/Enter/Esc), used for customers and items.
+- `src/features/sales/` — NewSalePage, SalesPage, SaleDetailPage (+ cancel/delivery dialogs), SaleTables (sales/payments/schedule tables, status badges), PaymentDialogs (record, void, reschedule), CollectionsPage (+ `copyText` with clipboard fallback), Print (`usePrint`, `useBusiness`, SaleReceipt, PaymentReceipt, StatementDoc).
+- Printing: `usePrint()` portals the document into `.print-root` on `<body>` and calls `window.print()`; `@media print` hides everything else. E2E stubs `window.print` and records the printed text.
+- Routes: `/sales/new` (`?customer=` preselects), `/sales`, `/sales/:id`, `/collections`, `/collections/:tab` (overdue, today, week, later, no-date), `/settings/sales`.
+- E2E helper: the Combobox is driven by clicking its input, typing, then clicking `.combobox-option`.
+- Rules: counters accept only `sale-YYYY` / `payment-YYYY` and only `next + 1`; sales are locked except payment totals, delivery, notes and cancellation; installments keep `paidC ≤ amountC` and a status that matches; payments only ACTIVE → VOIDED.

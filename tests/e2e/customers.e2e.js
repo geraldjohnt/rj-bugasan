@@ -104,11 +104,16 @@ await step('Contacts: add two, only one primary; edit; remove', async () => {
   expect(await page.locator('.contact-card').count() === 1, 'one contact expected after removal');
 });
 
-await step('Tab state is in the URL and survives reload; later-phase tabs say so', async () => {
+await step('Tab state is in the URL and survives reload; sales/payments/schedule tabs are empty for a new customer', async () => {
   await page.reload();
   await page.waitForSelector('.tab.is-active:has-text("Contacts")');
   await tab('Sales');
-  await page.waitForSelector('text=not built yet');
+  await page.waitForSelector('text=No sales yet');
+  await tab('Payments');
+  await page.waitForSelector('text=No payments yet');
+  await tab('Schedule');
+  await page.waitForSelector('text=Nothing scheduled');
+  await tab('Contacts');
 });
 
 await step('Edit: clear credit limit; duplicate-name warning shown for a new customer', async () => {
@@ -162,7 +167,7 @@ await step('Load sample data: 5 customers added; second load adds nothing', asyn
   await page.goto(url + '#/settings/system');
   await page.click('button:has-text("Load sample data")');
   await page.click('.dialog-footer button:has-text("Load sample data")');
-  await toast('5 customer(s) added');
+  await toast('5 customer(s)');
   await page.click('button:has-text("Load sample data")');
   await page.click('.dialog-footer button:has-text("Load sample data")');
   await toast('Sample data is already loaded.');

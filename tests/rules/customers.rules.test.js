@@ -49,10 +49,11 @@ test('owner: every customer service write is accepted by the rules', async () =>
   assert.equal(c.creditLimitC, null);
 });
 
-test('owner: sample data (items + customers) loads through the rules', async () => {
+test('owner: sample data (items, customers, sales, payments) loads through the rules', async () => {
   const r = await loadSampleData(adapterAs(OWNER), actor);
   assert.equal(r.created, 9);
   assert.equal(r.customers, 5);
+  assert.equal(r.sales, 7);
 });
 
 test('customers: bad shapes, negative balances and deletes are rejected', async () => {

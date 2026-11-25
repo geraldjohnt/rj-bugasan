@@ -40,3 +40,13 @@
 - **Tests:** unit/service 62/62, rules 28/28 (mutation-checked), E2E shell 16/16, inventory 15/15, customers 12/12 (see TESTING_STATUS).
 - **Problems found and fixed:** shell E2E used Customers as its placeholder example (now Collections); an older rules test asserted customers were locked (now probes payments); package-lock root version was stale (0.1.0).
 - **Next session objective:** Phase 6 (Sales) with sample sales.
+
+## 2026-11-25 — Session 4: Phases 6 (Sales) and 7 (Installments, payments, collections)
+- **Objective:** "Continue phase 6 and 7."
+- **Work completed:** Started from the session-3 draft patch (D-028; still in an old scratchpad) as a reference: reviewed and kept its domain/services/screens, then completed what was missing — Collections page, Settings → Sales, CSS (sale layout, combobox, print), routes, customer detail tabs, Firestore rules for counters/sales/installments/payments, rules tests, sales E2E, sample sales, docs. Fixed: delivery could still be changed on a cancelled sale (service + rules now refuse); decision reference in the draft pointed to the wrong ID (now D-032).
+- **Decisions:** D-032 … D-037.
+- **Tests:** unit/service 76/76, rules 35/35 (mutation-checked), E2E shell 16/16, inventory 15/15, customers 12/12, sales 16/16, offline smoke on `/build` (see TESTING_STATUS).
+- **Problems found and fixed:** Collections table overflowed at 1366 px; New sale item picker too narrow; shell and customers E2E still expected Phase 6–7 placeholders.
+- **Not done:** no release (only on "create PR and merge to main", D-018); real-Firebase check and paper printing need the owner.
+- **Next session objective:** release 0.4.0 when asked; then Phase 8 (Restocking, suppliers, expenses).
+- Release 0.4.0: version bumped, release build verified on `/dist` (unit 76/76, rules 35/35, smoke, E2E 16/16 + 15/15 + 12/12 + 16/16), committed `/dist`, PR created and merged to main.

@@ -1,3 +1,4 @@
+import { DEFAULT_SALES_SETTINGS } from '../domain/sales.js';
 /* settings/general (DATA_DICTIONARY). */
 export const DEFAULT_GENERAL = {
   businessName: 'RJ Bugasan', address: '', contactNumber: '', email: '',
@@ -12,4 +13,17 @@ export async function loadGeneralSettings(adapter) {
 export async function saveGeneralSettings(adapter, values, uid) {
   const { id, ...data } = values;
   await adapter.set('settings', 'general', { ...data, updatedAt: adapter.serverTime(), updatedBy: uid });
+}
+
+/* settings/sales (DATA_DICTIONARY): Sale ID prefix, installment defaults, reminder template, receipt footer. */
+export { DEFAULT_SALES_SETTINGS };
+
+export async function loadSalesSettings(adapter) {
+  try { return { ...DEFAULT_SALES_SETTINGS, ...((await adapter.get('settings', 'sales')) || {}) }; }
+  catch (e) { return { ...DEFAULT_SALES_SETTINGS }; }
+}
+
+export async function saveSalesSettings(adapter, values, uid) {
+  const { id, ...data } = values;
+  await adapter.set('settings', 'sales', { ...data, updatedAt: adapter.serverTime(), updatedBy: uid });
 }

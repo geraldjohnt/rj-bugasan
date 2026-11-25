@@ -1,6 +1,6 @@
 {
   "name": "rj-ims",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "RJ Inventory and Sales Management System",
   "scripts": {
@@ -9,7 +9,7 @@
     "test": "node --test \"tests/domain/*.test.js\" \"tests/services/*.test.js\"",
     "test:build": "node tests/smoke/dist-smoke.js build",
     "test:dist": "node tests/smoke/dist-smoke.js dist",
-    "test:e2e": "node tests/e2e/shell.e2e.js build && node tests/e2e/inventory.e2e.js build && node tests/e2e/customers.e2e.js build",
+    "test:e2e": "node tests/e2e/shell.e2e.js build && node tests/e2e/inventory.e2e.js build && node tests/e2e/customers.e2e.js build && node tests/e2e/sales.e2e.js build",
     "test:rules": "firebase emulators:exec --only firestore --project demo-rj-ims \"node --test --test-concurrency=1 tests/rules/*.test.js\""
   },
   "devDependencies": {

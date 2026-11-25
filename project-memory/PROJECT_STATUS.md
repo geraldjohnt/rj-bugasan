@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-11-25
 **Overall status:** Design approved (D-017). Implementation started.
-**Current phase:** Phase 5 (Customers) — implemented, tested and released as 0.3.0; next Phase 6 (Sales)
-**Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module and the Customers module (list, detail, alternate contacts, credit limit, archive, Walk-in, sample data) exist and are tested. Sales and later modules not started.
+**Current phase:** Phases 6 (Sales) and 7 (Installments, payments, collections) — implemented, tested and released as 0.4.0; next Phase 8 (Restocking, suppliers, expenses)
+**Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales) exist and are tested. Phases 8–12 not started.
 
 ## Completed
 - Phase 0: requirements interview (8 rounds) and design documents; approved 2026-11-25.
@@ -13,6 +13,7 @@
 ## Releases
 - 0.1.0 — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/1 (merged). Verified: unit 35/35, rules 15/15, dist smoke, dist E2E 16/16 (earlier recorded as 17/17; the script has 16 steps).
 - 0.2.0 — 2026-11-25 — Phase 4 Inventory — https://github.com/geraldjohnt/rj-bugasan/pull/3. Verified on minified `/dist`: unit 53/53, rules 22/22, dist smoke, E2E shell 16/16 + inventory 15/15.
+- 0.4.0 — 2026-11-25 — Phases 6–7 Sales, payments, collections — PR to main (see SESSION_LOG). Verified on minified `/dist`: unit 76/76, rules 35/35, dist smoke, E2E shell 16/16 + inventory 15/15 + customers 12/12 + sales 16/16.
 - 0.3.0 — 2026-11-25 — Phase 5 Customers — https://github.com/geraldjohnt/rj-bugasan/pull/4. Verified on minified `/dist`: unit 62/62, rules 28/28, dist smoke, E2E shell 16/16 + inventory 15/15 + customers 12/12.
 - GitHub Pages deploy — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/2 (merged). `.github/workflows/static.yml` publishes `/dist` on every push to main (D-023). Same checks passed; `/dist` unchanged.
 
@@ -28,8 +29,11 @@
 ## Completed 2026-11-25 (Phase 5)
 - Customers module; Firestore rules for customers; sample customers. Tests: unit/service 62/62, rules 28/28, E2E shell 16/16 + inventory 15/15 + customers 12/12.
 
+## Completed 2026-11-25 (Phases 6–7, session 4)
+- Sales, installments, payments and collections; Firestore rules for counters/sales/installments/payments; sample sales. The session-3 draft (D-028) was used as a starting point, reviewed, completed and tested. Tests: unit/service 76/76, rules 35/35 (mutation-checked), E2E shell 16/16 + inventory 15/15 + customers 12/12 + sales 16/16, offline smoke on `/build`.
+
 ## Not started
-- Phases 6–12. (A Phase 6/7 draft existed in session 3 but was not committed — D-028.)
+- Phases 8–12.
 
 ## Blockers
 - None.
@@ -51,5 +55,7 @@
 4. ✅ Phase 4 (Inventory) built and released as 0.2.0 (https://github.com/geraldjohnt/rj-bugasan/pull/3); GitHub Pages republishes `/dist` on merge.
 4a. ✅ Phase 5 (Customers) built and released as 0.3.0 (https://github.com/geraldjohnt/rj-bugasan/pull/4); GitHub Pages republishes `/dist` on merge.
 4b. Owner: re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phase 5"), open Customers once online (creates Walk-in).
-4c. Next development: Phase 6 (Sales), including its sample data.
+4c. ✅ Phases 6–7 built, tested and released as 0.4.0; GitHub Pages republishes `/dist` on merge.
+4d. Owner: re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phases 6–7"); optionally review Settings → Sales.
+4e. Next development: Phase 8 (Restocking, suppliers, expenses) — expand its tasks/acceptance in DEVELOPMENT_PHASES first, then build with sample data.
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).
