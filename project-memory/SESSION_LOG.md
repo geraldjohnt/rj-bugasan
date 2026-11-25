@@ -7,3 +7,7 @@
 - **Problems / risks found:** KI-001 to KI-007; notably phones cannot run a local HTML folder (KI-006) and username lookup privacy (KI-004).
 - **Remaining work:** User approval (AQ-1 to AQ-5); Phase 1.
 - **Next session objective:** Record approval decisions; start Phase 1 if approved.
+- **Later in the same session:** Approval received (D-014..D-017). User added the release rule (D-018). Phase 1 foundation built: build pipeline, vendored deps, adapters, foundation screen, unit + smoke tests (all passing). Spike pending the user's Firebase project.
+- **Files created:** package.json, package-lock.json, .gitignore, tools/build.cjs, config/firebase-config.js, src/**, tests/**.
+- **Problems encountered:** firebase npm package has no LICENSE file (build writes a notice); Node 22 test runner needs a glob; npm audit grpc warning (KI-008).
+- **Recommended next session objective:** Phase 2 + Phase 3 on demo data; run the spike once Firebase config arrives.

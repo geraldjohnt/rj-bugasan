@@ -9,6 +9,17 @@
 5. **Build → Firestore Database → Create database** → location **asia-southeast1 (Singapore)** (closest to PH; cannot be changed later) → start in **production mode**.
 6. **Project settings (gear) → General → Your apps → Web (</>)** → nickname `rj-ims` → do **not** enable Hosting yet → Register. Copy the `firebaseConfig` block (apiKey, authDomain, projectId, …). This is not a password; it only identifies the project.
 7. Send the developer: the `firebaseConfig` block, the owner UID, and the username you want (e.g. `rjowner`). **Never send the password.**
-8. The developer will provide `firestore.rules` and `firestore.indexes.json` to paste/deploy, and a one-time setup page that creates the `users` and `usernames` records.
+8. **Temporary, for the compatibility test only:** Firestore → Rules → replace with the rules below → Publish.
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /_spike/{doc} { allow read, write: if request.auth != null; }
+     }
+   }
+   ```
+   Then the developer opens `build/spike.html` by double-click, signs in, and records the results.
+   These rules are replaced by the real rules before go-live.
+9. The developer will provide `firestore.rules` and `firestore.indexes.json` to paste/deploy, and a one-time setup page that creates the `users` and `usernames` records.
 
 Optional (recommended for phone access, decision D-014): Firebase **Hosting** to open the app on a phone via an HTTPS link.

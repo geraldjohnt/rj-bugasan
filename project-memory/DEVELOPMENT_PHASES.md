@@ -5,14 +5,22 @@ Never mark a phase complete until its acceptance criteria are verified.
 ## Phase 0 — Requirements & Architecture
 - **Objective:** Complete interview; produce and approve the design.
 - **Deliverables:** PROJECT_OVERVIEW, REQUIREMENTS, SYSTEM_ARCHITECTURE, DATABASE_DESIGN, DATA_DICTIONARY, BUSINESS_RULES, UI_UX_GUIDELINES, DEVELOPMENT_ROADMAP, TESTING_STRATEGY, FIREBASE_SETUP.
-- **Acceptance criteria:** All interview rounds answered ✅ · documents drafted ✅ · approval items in OPEN_QUESTIONS resolved ☐ · user explicitly approves ☐.
-- **Status:** In progress — awaiting user approval (2026-11-25).
+- **Acceptance criteria:** All interview rounds answered ✅ · documents drafted ✅ · approval items in OPEN_QUESTIONS resolved ✅ · user explicitly approves ✅ (D-017).
+- **Status:** Complete (2026-11-25).
 
 ## Phase 1 — Foundation & Firebase spike
-- **Scope:** repo layout, `tools/build.js` (esbuild → IIFE), vendored React 18.3.1 UMD, Firebase compat, Inter, icons; `dist/index.html` opens via `file://`; Mock adapter skeleton; spike page.
-- **Spike checks (Chrome, Edge, Firefox on Windows; plus Hosting URL on phone):** compat scripts load; email/password sign-in; session survives restart; Firestore read/write/transaction; persistent cache; offline detection; fonts load.
+- **Scope:** repo layout, `tools/build.js` (esbuild → IIFE; dev → `/build`, release minified → `/dist` per D-018), dist smoke test, vendored React 18.3.1 UMD, Firebase compat, Inter, icons; `dist/index.html` opens via `file://`; Mock adapter skeleton; spike page.
+- **Spike checks (Chrome, Edge, Firefox on Windows; phone deferred per D-014):** compat scripts load; email/password sign-in; session survives restart; Firestore read/write/transaction; persistent cache; offline detection; fonts load.
 - **Acceptance:** `dist/index.html` renders a React page by double-click with network disabled; spike results recorded in TESTING_STATUS and KI-001 updated; go/no-go decision recorded in DECISIONS.
-- **Status:** Not started.
+- **Status:** In progress (started 2026-11-25).
+- **Progress 2026-11-25:**
+  - ✅ Build pipeline (`tools/build.cjs`): dev → `/build`, release (minified) → `/dist`.
+  - ✅ Vendored React 18.3.1 UMD, Firebase 12.13.0 compat (app/auth/firestore), Inter font, license notices.
+  - ✅ Foundation screen with environment checks; Mock adapter (transactions, optimistic concurrency); Firestore adapter (unverified).
+  - ✅ Verified: `/build` and `/dist` open from `file://` with network disabled in Chromium (Playwright) — no errors, no network requests.
+  - ☐ Firebase spike (`build/spike.html`) — blocked on the user's Firebase project.
+  - ☐ Manual check in Edge / Chrome / Firefox on the owner's Windows PC.
+  - ☐ Icons (moved to Phase 2 with the component library).
 
 ## Phase 2 — Design system & app shell
 - **Scope:** tokens.css, components (Button, Input, MoneyInput, QtyInput, Select, Combobox, Table, Dialog, Toast, Badge, EmptyState, Skeleton, Tabs), layout, hash router, route guard, login page, idle lock, change password, theme/palette/density settings, offline & demo banners, general settings.

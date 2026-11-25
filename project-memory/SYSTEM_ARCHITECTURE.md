@@ -27,7 +27,7 @@ Why this shape:
 |---|---|---|
 | Source | `src/**/*.jsx`, `src/**/*.js`, `src/styles/*.css` | — |
 | Tooling | Node + esbuild (dev dependency) → bundles JSX into `dist/app.js` (format IIFE, React/Firebase as globals) | none |
-| Output | `dist/` | the `dist/` folder, double-click `dist/index.html` |
+| Output | `build/` (dev, unminified, git-ignored) | `dist/` (release: minified, verified, committed on PR/merge — D-018); double-click `dist/index.html` |
 
 The client never needs Node, npm, a server or a build step.
 
@@ -77,7 +77,7 @@ UI (features/*)  →  hooks (useQuery, useMutation, useAuth, useOnline)
   staff, consider Cloud Functions (paid Blaze plan) for server-side enforcement. (KI-003)
 - `file://` limitations: API-key HTTP-referrer restriction and App Check (reCAPTCHA) cannot be used. (KI-001)
 
-## 7. Device access — PC and phone (RQ-004) — DECISION NEEDED
+## 7. Device access — PC and phone (RQ-004) — DECIDED: PC only for v1 (D-014)
 Opening a local `index.html` works on Windows/macOS PCs. **Phones cannot practically run a local HTML folder**
 (iOS Safari cannot; Android Chrome blocks local scripts/storage in most cases). Recommendation (pending approval as D-014):
 publish the *same* `dist` folder to **Firebase Hosting** (free) so the phone opens an HTTPS URL, while the PC can
@@ -106,6 +106,7 @@ src/
   styles/ tokens.css, base.css, components.css
 tools/ build.js
 tests/ domain/*.test.js, services/*.test.js, e2e/*.spec.js
-dist/ index.html, app.js, app.css, vendor/, config/, assets/
+build/ (dev output, git-ignored)
+dist/ index.html, app.js, app.css, vendor/, config/, assets/  (minified release only, D-018)
 firebase/ firestore.rules, firestore.indexes.json
 ```

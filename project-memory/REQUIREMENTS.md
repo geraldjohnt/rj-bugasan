@@ -6,7 +6,7 @@
 | RQ-001 | Products are rice only. | R1-Q1 |
 | RQ-002 | Customers are a mix of types; both registered and walk-in sales allowed; registered preferred. | R1-Q1, R1-Q6 |
 | RQ-003 | v1 has a single Owner user; restricted users may be added later. | R1-Q2 |
-| RQ-004 | Usable on phone and PC, possibly several devices at once, with shared live data. | R1-Q3 |
+| RQ-004 | Usable on PC, possibly several devices at once, with shared live data. Phone access deferred (D-014, DF-007); layouts remain responsive. | R1-Q3, D-014 |
 | RQ-005 | Single store location. | R1-Q4 |
 | RQ-006 | Delivery tracked per sale as Pending / Delivered / Picked up only. | R1-Q6 |
 | RQ-007 | Owner enters existing Excel data manually (opening stock, customers, open installments). | R1-Q7 |
@@ -26,6 +26,7 @@
 | RQ-021 | Cash / Bank Transfer / E-Wallet sales may be partially paid; remainder is an outstanding balance with optional due date; later payments can be recorded. | R3-Q6 |
 | RQ-022 | Customers have 0..n alternate contacts: name, address, contact number, email, Facebook, relationship, primary flag, notes. | R3-Q7 |
 | RQ-023 | Printable sale and payment receipts for standard printers; PDF via browser print. | R3-Q8 |
+| RQ-048 | Business rules A-005..A-009 confirmed: cancellation refunds payments, no partial returns; credit limit warns; reliability thresholds; contact number required; opening-balance entries. | AQ-4 |
 | RQ-024 | Installment frequency chosen per sale: Monthly on 15th, Monthly on last day of month, or Semi-monthly (15th and last day). Installment count 3, 4 or 5 (max 5). | R4-Q1, brief |
 | RQ-025 | First due date = first qualifying date at least N days after sale date (N default 7, configurable). Each due date editable. | R4-Q2 |
 | RQ-026 | Optional down payment; remainder split into installments. | R4-Q3 |
@@ -60,6 +61,7 @@
 | DF-004 | Staff accounts & roles UI | Future (R8-Q4); model prepared now |
 | DF-005 | SMS sending, barcode/scale hardware, multiple branches | Not selected for future planning (R8-Q4) |
 | DF-006 | Automatic cloud backups (Blaze plan) | Manual export chosen (R7-Q3) |
+| DF-007 | Phone access via Firebase Hosting | PC only for now (D-014) |
 
 ## Rejected
 | ID | Requirement | Reason |

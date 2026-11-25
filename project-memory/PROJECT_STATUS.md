@@ -1,27 +1,29 @@
 # Project Status
 
 **Last updated:** 2026-11-25
-**Overall status:** Planning complete — awaiting user approval of the design
-**Current phase:** Phase 0 — Requirements & Architecture (see DEVELOPMENT_PHASES.md)
-**Implementation status:** No application code exists. Only project-memory documentation.
+**Overall status:** Design approved (D-017). Implementation started.
+**Current phase:** Phase 1 — Foundation & Firebase spike (in progress)
+**Implementation status:** Build pipeline, vendored runtime, temporary foundation screen, Mock and Firestore adapters exist. No business modules yet.
 
 ## Completed
-- Project memory structure (2026-11-25).
-- Requirements interview, all 8 rounds (2026-11-25) — see INTERVIEW_LOG.md.
-- Design drafts: PROJECT_OVERVIEW, REQUIREMENTS, SYSTEM_ARCHITECTURE, DATABASE_DESIGN, DATA_DICTIONARY,
-  BUSINESS_RULES, UI_UX_GUIDELINES, DEVELOPMENT_ROADMAP, DEVELOPMENT_PHASES, TESTING_STRATEGY, FIREBASE_SETUP.
+- Phase 0: requirements interview (8 rounds) and design documents; approved 2026-11-25.
+- Phase 1 (partial): build pipeline (`/build` dev, `/dist` minified release), vendored React 18.3.1 + Firebase 12.13.0 compat + Inter,
+  Mock adapter with transactions (8/8 tests pass), Firestore adapter (unverified), foundation screen, offline file:// smoke test (passes in Chromium).
 
 ## In progress
-- Phase 0 approval: approval items AQ-1 to AQ-5 in OPEN_QUESTIONS.md.
+- Phase 1: Firebase `file://` spike (TQ-1).
 
 ## Not started
-- Phase 1 onward (all application code, Firebase spike).
+- Phases 2–12 (app shell, domain core, all business modules).
 
 ## Blockers
-- Coding is blocked until the user approves the design (AQ-5).
-- Firebase spike needs the user's Firebase project (FIREBASE_SETUP.md). Development can start on the Mock adapter without it.
+- Firebase spike needs the user's Firebase project (FIREBASE_SETUP.md, steps 1–8). Not blocking Phase 2/3 work on demo data.
+
+## Standing instructions
+- Release rule (D-018): on "create PR and merge to main" → `npm run release` → `npm test` + `npm run test:dist` → commit `/dist` → PR → merge.
+- User prefers questions as click-to-answer options with a recommended default.
 
 ## Immediate next actions
-1. Get answers to AQ-1 to AQ-5; record them in DECISIONS / OPEN_QUESTIONS.
-2. On approval: start Phase 1 (build pipeline, vendored deps, `file://` shell, Mock adapter, spike page).
-3. Owner creates the Firebase project using FIREBASE_SETUP.md and provides config + UID + username.
+1. Owner: create Firebase project (FIREBASE_SETUP.md) and send config, UID, username.
+2. Run the spike (`build/spike.html`) in Edge/Chrome/Firefox on the owner's PC; record results; decide go/no-go for Firestore under file://.
+3. Meanwhile start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).

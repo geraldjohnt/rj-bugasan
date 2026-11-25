@@ -36,3 +36,17 @@ REQUIREMENTS, KNOWN_ISSUES, TESTING_STATUS, IMPLEMENTATION_NOTES, CHANGELOG, and
 - All dependencies stored locally; no CDNs at runtime; relative paths only; no service workers or ES-module loading that needs HTTP.
 - Firebase Firestore is the intended database. Its `file://` compatibility must be validated before implementation.
 - No implementation until the user explicitly approves the planning and architecture.
+
+## Release procedure (mandatory — user instruction 2026-11-25, D-018)
+
+Whenever the user asks to **create a PR and merge to main**:
+1. Run the release build (`npm run release`). It produces a **minified, client-ready** app in the root `/dist` folder:
+   minified JS bundle, minified CSS, minified HTML, production (`.min`) vendor files only, no source maps,
+   no dev/test/spike files, relative paths only.
+2. **Verify it still runs:** run the smoke test that opens `dist/index.html` via `file://` with the network disabled
+   (`npm run test:dist`) plus the unit tests. Do not create the PR if anything fails; report the failure instead.
+3. Commit the updated `/dist`, create the PR, and merge to main.
+4. `/dist` must always be self-contained so the user can zip it and send it to a client or deploy it.
+   Never put secrets in `/dist` (the Firebase web config is not a secret).
+
+Day-to-day development builds go to `/build` (git-ignored), never to `/dist`.
