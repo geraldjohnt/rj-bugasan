@@ -9,7 +9,7 @@
 - Project memory structure created (2026-11-25).
 
 ## In progress
-- Rounds 1-5 answered (2026-11-25). Round 6 (Reports, dashboard, profit) being asked.
+- Rounds 1-6 answered (2026-11-25). Round 7 (Login, security, backup) being asked.
 
 ## Not started
 - All application modules (Auth, Inventory, Customers, Sales, Installments, Payments, Calendar, Purchasing, Reports, Settings).
@@ -21,6 +21,6 @@
 - Firebase config not yet provided (needed for the compatibility spike).
 
 ## Immediate next actions
-1. Record Round 6 answers.
-2. Ask Round 7 as option prompts (user preference).
+1. Record Round 7 answers.
+2. Ask Round 8 as option prompts (user preference).
 3. Continue rounds per the interview plan in INTERVIEW_LOG.md.
