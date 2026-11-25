@@ -10,3 +10,4 @@
 - Firebase spike passed (D-019 GO).
 - Phase 3 domain core; Phase 2 app shell, authentication, settings, design system; Firestore rules (Phase 2 scope).
 - **Release 0.1.0** merged to main via https://github.com/geraldjohnt/rj-bugasan/pull/1 (minified `/dist`).
+- **Phase 4 — Inventory:** items (add/edit/archive/restore, sack ↔ per-kg link, opening stock), stock adjustments with reasons, open sack, movements list and item history, stock count (draft → finalize), low stock and valuation, activity-log entries, Firestore rules + indexes, sample data loader (Settings → System). Root README now shows the phase table.

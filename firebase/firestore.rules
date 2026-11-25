@@ -2,7 +2,10 @@ rules_version = '2';
 /*
  * RJ Inventory & Sales — Firestore Security Rules.
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
- * Scope: Phase 2 (owner bootstrap, users, usernames, settings). Every other path is denied until its phase adds rules.
+ * Scope: Phase 2 (owner bootstrap, users, usernames, settings) and Phase 4 (items, inventoryMovements, stockCounts,
+ * activityLogs). Every other path is denied until its phase adds rules.
+ * Cross-document consistency (item quantity == sum of its movements) is enforced by client transactions (KI-003, D-016);
+ * these rules enforce per-document shape and invariants.
  * Tests: tests/rules/firestore.rules.test.js (Firestore emulator) — `npm run test:rules`.
  */
 service cloud.firestore {
@@ -60,6 +63,61 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['email', 'uid'])
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email;
+      allow update, delete: if false;
+    }
+
+    // ---- Phase 4: inventory ---------------------------------------------------------------------------------
+    function isInt(v) { return v is int; }
+    function nonNegInt(v) { return v is int && v >= 0; }
+    function optString(v) { return v == null || v is string; }
+
+    function validItem(d) {
+      return d.keys().hasAll(['name', 'nameLower', 'unit', 'qtyH', 'priceC', 'costC', 'minStockH', 'status'])
+        && d.keys().hasOnly(['name', 'nameLower', 'variety', 'category', 'unit', 'sackWeightKg', 'linkedSackItemId', 'linkedKgItemId',
+             'sku', 'description', 'qtyH', 'priceC', 'costC', 'minStockH', 'supplierId', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.nameLower == d.name.lower()
+        && d.unit in ['SACK', 'KG']
+        && nonNegInt(d.qtyH) && nonNegInt(d.priceC) && nonNegInt(d.costC) && nonNegInt(d.minStockH)
+        && (d.unit == 'KG' || (d.qtyH % 100 == 0 && d.sackWeightKg is number && d.sackWeightKg > 0))
+        && d.status in ['ACTIVE', 'ARCHIVED'];
+    }
+    match /items/{id} {
+      allow read: if isActive();
+      allow create: if isOwner() && validItem(request.resource.data);
+      allow update: if isOwner() && validItem(request.resource.data) && request.resource.data.unit == resource.data.unit;
+      allow delete: if false;                // BR-018: items are archived, never deleted
+    }
+
+    match /inventoryMovements/{id} {
+      allow read: if isActive();
+      allow create: if isOwner()
+        && request.resource.data.type in ['OPENING', 'SALE', 'SALE_CANCEL', 'RESTOCK_RECEIPT', 'ADJUSTMENT', 'COUNT_ADJUSTMENT', 'SACK_OPEN_OUT', 'SACK_OPEN_IN']
+        && request.resource.data.itemId is string
+        && request.resource.data.unit in ['SACK', 'KG']
+        && isInt(request.resource.data.qtyDeltaH) && request.resource.data.qtyDeltaH != 0
+        && nonNegInt(request.resource.data.qtyBeforeH) && nonNegInt(request.resource.data.qtyAfterH)
+        && request.resource.data.qtyAfterH == request.resource.data.qtyBeforeH + request.resource.data.qtyDeltaH
+        && nonNegInt(request.resource.data.unitCostC)
+        && request.resource.data.businessDate is string
+        && request.resource.data.createdBy == request.auth.uid
+        && (request.resource.data.type != 'ADJUSTMENT' || (request.resource.data.reason is string && request.resource.data.reason.size() > 0));
+      allow update, delete: if false;        // BR-011: movements are immutable
+    }
+
+    match /stockCounts/{id} {
+      allow read: if isActive();
+      allow create: if isOwner() && request.resource.data.status == 'DRAFT' && request.resource.data.lines is list;
+      allow update: if isOwner() && resource.data.status == 'DRAFT'
+        && request.resource.data.status in ['DRAFT', 'FINALIZED'] && request.resource.data.lines is list;
+      allow delete: if isOwner() && resource.data.status == 'DRAFT';   // finalized counts are read-only (BR-017)
+    }
+
+    // ---- Activity log (BR-093): append-only ---------------------------------------------------------------
+    match /activityLogs/{id} {
+      allow read: if isOwner();
+      allow create: if isActive() && request.resource.data.by == request.auth.uid
+        && request.resource.data.action is string && request.resource.data.summary is string;
       allow update, delete: if false;
     }
 

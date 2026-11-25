@@ -3,7 +3,8 @@ import {
   LayoutDashboard, CalendarDays, ShoppingCart, ReceiptText, HandCoins, Users, Package, ArrowLeftRight,
   ClipboardList, Truck, Building2, Wallet, ChartColumn, History, DatabaseBackup, Settings, Menu, LogOut,
   KeyRound, Lock, Wifi, WifiOff, X, Check, CircleAlert, Info, TriangleAlert, ChevronDown, ChevronsLeft,
-  ChevronsRight, Plus, Search, Eye, EyeOff, User, Monitor, Sun, Moon, Construction,
+  ChevronsRight, Plus, Search, Eye, EyeOff, User, Monitor, Sun, Moon, Construction, Pencil, Archive, ArchiveRestore,
+  PackageOpen, SlidersHorizontal, ArrowLeft, Trash2, Save, CircleCheck, Link, Database,
 } from 'lucide';
 
 const ICONS = {
@@ -14,6 +15,8 @@ const ICONS = {
   online: Wifi, offline: WifiOff, close: X, check: Check, error: CircleAlert, info: Info, warning: TriangleAlert,
   chevronDown: ChevronDown, collapse: ChevronsLeft, expand: ChevronsRight, plus: Plus, search: Search,
   eye: Eye, eyeOff: EyeOff, user: User, system: Monitor, sun: Sun, moon: Moon, planned: Construction,
+  edit: Pencil, archive: Archive, restore: ArchiveRestore, openSack: PackageOpen, adjust: SlidersHorizontal,
+  back: ArrowLeft, trash: Trash2, save: Save, done: CircleCheck, link: Link, sample: Database,
 };
 
 export function Icon({ name, size = 18, className = '', title }) {

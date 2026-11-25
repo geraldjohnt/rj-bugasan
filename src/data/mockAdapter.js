@@ -116,6 +116,12 @@ export function createMockAdapter({ storage = null, maxRetries = 5, now = () => 
       l.run();
       return () => listeners.delete(l);
     },
+    subscribeDoc(name, id, cb) {
+      const l = { col: name, run: () => { const rec = col(name)[id]; cb(rec ? { id, ...clone(rec.data) } : null); } };
+      listeners.add(l);
+      l.run();
+      return () => listeners.delete(l);
+    },
     serverTime() { return now().toISOString(); },
     reset() { db = {}; persist(); },
   };

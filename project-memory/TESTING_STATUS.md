@@ -18,3 +18,8 @@ Planned tests: see TESTING_STRATEGY.md.
 | Smoke /build and trial /dist (Phase 2 shell) | PASS | 2026-11-25 | dist not committed (release rule D-018) |
 | Real Firebase login flow (setup owner, sign in, change password, reset email) | Not run | — | Needs rules published; owner performs setup |
 | Release 0.1.0 verification on minified /dist | PASS | 2026-11-25 | unit 35/35, rules 15/15, smoke, E2E 17/17 |
+| Unit + service: inventory domain (7) and inventory services on Mock adapter (11, incl. ledger invariant, concurrent last-stock removal, count at finalize time, sample data idempotent) | PASS 53/53 total | 2026-11-25 | `npm test` |
+| Security rules incl. Phase 4 (22 tests; real inventory services run through the emulator) | PASS 22/22 | 2026-11-25 | `npm run test:rules` (files now run serially). Mutation check: removing the movement arithmetic rule and allowing item delete made 2 tests fail as expected |
+| E2E inventory, demo mode, file:// on /build — 15 steps (validation, add sack/kg, link, duplicate name, open sack, adjust incl. limits, edit price, movements filter, stock count draft/reload/finalize, archive/restore, sample data ×2, low-stock filter, phone width, no JS errors) | PASS 15/15 | 2026-11-25 | `node tests/e2e/inventory.e2e.js build`; found and fixed: wide tables pushed the page sideways on phones |
+| E2E shell on /build after Phase 4 (+ offline smoke on /build) | PASS 16/16, smoke PASS | 2026-11-25 | `npm run test:e2e` runs shell + inventory |
+| Inventory on the real Firebase project | Not run | — | Needs rules + indexes published by the owner |

@@ -1,0 +1,7 @@
+{
+  "indexes": [
+    { "collectionGroup": "inventoryMovements", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "itemId", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] },
+    { "collectionGroup": "inventoryMovements", "queryScope": "COLLECTION", "fields": [ { "fieldPath": "type", "order": "ASCENDING" }, { "fieldPath": "createdAt", "order": "DESCENDING" } ] }
+  ],
+  "fieldOverrides": []
+}

@@ -35,7 +35,10 @@ Never mark a phase complete until its acceptance criteria are verified.
 
 ## Phase 4 — Inventory
 - **Scope:** item CRUD/archive, sack–kg link, movements list, item history, adjustments with reasons, open sack, stock count, low-stock, valuation.
-- **Acceptance:** every quantity change produces a movement; negative stock impossible; open sack atomic; count finalize creates correct adjustments.
+- **Acceptance:** every quantity change produces a movement ✅ (ledger invariant checked in service tests); negative stock impossible ✅ (domain, transaction and rules); open sack atomic ✅; count finalize creates correct adjustments ✅.
+- **Status:** Implemented and tested (2026-11-25) in demo mode (unit/service tests, E2E 15/15) and against the Firestore emulator (real services through the rules, 7 tests). Remaining for "Verified": owner publishes rules + indexes (FIREBASE_SETUP "Phase 4") and tries it on the real database.
+- **Built:** item list (search, status/unit/stock filters, low/out-of-stock badges, value at cost, totals, summary strip), item add/edit dialog (sack weight, link per-kg ↔ sack, opening stock, price-below-cost warning), item detail (stats, details, stock history), archive/restore, stock adjustment (reason list, note for Other, preview), open sack (default kg cost, override, preview), Movements page (type/date/item filters, show more), Stock count (draft, save, discard, finalize with confirmation, read-only after), activity-log entries for every action, sample data (D-025), Firestore rules + indexes for Phase 4.
+- **Decisions in this phase:** stock count compares counted quantities with stock *at finalize time*, not at draft creation (sales may happen during counting); uncounted lines are ignored. KG item cost is set to the confirmed value when a sack is opened (BR-016).
 
 ## Phase 5 — Customers
 - **Scope:** customer CRUD/archive, alternate contacts, type, credit limit, search, detail page shell, Walk-in system customer.

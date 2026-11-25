@@ -25,7 +25,13 @@
 - `src/app/router.jsx` (hash router), `src/app/prefs.jsx` (appearance; pre-paint copy in `src/index.html`).
 - `src/auth/` — `authService.js` (Firebase + demo), `AuthContext.jsx` (session + idle lock), `AuthPages.jsx` (login, setup, lock, reset, change password).
 - `src/components/` — shared UI. `src/features/` — pages (settings, system check, placeholder, dev UI reference).
-- `src/domain/` — pure business logic (Phase 3).
+- `src/domain/` — pure business logic (Phase 3); `inventory.js` (Phase 4 rules: item form validation, applyDelta, adjustments, open-sack plan, count plan, stock status, valuation).
+- `src/data/inventoryService.js` — inventory transactions (create/update/archive item, adjust, open sack, counts). Every quantity change writes item + movement + activity log in one transaction.
+- `src/data/activityLog.js` (log entry inside a transaction), `src/data/useData.js` (live `useQuery`/`useDoc` hooks, `actorOf`, `errorMessage`), `src/data/sampleData.js` (D-025).
+- `src/features/inventory/` — ItemsPage, ItemDetailPage, MovementsPage (+ MovementsTable), StockCountPages, InventoryDialogs (item form, adjust, open sack, confirm, StockBadge).
+- `src/features/system/SampleData.jsx` — "Load sample data" button/panel. `src/app/format.js` — timestamp display (Firestore Timestamp or ISO).
+- `firebase/firestore.indexes.json` — composite indexes (referenced from firebase.json).
+- `wrapFirestore(db, FieldValue)` in firestoreAdapter.js wraps any compat Firestore (used by rules tests to run real services in the emulator).
 - `firebase/firestore.rules`, `firebase.json` (emulator on port 8085).
 - `src/styles/` — `tokens.css` (design tokens), `fonts.css`, `base.css`.
 - `src/spike/` — Firebase file:// spike page (dev build only).
@@ -55,3 +61,9 @@
 
 ## Release procedure (D-018)
 See root CLAUDE.md "Release procedure".
+
+## Phase 4 notes
+- Adapters now also provide `subscribeDoc(col, id, cb, onError)`; the Firestore adapter reads with `serverTimestamps: 'estimate'` so freshly written docs sort and display correctly before the server confirms.
+- Rules test files share one emulator project: run them serially (`--test-concurrency=1`), otherwise `clearFirestore` in one file wipes the other's data.
+- Grid children default to `min-width: auto`; a wide table then pushes the page sideways on phones. `.stack > *, .panel, .page { min-width: 0 }` keeps tables inside their scroll wrapper.
+- E2E field helper: locate inputs by the start of their label text (`.field-label` regex), scoped to `.dialog` or `.toolbar`.

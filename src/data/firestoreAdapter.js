@@ -10,7 +10,9 @@ function applyQuery(ref, q = {}) {
   if (q.limit) r = r.limit(q.limit);
   return r;
 }
-const rows = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+// 'estimate': pending server timestamps show the local time instead of null until the server confirms.
+const EST = { serverTimestamps: 'estimate' };
+const rows = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data(EST) }));
 
 export function createFirestoreAdapter(firebase, config) {
   const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(config);
@@ -22,11 +24,13 @@ export function createFirestoreAdapter(firebase, config) {
     .then(() => 'enabled')
     .catch((err) => `unavailable (${err.code || err.message})`);
 
+  return { ...wrapFirestore(db, firebase.firestore.FieldValue), app, persistence, auth: app.auth() };
+}
+
+/** Adapter interface over a compat Firestore instance (also used by the rules tests with the emulator). */
+export function wrapFirestore(db, FieldValue) {
   return {
     kind: 'firestore',
-    app,
-    persistence,
-    auth: app.auth(),
     async get(name, id) { const s = await db.collection(name).doc(id).get(); return s.exists ? { id: s.id, ...s.data() } : null; },
     async query(name, q) { return rows(await applyQuery(db.collection(name), q).get()); },
     async set(name, id, data) { await db.collection(name).doc(id).set(data); },
@@ -42,6 +46,7 @@ export function createFirestoreAdapter(firebase, config) {
       }));
     },
     subscribe(name, q, cb, onError) { return applyQuery(db.collection(name), q).onSnapshot((s) => cb(rows(s)), onError); },
-    serverTime() { return firebase.firestore.FieldValue.serverTimestamp(); },
+    subscribeDoc(name, id, cb, onError) { return db.collection(name).doc(id).onSnapshot((s) => cb(s.exists ? { id: s.id, ...s.data(EST) } : null), onError); },
+    serverTime() { return FieldValue.serverTimestamp(); },
   };
 }

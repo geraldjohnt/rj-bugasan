@@ -21,6 +21,12 @@ If the user says "continue", continue from the "Immediate next actions" in `PROJ
 ### Before ending a meaningful session
 Update, as applicable: PROJECT_STATUS, DEVELOPMENT_PHASES, OPEN_QUESTIONS, DECISIONS,
 REQUIREMENTS, KNOWN_ISSUES, TESTING_STATUS, IMPLEMENTATION_NOTES, CHANGELOG, and append to SESSION_LOG.
+Whenever any phase's status changes, also update the **phase table in the root `README.md`** (user instruction
+2026-11-25, D-024) so it matches DEVELOPMENT_PHASES.md.
+
+### When a phase is done (user instruction 2026-11-25, D-025)
+Add sample data for that phase to `src/data/sampleData.js` (created through the real services, idempotent),
+so the owner can test it via Settings → System → "Load sample data".
 
 ### Integrity rules
 - The repository is the single source of truth.
@@ -44,7 +50,8 @@ Whenever the user asks to **create a PR and merge to main**:
    minified JS bundle, minified CSS, minified HTML, production (`.min`) vendor files only, no source maps,
    no dev/test/spike files, relative paths only.
 2. **Verify it still runs:** `npm test` (unit), `npm run test:rules` (security rules, emulator), `npm run test:dist`
-   (opens `dist/index.html` via `file://` offline) and `node tests/e2e/shell.e2e.js dist` (click-through in demo mode).
+   (opens `dist/index.html` via `file://` offline), `node tests/e2e/shell.e2e.js dist` and
+   `node tests/e2e/inventory.e2e.js dist` (click-throughs in demo mode; add each new phase's E2E script here).
    Do not create the PR if anything fails; report the failure instead.
 3. Commit the updated `/dist`, create the PR, and merge to main.
 4. `/dist` must always be self-contained so the user can zip it and send it to a client or deploy it.
