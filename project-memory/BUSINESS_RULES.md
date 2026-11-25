@@ -60,7 +60,8 @@
 - BR-060 Restock status: ORDERED → PARTIALLY_RECEIVED → RECEIVED, or CANCELLED (only if nothing received). Stock increases only on receipt.
 - BR-061 Each receipt records date and received quantities per line (≤ remaining ordered; owner may edit the order line first). Each received line creates a RESTOCK_RECEIPT movement.
 - BR-062 If received unit cost differs from item cost, a pre-checked "Update item cost" option is shown (RQ-033).
-- BR-063 Expenses: date, category (Delivery/Fuel, Rent, Wages, Utilities, Supplies, Other), amount, note. Corrected by voiding, not deleting.
+- BR-063 Expenses: date, category (Delivery/Fuel, Rent, Wages, Utilities, Supplies, Other), amount, note (required for Other — D-039). Corrected by voiding, not deleting.
+- BR-064 A partially received order whose remainder will not arrive may be **closed** with a reason (status RECEIVED, received stock kept) — D-038.
 
 ## 7. Reporting definitions (RQ-036)
 - **Revenue** = Σ totals of non-cancelled sales by sale date (opening-balance entries excluded).

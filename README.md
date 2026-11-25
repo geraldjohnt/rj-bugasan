@@ -23,16 +23,16 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 | 5 | Customers (list, detail, alternate contacts, credit limit, archive, Walk-in) | Implemented & tested (demo + rules emulator); released in 0.3.0 | Owner to re-publish rules; sample customers available |
 | 6 | Sales (new sale, sales list/detail, cancel, delivery, receipts) | Implemented & tested (demo + rules emulator); released in 0.4.0 | Owner to re-publish rules; sample sales available |
 | 7 | Installments, payments, collections | Implemented & tested (demo + rules emulator); released in 0.4.0 | Record/void payments, reschedule, Collections screen, reminders, customer statement; owner to re-publish rules |
-| 8 | Restocking, suppliers, expenses | Planned | Next |
-| 9 | Calendar | Planned | |
-| 10 | Dashboard & reports | Planned | |
-| 11 | Activity log UI, backup/restore, opening balances | Planned | |
+| 8 | Restocking, suppliers, expenses | Implemented & tested (demo + rules emulator); not yet released | Suppliers, restock orders with partial receipts and cost update, expenses; sample data available |
+| 9 | Calendar | Implemented & tested (demo + rules emulator); not yet released | Month + agenda, filters, custom events; sample reminders |
+| 10 | Dashboard & reports | Implemented & tested (demo); not yet released | KPIs, 14-day chart, 8 reports with print and CSV |
+| 11 | Activity log UI, backup/restore, opening balances | Planned | Next |
 | 12 | Firebase go-live & release | Planned | |
 
 ## Trying it with sample data
 
 Sign in, then **Settings → System → Load sample data** (or the button on the empty Items page). Each finished phase
-adds its own sample records (currently: rice items, customers, and sales with installments, payments and collections). In demo mode (no Firebase config) the data stays in your browser only.
+adds its own sample records (currently: rice items, customers, sales with installments, payments and collections, suppliers with restocks, expenses and calendar reminders; the dashboard and reports use all of it). In demo mode (no Firebase config) the data stays in your browser only.
 
 ## Developer commands
 

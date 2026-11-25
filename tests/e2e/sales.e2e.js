@@ -204,7 +204,7 @@ await step('Cancel sale: reason required; stock returned; payments refunded; cus
   await page.waitForSelector('.banner:has-text("Wrong quantity entered")');
   await page.waitForSelector('.badge:has-text("Refunded")');
   const row = await itemQty('Dinorado 50kg Sack');
-  expect(row.includes('17 sacks'), 'Dinorado stock after cancel: ' + row); // 20 − 2 (sample) − 1 (sample walk-in) = 17
+  expect(row.includes('32 sacks'), 'Dinorado stock after cancel: ' + row); // 20 − 2 (sample) − 1 (sample walk-in) + 10 + 5 (sample restocks, Phase 8) = 32
 });
 
 await step('Collections: overdue first, contacts shown, copy reminder, record payment from the list', async () => {

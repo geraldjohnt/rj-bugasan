@@ -62,10 +62,27 @@ Never mark a phase complete until its acceptance criteria are verified.
 - **Decisions:** D-034, D-036.
 
 ## Phase 8 — Restocking, suppliers, expenses
+- **Scope:** suppliers (CRUD, archive), restock orders (`RS-YYYY-NNNNN`), edit open orders, receive (partial/full) with stock-in movements and the pre-checked "Update item cost" prompt, cancel (nothing received), close a short delivery, expenses (add, void), rules, sample data.
+- **Acceptance:** stock rises only on receipt, through RESTOCK_RECEIPT movements ✅ (ledger invariant in service tests); received ≤ ordered ✅ (domain + service; receipts only grow in rules); cancel only while nothing received ✅ (service + rules); cost update only when ticked ✅; expenses voided, never edited/deleted ✅ (service + rules, mutation-checked); every action in the activity log ✅.
+- **Status:** Implemented and tested (2026-11-25) in demo mode (domain 6, service 5 tests, E2E 12/12) and against the Firestore emulator (real services through the rules, mutation-checked). Not yet released. Remaining for "Verified": release, owner re-publishes rules (FIREBASE_SETUP "Phases 8–10") and tries it on the real database.
+- **Built:** Suppliers list (search, status, open orders, last delivery, received value) and detail (stats, details, its restocks, New restock, edit, archive/restore); Restocks list (Open/status/date filters, late flag, value still to receive); New/Edit restock form (supplier search + quick add, item lines with cost prefilled, live total, expected date); Restock detail (ordered/received/remaining, deliveries history, Receive dialog with per-line qty, cost and pre-checked cost update, Cancel order, Close order); Expenses page (period/category/status filters, totals, add dialog, void with reason); rules for suppliers, restocks, expenses and the `restock-YYYY` counter; sample suppliers, restocks (every status) and expenses (one voided).
+- **Decisions:** D-038, D-039.
+
 ## Phase 9 — Calendar
+- **Scope:** Month and Agenda views, filters (Sales, Payment due, Overdue, Restocking, Deliveries, Other), custom events, click-through to source records (RQ-035).
+- **Acceptance:** entries derived live from sales/installments/restocks ✅ (domain tests); overdue shown as its own category ✅; paid rows, cancelled sales/restocks and opening balances hidden ✅; custom events add/edit/delete, logged ✅; filters remembered ✅; month navigation incl. leap February ✅.
+- **Status:** Implemented and tested (2026-11-25): domain 3 tests, service 1, rules 1, E2E 10/10. Not yet released.
+- **Built:** `#/calendar/{month|agenda}?m=YYYY-MM`; month grid (Sunday first, today highlighted, 3 chips per day + "+n more", day dialog with "Add event on this day"); agenda list per day; category filter chips with counts (remembered in this browser); overdue banner linking to Collections; Add/Edit/Delete event dialog (title, date, optional time, note); sample events.
+- **Decisions:** D-040.
+
 ## Phase 10 — Dashboard & reports
+- **Scope:** dashboard KPIs and alerts; reports Sales, Profit by item, Profit & loss (net profit), Cash collected, Receivables aging, Inventory valuation, Movements & losses, Restocks by supplier; date presets; print/PDF; CSV (RQ-036 … RQ-039). Customer statement already exists on the customer page (Phase 7).
+- **Acceptance:** revenue/COGS/gross/net follow BUSINESS_RULES §7 with cancelled sales, voided payments/expenses and opening balances excluded ✅ (domain tests); per-item revenue adds up to revenue (discount spread) ✅; aging buckets Current/1–30/31–60/61+ ✅; dashboard KPIs equal the matching report figures ✅ (E2E cross-check); CSV has header and plain numbers ✅; print shows business header and period ✅.
+- **Status:** Implemented and tested (2026-11-25): domain 6 tests, E2E 12/12. Not yet released. Phase 10 needs no sample data of its own (it reads all earlier sample data — D-025 satisfied by Phases 4–9 sets).
+- **Built:** Dashboard (8 KPI tiles linking to their screens, Needs attention list, 14-day revenue vs cash bar chart with hover and table view, collections coming up, recent sales, low/out-of-stock); Reports page with tabs, period presets (Today, Last 7 days, This month, Last month, Last 30 days, This year, Custom) in the URL, stat strip, tables with totals, Print / PDF, Export CSV (UTF-8 with BOM for Excel).
+- **Decisions:** D-041, D-042.
 ## Phase 11 — Activity log UI, backup/restore, opening balances
 ## Phase 12 — Firebase go-live & release
 - **Scope:** deploy rules & indexes, create owner account + username, optional Hosting deploy, E2E suite on `file://` build, release folder, user guide.
 
-(Detailed tasks and acceptance criteria for phases 8–12 will be expanded when Phase 7 completes.)
+(Detailed tasks and acceptance criteria for phases 11–12 will be expanded when Phase 10 is released.)

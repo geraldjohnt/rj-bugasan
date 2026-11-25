@@ -112,14 +112,15 @@ Payment numbers use the year of the payment date (`payment-YYYY` counter).
 name, contactPerson, contactNumber, email, address, notes, status.
 
 ## restocks/{restockNo}
-supplierId, supplierName, orderDate, expectedDate, status, lines[{itemId, itemName, unit, qtyOrderedH, qtyReceivedH, unitCostC}],
-receipts[{date, lines[{itemId, qtyH, unitCostC}], by, at}], totalCostC, notes.
+restockNo (= doc ID, `RS-YYYY-NNNNN`, counter `restock-YYYY`, year of the order date), supplierId, supplierName, orderDate, expectedDate (date?), status (`ORDERED`\|`PARTIALLY_RECEIVED`\|`RECEIVED`\|`CANCELLED`),
+lines[{itemId, itemName, unit, qtyOrderedH, qtyReceivedH, unitCostC}], receipts[{date, lines[{itemId, itemName, unit, qtyH, unitCostC}], by, byName, at (ISO)}], totalCostC (Σ ordered × cost), notes,
+cancel {reason, at, by}?, closed {reason, at, by, short[{itemId, qtyH}]}? (D-038).
 
 ## expenses/{id}
-date, category, amountC, note, status (`ACTIVE`\|`VOIDED`), void{reason, at, by}.
+date, category (BR-063 list), amountC > 0, note (required for Other — D-039), status (`ACTIVE`\|`VOIDED`), void{reason, at, by}.
 
 ## calendarEvents/{id}
-title, date, allDay, time?, category `OTHER`, note.
+title (≤ 120), date, time (`HH:MM` or ''), note, category `OTHER` (only custom events are stored — D-040).
 
 ## activityLogs/{id}
 at, by, byName, action (e.g. `SALE_CREATE`, `SALE_CANCEL`, `PAYMENT_VOID`, `ITEM_PRICE_CHANGE`, `STOCK_ADJUST`, `SCHEDULE_REVISE`, `RESTORE`), entityType, entityId, summary, changes (small map of before/after).

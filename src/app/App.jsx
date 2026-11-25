@@ -24,6 +24,13 @@ import { NewSalePage } from '../features/sales/NewSalePage.jsx';
 import { SalesPage } from '../features/sales/SalesPage.jsx';
 import { SaleDetailPage } from '../features/sales/SaleDetailPage.jsx';
 import { CollectionsPage } from '../features/sales/CollectionsPage.jsx';
+import { SuppliersPage, SupplierDetailPage } from '../features/purchasing/SuppliersPage.jsx';
+import { RestocksPage, RestockFormPage } from '../features/purchasing/RestocksPage.jsx';
+import { RestockDetailPage } from '../features/purchasing/RestockDetailPage.jsx';
+import { ExpensesPage } from '../features/purchasing/ExpensesPage.jsx';
+import { CalendarPage } from '../features/calendar/CalendarPage.jsx';
+import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
+import { ReportsPage } from '../features/reports/ReportsPage.jsx';
 import { loadGeneralSettings, DEFAULT_GENERAL } from '../data/settingsRepo.js';
 
 const PUBLIC = ['/login', '/setup', '/system-check'];
@@ -71,6 +78,8 @@ function Routes({ adapter, general, setGeneral }) {
   const settings = matchPath('/settings', path) ? {} : matchPath('/settings/:tab', path);
   if (settings) page = <SettingsPage tab={settings.tab} adapter={adapter} onGeneralSaved={setGeneral} />;
   else if (path === '/dev/ui' && __BUILD_MODE__ === 'development') page = <UiReferencePage />;
+  else if (path === '/') page = <DashboardPage adapter={adapter} />;
+  else if (path === '/reports' || matchPath('/reports/:tab', path)) page = <ReportsPage adapter={adapter} tab={(matchPath('/reports/:tab', path) || {}).tab} query={query} />;
   else if (path === '/items') page = <ItemsPage adapter={adapter} />;
   else if (matchPath('/items/:id', path)) { const { id } = matchPath('/items/:id', path); page = <ItemDetailPage key={id} adapter={adapter} id={id} />; }
   else if (path === '/movements') page = <MovementsPage adapter={adapter} />;
@@ -85,6 +94,14 @@ function Routes({ adapter, general, setGeneral }) {
   else if (path === '/sales') page = <SalesPage adapter={adapter} />;
   else if (matchPath('/sales/:id', path)) { const { id } = matchPath('/sales/:id', path); page = <SaleDetailPage key={id} adapter={adapter} id={id} />; }
   else if (path === '/collections' || matchPath('/collections/:tab', path)) page = <CollectionsPage adapter={adapter} tab={(matchPath('/collections/:tab', path) || {}).tab} />;
+  else if (path === '/suppliers') page = <SuppliersPage adapter={adapter} />;
+  else if (matchPath('/suppliers/:id', path)) { const { id } = matchPath('/suppliers/:id', path); page = <SupplierDetailPage key={id} adapter={adapter} id={id} />; }
+  else if (path === '/restocks') page = <RestocksPage adapter={adapter} />;
+  else if (path === '/restocks/new') page = <RestockFormPage key={'new-' + (query.supplier || '')} adapter={adapter} supplierId={query.supplier} />;
+  else if (matchPath('/restocks/:id/edit', path)) { const { id } = matchPath('/restocks/:id/edit', path); page = <RestockFormPage key={'edit-' + id} adapter={adapter} id={id} />; }
+  else if (matchPath('/restocks/:id', path)) { const { id } = matchPath('/restocks/:id', path); page = <RestockDetailPage key={id} adapter={adapter} id={id} />; }
+  else if (path === '/calendar' || matchPath('/calendar/:view', path)) page = <CalendarPage adapter={adapter} view={(matchPath('/calendar/:view', path) || {}).view} monthParam={query.m} />;
+  else if (path === '/expenses') page = <ExpensesPage adapter={adapter} />;
   else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
   else page = <NotFoundPage />;
 

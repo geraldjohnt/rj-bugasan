@@ -2,8 +2,8 @@
 
 **Last updated:** 2026-11-25
 **Overall status:** Design approved (D-017). Implementation started.
-**Current phase:** Phases 6 (Sales) and 7 (Installments, payments, collections) — implemented, tested and released as 0.4.0; next Phase 8 (Restocking, suppliers, expenses)
-**Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales) exist and are tested. Phases 8–12 not started.
+**Current phase:** Phases 8 (Restocking, suppliers, expenses), 9 (Calendar) and 10 (Dashboard & reports) — implemented and tested, not yet released; next: release 0.5.0 when asked, then Phase 11
+**Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales), Restocks/Suppliers/Expenses, Calendar, Dashboard and Reports exist and are tested. Phases 11–12 not started.
 
 ## Completed
 - Phase 0: requirements interview (8 rounds) and design documents; approved 2026-11-25.
@@ -32,8 +32,11 @@
 ## Completed 2026-11-25 (Phases 6–7, session 4)
 - Sales, installments, payments and collections; Firestore rules for counters/sales/installments/payments; sample sales. The session-3 draft (D-028) was used as a starting point, reviewed, completed and tested. Tests: unit/service 76/76, rules 35/35 (mutation-checked), E2E shell 16/16 + inventory 15/15 + customers 12/12 + sales 16/16, offline smoke on `/build`.
 
+## Completed 2026-11-25 (Phases 8–10, session 5)
+- Suppliers, restocks (order/edit/receive with cost update/cancel/close), expenses; Calendar (month + agenda, filters, custom events); Dashboard and 8 reports with print and CSV; rules for suppliers/restocks/expenses/calendarEvents; sample data for Phases 8–9. Tests: unit/service 97/97, rules 39/39 (mutation-checked), E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12, offline smoke on `/build`. Decisions D-038 … D-042.
+
 ## Not started
-- Phases 8–12.
+- Phases 11–12.
 
 ## Blockers
 - None.
@@ -57,5 +60,8 @@
 4b. Owner: re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phase 5"), open Customers once online (creates Walk-in).
 4c. ✅ Phases 6–7 built, tested and released as 0.4.0; GitHub Pages republishes `/dist` on merge.
 4d. Owner: re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phases 6–7"); optionally review Settings → Sales.
-4e. Next development: Phase 8 (Restocking, suppliers, expenses) — expand its tasks/acceptance in DEVELOPMENT_PHASES first, then build with sample data.
+4e. ✅ Phases 8–10 built and tested (session 5); not released yet.
+4f. On "create PR and merge to main": release 0.5.0 per D-018 (bump version, `npm run release`, run every check incl. the new restocks/calendar/reports E2E on `dist`).
+4g. Owner (after release): re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phases 8–10"); try Reports → Export CSV and Print on the store PC (KI-015, KI-019).
+4h. Next development: Phase 11 (Activity log UI, backup/restore, opening balances) — expand its tasks/acceptance in DEVELOPMENT_PHASES first.
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).

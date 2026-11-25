@@ -11,6 +11,10 @@ import { createCustomer, saveContact, ensureWalkIn } from './customerService.js'
 import { createSale, cancelSale, updateFulfillment } from './salesService.js';
 import { recordPayment, voidPayment } from './paymentService.js';
 import { DEFAULT_SALES_SETTINGS } from '../domain/sales.js';
+import { validateSupplierForm, validateRestockForm, validateExpenseForm } from '../domain/purchasing.js';
+import { validateEventForm } from '../domain/calendar.js';
+import { createSupplier, createRestock, receiveRestock, cancelRestock, createExpense, voidExpense } from './purchasingService.js';
+import { createEvent } from './calendarService.js';
 
 const P = (pesos) => Math.round(pesos * 100);
 
@@ -27,7 +31,7 @@ const ITEMS = [
   { name: 'NFA Well-milled 50kg Sack', variety: 'NFA', category: 'Well-milled', unit: UNITS.SACK, sackWeightKg: 50, price: 2150, cost: 1900, min: 3, opening: 0 },
 ];
 
-/** Returns { created, skipped, customers, sales } counts. `asOf` = today's business date (tests pass a fixed one). */
+/** Returns { created, skipped, customers, sales, suppliers, restocks, expenses, events } counts. `asOf` = today's business date (tests pass a fixed one). */
 export async function loadSampleData(adapter, actor, asOf = today()) {
   const existing = await adapter.query('items', {});
   const byName = new Map(existing.map((i) => [i.nameLower, i.id]));
@@ -54,7 +58,8 @@ export async function loadSampleData(adapter, actor, asOf = today()) {
     await adjustStock(adapter, actor, { itemId: ids['Malagkit per KG'], direction: 'OUT', qtyH: 200, reason: 'Spoilage/Pests', note: '', date: addDays(start, 8) });
   }
   const c = await loadCustomersAndSales(adapter, actor, asOf, ids);
-  return { created, skipped, ...c };
+  const p = await loadPurchasing(adapter, actor, asOf, ids);
+  return { created, skipped, ...c, ...p };
 }
 
 // Phase 5 — customers (with alternate contacts). Phase 6/7 — sales, payments, a voided payment and a cancelled sale.
@@ -129,4 +134,83 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
   sales++;
   await updateFulfillment(adapter, actor, s1.saleId, { fulfillment: 'DELIVERED', deliveryDate: addDays(d1, 1), notes: 'Deliver to the store.' });
   return { customers, sales };
+}
+
+// Phase 8 — suppliers, restocks (received with a cost change, partly received, ordered, cancelled) and expenses.
+// Phase 9 — custom calendar events. Phase 10 (reports, dashboard) needs no data of its own: it reads all of the above.
+const SUPPLIERS = [
+  { name: 'Golden Grains Trading', contactPerson: 'Mr. Lim', contactNumber: '0917 555 9001', address: 'Nueva Ecija', email: 'orders@goldengrains.example.com' },
+  { name: 'Nueva Ecija Rice Mill', contactPerson: 'Aling Cora', contactNumber: '0918 555 9002', address: 'Cabanatuan City' },
+  { name: 'Bayanihan Farmers Coop', contactPerson: 'Tatay Ben', contactNumber: '0920 555 9003', notes: 'Cash on delivery only.' },
+];
+
+async function loadPurchasing(adapter, actor, asOf, itemIds) {
+  const existing = await adapter.query('suppliers', {});
+  const byName = new Map(existing.map((x) => [x.nameLower, x.id]));
+  const sid = {};
+  let suppliers = 0;
+  for (const s of SUPPLIERS) {
+    const key = s.name.toLowerCase();
+    if (byName.has(key)) { sid[s.name] = byName.get(key); continue; }
+    sid[s.name] = await createSupplier(adapter, actor, validateSupplierForm(s).data);
+    suppliers++;
+  }
+  const none = { suppliers, restocks: 0, expenses: 0, events: 0 };
+  if (suppliers !== SUPPLIERS.length || Object.keys(itemIds).length !== ITEMS.length) return none;
+
+  const items = Object.fromEntries((await adapter.query('items', {})).map((i) => [i.id, i]));
+  const order = async (supplier, orderDate, expectedDate, lines, notes = '') => {
+    const { data, errors } = validateRestockForm({
+      supplierId: sid[supplier], orderDate, expectedDate, notes,
+      lines: lines.map(([name, qty, cost]) => ({ itemId: itemIds[name], qty: String(qty), unitCost: String(cost) })),
+    }, items);
+    if (Object.keys(errors).length) throw new Error('Invalid sample restock: ' + JSON.stringify(errors));
+    return createRestock(adapter, actor, data);
+  };
+  const receive = (id, date, lines) => receiveRestock(adapter, actor, id, {
+    date, lines: lines.map(([name, qty, cost, updateCost = true]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), updateCost })),
+  });
+  let restocks = 0;
+
+  // 1. Fully received two months ago at the usual cost.
+  const r1 = await order('Golden Grains Trading', addDays(asOf, -60), addDays(asOf, -57), [['Dinorado 50kg Sack', 10, 2900], ['Sinandomeng 50kg Sack', 8, 2300]]);
+  await receive(r1, addDays(asOf, -57), [['Dinorado 50kg Sack', 10, 2900], ['Sinandomeng 50kg Sack', 8, 2300]]);
+  restocks++;
+  // 2. Received at a higher cost (item cost updated) — NFA had no stock until now.
+  const r2 = await order('Nueva Ecija Rice Mill', addDays(asOf, -30), addDays(asOf, -26), [['NFA Well-milled 50kg Sack', 6, 1900], ['Jasmine 25kg Sack', 4, 1450]]);
+  await receive(r2, addDays(asOf, -26), [['NFA Well-milled 50kg Sack', 6, 1950], ['Jasmine 25kg Sack', 4, 1500]]);
+  restocks++;
+  // 3. Partly received; the rest is expected in a few days.
+  const r3 = await order('Golden Grains Trading', addDays(asOf, -6), addDays(asOf, 3), [['Dinorado 50kg Sack', 12, 2900], ['Malagkit per KG', 25, 65]], 'Rest of the Dinorado follows.');
+  await receive(r3, addDays(asOf, -4), [['Dinorado 50kg Sack', 5, 2900], ['Malagkit per KG', 25, 65]]);
+  restocks++;
+  // 4. Ordered, expected next week. 5. Cancelled.
+  await order('Bayanihan Farmers Coop', addDays(asOf, -1), addDays(asOf, 6), [['Brown Rice 25kg Sack', 5, 1650], ['Sinandomeng 50kg Sack', 10, 2300]]);
+  const r5 = await order('Bayanihan Farmers Coop', addDays(asOf, -15), addDays(asOf, -10), [['Jasmine 25kg Sack', 3, 1450]]);
+  await cancelRestock(adapter, actor, r5, 'Supplier could not deliver');
+  restocks += 2;
+
+  const EXPENSES = [
+    [-58, 'Rent', 8000, 'Store rent'], [-55, 'Utilities', 1850.75, 'Electricity'], [-40, 'Delivery/Fuel', 650, 'Tricycle deliveries'],
+    [-28, 'Rent', 8000, 'Store rent'], [-25, 'Wages', 4500, 'Helper (2 weeks)'], [-20, 'Supplies', 420, 'Sacks and twine'],
+    [-12, 'Delivery/Fuel', 380, 'Gas for delivery'], [-11, 'Wages', 4500, 'Helper (2 weeks)'], [-3, 'Utilities', 1720.4, 'Electricity'],
+    [-2, 'Other', 250, 'Barangay permit photocopies'],
+  ];
+  let expenses = 0, mistake = null;
+  for (const [days, category, amount, note] of EXPENSES) {
+    const id = await createExpense(adapter, actor, validateExpenseForm({ date: addDays(asOf, days), category, amount: String(amount), note }).data);
+    if (days === -12) mistake = id;
+    expenses++;
+  }
+  await createExpense(adapter, actor, validateExpenseForm({ date: addDays(asOf, -12), category: 'Delivery/Fuel', amount: '380', note: 'Gas for delivery' }).data);
+  await voidExpense(adapter, actor, mistake, 'Entered twice');
+  expenses++;
+
+  let events = 0;
+  for (const e of [{ title: 'Pay store rent', date: addDays(asOf, 5), time: '09:00', note: 'Landlord: Mrs. Garcia' },
+    { title: 'Business permit renewal', date: addDays(asOf, 12), time: '', note: 'Bring last year\'s permit' }]) {
+    await createEvent(adapter, actor, validateEventForm(e).data);
+    events++;
+  }
+  return { suppliers, restocks, expenses, events };
 }

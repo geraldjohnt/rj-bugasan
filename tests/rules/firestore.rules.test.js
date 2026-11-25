@@ -120,7 +120,7 @@ test('usernames cannot be changed or deleted after setup', async () => {
 });
 test('collections without rules yet are denied, even to the owner', async () => {
   await seedOwner();
-  await assertFails(as(OWNER).doc('suppliers/s1').get());
-  await assertFails(as(OWNER).doc('expenses/e1').set({ amountC: 1 }));
+  await assertFails(as(OWNER).doc('backups/b1').get());
+  await assertFails(as(OWNER).doc('anything/e1').set({ amountC: 1 }));
   await assertFails(as(OWNER).doc('_spike/probe').get());
 });

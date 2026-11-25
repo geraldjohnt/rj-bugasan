@@ -6,6 +6,7 @@ import {
   ChevronsRight, Plus, Search, Eye, EyeOff, User, Monitor, Sun, Moon, Construction, Pencil, Archive, ArchiveRestore,
   PackageOpen, SlidersHorizontal, ArrowLeft, Trash2, Save, CircleCheck, Link, Database,
   Printer, Phone, Copy, Ban, CalendarClock, UserPlus, Receipt, Undo2, Contact, Star, Banknote, FileText, Minus,
+  ChevronLeft, ChevronRight, Download, PackageCheck, CalendarPlus, List, CalendarRange, CircleStop, TrendingUp,
 } from 'lucide';
 
 const ICONS = {
@@ -20,6 +21,8 @@ const ICONS = {
   back: ArrowLeft, trash: Trash2, save: Save, done: CircleCheck, link: Link, sample: Database,
   print: Printer, phone: Phone, copy: Copy, cancel: Ban, reschedule: CalendarClock, addCustomer: UserPlus, receipt: Receipt,
   undo: Undo2, contact: Contact, star: Star, payment: Banknote, statement: FileText, minus: Minus,
+  prev: ChevronLeft, next: ChevronRight, download: Download, receive: PackageCheck, addEvent: CalendarPlus, agenda: List,
+  month: CalendarRange, close2: CircleStop, trend: TrendingUp,
 };
 
 export function Icon({ name, size = 18, className = '', title }) {
