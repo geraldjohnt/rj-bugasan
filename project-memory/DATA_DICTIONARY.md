@@ -72,6 +72,7 @@ date, status `DRAFT`\|`FINALIZED`, note, lines[{itemId, itemName, unit, systemQt
 | lastSaleDate | date? | |
 | paidInstallments, paidOnTime | int | reliability (BR-025) |
 | status | `ACTIVE` \| `ARCHIVED` | `WALK_IN` is system |
+| system | bool | true only for the built-in `WALK_IN` document (D-029) |
 
 ## sales/{saleId}
 | Field | Type | Notes |

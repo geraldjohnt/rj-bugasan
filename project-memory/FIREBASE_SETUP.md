@@ -43,3 +43,9 @@ Do steps 1–3 in one sitting: until the owner exists, the first person to compl
    Alternatively a developer with the Firebase CLI runs `firebase deploy --only firestore:rules,firestore:indexes`.
    An index takes a few minutes to build; until then the affected list shows "The database needs an index".
 3. Optional: Settings → System → **Load sample data** to try the inventory screens (writes sample records to the real database).
+
+## Phase 5 — customers on the real database
+1. **Re-publish the rules:** Firestore Database → Rules → replace everything with the current `firebase/firestore.rules` → Publish.
+   (Phase 5 adds rules for `customers`; without them the Customers screen shows a permission error.) No new indexes are needed.
+2. Open **Customers** once while online: the built-in **Walk-in** customer is created automatically.
+3. Optional: Settings → System → **Load sample data** adds 5 sample customers with alternate contacts (and the sample items if missing).

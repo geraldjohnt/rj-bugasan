@@ -18,6 +18,8 @@ import { ItemsPage } from '../features/inventory/ItemsPage.jsx';
 import { ItemDetailPage } from '../features/inventory/ItemDetailPage.jsx';
 import { MovementsPage } from '../features/inventory/MovementsPage.jsx';
 import { StockCountListPage, StockCountPage } from '../features/inventory/StockCountPages.jsx';
+import { CustomersPage } from '../features/customers/CustomersPage.jsx';
+import { CustomerDetailPage } from '../features/customers/CustomerDetailPage.jsx';
 import { loadGeneralSettings, DEFAULT_GENERAL } from '../data/settingsRepo.js';
 
 const PUBLIC = ['/login', '/setup', '/system-check'];
@@ -70,6 +72,11 @@ function Routes({ adapter, general, setGeneral }) {
   else if (path === '/movements') page = <MovementsPage adapter={adapter} />;
   else if (path === '/stock-count') page = <StockCountListPage adapter={adapter} />;
   else if (matchPath('/stock-count/:id', path)) { const { id } = matchPath('/stock-count/:id', path); page = <StockCountPage key={id} adapter={adapter} id={id} />; }
+  else if (path === '/customers') page = <CustomersPage adapter={adapter} />;
+  else if (matchPath('/customers/:id', path) || matchPath('/customers/:id/:tab', path)) {
+    const { id, tab } = matchPath('/customers/:id', path) || matchPath('/customers/:id/:tab', path);
+    page = <CustomerDetailPage key={id} adapter={adapter} id={id} tab={tab} />;
+  }
   else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
   else page = <NotFoundPage />;
 

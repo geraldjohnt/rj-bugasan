@@ -24,3 +24,7 @@ Planned tests: see TESTING_STRATEGY.md.
 | E2E shell on /build after Phase 4 (+ offline smoke on /build) | PASS 16/16, smoke PASS | 2026-11-25 | `npm run test:e2e` runs shell + inventory |
 | Inventory on the real Firebase project | Not run | — | Needs rules + indexes published by the owner |
 | Release 0.2.0 verification on minified /dist | PASS | 2026-11-25 | unit 53/53, rules 22/22, dist smoke, E2E shell 16/16 + inventory 15/15 |
+| Unit + service: customers (validation, contacts/primary, search, reliability, create/edit/log, archive with balance, Walk-in, sample data) — 9 tests | PASS 62/62 total | 2026-11-25 | `npm test` |
+| Security rules incl. Phase 5 (6 customer tests; real customer services through the emulator) | PASS 28/28 | 2026-11-25 | `npm run test:rules`. Mutation check: removing the BR-026 archive guard and the Walk-in field guard made 2 tests fail as expected |
+| E2E customers, demo mode, file:// on /build — 12 steps (validation, add with credit limit, contacts add/edit/remove + single primary, tab in URL, edit/clear limit, duplicate-name warning, search by phone digits and contact name, archive/restore, Walk-in locked, sample data ×2 + type filter, phone width, no JS errors) | PASS 12/12 | 2026-11-25 | `node tests/e2e/customers.e2e.js build` |
+| E2E shell + inventory on /build after Phase 5 (+ offline smoke on /build) | PASS 16/16, 15/15, smoke PASS | 2026-11-25 | Shell test now uses Collections as its "not built yet" example |

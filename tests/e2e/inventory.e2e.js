@@ -200,7 +200,7 @@ await step('Load sample data from Settings → System; second load adds nothing'
   await page.goto(url + '#/settings/system');
   await page.click('button:has-text("Load sample data")');
   await page.click('.dialog-footer button:has-text("Load sample data")');
-  await toast('Sample data loaded: 9 item(s) added.');
+  await toast('Sample data loaded: 9 item(s)');
   await page.click('button:has-text("Load sample data")');
   await page.click('.dialog-footer button:has-text("Load sample data")');
   await toast('Sample data is already loaded.');

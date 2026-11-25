@@ -32,3 +32,11 @@
 - **Not done:** no release to `/dist` (only on "create PR and merge to main"); real-Firebase check of Phase 4 needs the owner to publish rules + indexes.
 - **Next session objective:** Phase 5 (Customers) with sample customers.
 - Release 0.2.0: release build verified on `/dist` (unit 53/53, rules 22/22, smoke, E2E 16/16 + 15/15), PR https://github.com/geraldjohnt/rj-bugasan/pull/3 created and merged to main.
+
+## 2026-11-25 — Session 3: Phase 5 (Customers), release 0.3.0
+- **Objective:** User asked "Proceed phases 5, 6, and 7", then mid-session: "Stop after phase 5. Create PR and merge."
+- **Work completed:** Phase 5 end to end (domain, service, screens, rules, sample data, tests). Draft Phase 6/7 domain/services/screens were written, then removed from the branch per the user's instruction (D-028); a patch was kept only in the session scratchpad.
+- **Decisions:** D-028 … D-031.
+- **Tests:** unit/service 62/62, rules 28/28 (mutation-checked), E2E shell 16/16, inventory 15/15, customers 12/12 (see TESTING_STATUS).
+- **Problems found and fixed:** shell E2E used Customers as its placeholder example (now Collections); an older rules test asserted customers were locked (now probes payments); package-lock root version was stale (0.1.0).
+- **Next session objective:** Phase 6 (Sales) with sample sales.

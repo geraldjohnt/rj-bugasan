@@ -42,6 +42,10 @@ Never mark a phase complete until its acceptance criteria are verified.
 
 ## Phase 5 — Customers
 - **Scope:** customer CRUD/archive, alternate contacts, type, credit limit, search, detail page shell, Walk-in system customer.
+- **Acceptance:** contact number required (A-008) ✅; Walk-in cannot be edited/archived (BR-020) ✅ (service + rules); customer with a balance cannot be archived (BR-026) ✅ (service + rules); one primary alternate contact ✅; every change in the activity log ✅.
+- **Status:** Implemented and tested (2026-11-25) in demo mode (service tests 9, E2E 12/12) and against the Firestore emulator (real services through the rules, 6 tests, mutation-checked). Released as 0.3.0. Remaining for "Verified": owner re-publishes rules (FIREBASE_SETUP "Phase 5") and tries it on the real database.
+- **Built:** customer list (search by name/phone digits/address/alternate contact, type/balance/status filters, outstanding, credit limit with over-limit flag, total purchases, last sale, reliability badge, summary strip), add/edit dialog (duplicate-name warning), detail page (balance, credit limit + available, total purchases, % paid on time; tabs Summary, Contacts, and Sales/Payments/Schedule placeholders for Phases 6–7; tab in URL), alternate contacts (add/edit/remove, single primary), archive/restore, built-in Walk-in customer, activity-log entries, sample customers (D-025), Firestore rules for `customers`.
+- **Not in this phase (by design):** summary fields (outstanding, total purchases, last sale, reliability counters) are written by the sale/payment services of Phases 6–7; until then they stay 0 / "New payer".
 
 ## Phase 6 — Sales
 - **Scope:** new sale form, Sale ID generation, discount, terms (full/open balance/installment), stock re-validation in transaction, sales list/detail, cancel with reversal, delivery status, receipts.

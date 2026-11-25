@@ -20,8 +20,8 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 | 2 | Design system & app shell (login, settings) | Implemented & tested (demo) | Awaiting real-Firebase login check after go-live steps |
 | 3 | Domain core (money, dates, schedules, allocation) | Complete | 27 unit tests |
 | 4 | Inventory (items, movements, adjustments, open sack, stock count, low stock, valuation) | Implemented & tested (demo + rules emulator); released in 0.2.0 | Owner to publish rules + indexes and try it on the real database; sample data available |
-| 5 | Customers | Planned | Next |
-| 6 | Sales | Planned | |
+| 5 | Customers (list, detail, alternate contacts, credit limit, archive, Walk-in) | Implemented & tested (demo + rules emulator); released in 0.3.0 | Owner to re-publish rules; sample customers available |
+| 6 | Sales | Planned | Next |
 | 7 | Installments, payments, collections | Planned | |
 | 8 | Restocking, suppliers, expenses | Planned | |
 | 9 | Calendar | Planned | |
@@ -32,7 +32,7 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 ## Trying it with sample data
 
 Sign in, then **Settings → System → Load sample data** (or the button on the empty Items page). Each finished phase
-adds its own sample records. In demo mode (no Firebase config) the data stays in your browser only.
+adds its own sample records (currently: rice items and customers). In demo mode (no Firebase config) the data stays in your browser only.
 
 ## Developer commands
 
