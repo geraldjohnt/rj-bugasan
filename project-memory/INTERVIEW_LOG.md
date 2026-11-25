@@ -5,7 +5,7 @@
 |---|---|---|
 | 1 | Business operations, users, devices, internet, current process, priorities | Answered 2026-11-25 |
 | 2 | Inventory rules, KG/Sack units, quantity precision, pricing, cost | Answered 2026-11-25 |
-| 3 | Customers, alternate contacts, sales transactions, Sale ID format, discounts | Pending |
+| 3 | Customers, alternate contacts, sales transactions, Sale ID format, discounts | Answered 2026-11-25 |
 | 4 | Payment methods, installments, due-date rules, partial/advance/over-payments, rescheduling | Pending |
 | 5 | Collections, calendar, deliveries, restocking, suppliers, purchase orders | Pending |
 | 6 | Reports, dashboard, profitability definitions | Pending |
@@ -42,3 +42,18 @@
 | R2-Q5 | Sack-to-KG conversion | Link KG item to its Sack item; one-click "Open sack". Default cost per kg = sack cost / sack weight, but the owner can override the per-kg cost. | RQ-013 |
 | R2-Q6 | Price tiers | One selling price per item, pre-filled in the sale, editable per sale line (override logged). | RQ-014 |
 | R2-Q7 | Stock corrections | Adjustments need a reason from a list (Spillage, Spoilage, Count correction, Other + note), plus a Stock Count screen that records differences. | RQ-015 |
+
+---
+
+## Round 3 — Customers, sales, Sale ID, discounts (asked & answered 2026-11-25)
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R3-Q1 | Sale ID format | RJ-YYYY-NNNNN (e.g., RJ-2026-00001), sequence resets yearly; prefix configurable. | RQ-016, D-008 |
+| R3-Q2 | Discount scope | Whole sale only (% or fixed amount). | RQ-017 |
+| R3-Q3 | Customer per sale | One customer per sale. Built-in Walk-in customer for fully paid sales; registered customer required for installment/unpaid balances. | RQ-018 |
+| R3-Q4 | Extra customer fields | Customer type tag; credit limit; payment reliability indicator. (Photo/ID not selected.) | RQ-019 |
+| R3-Q5 | Editing saved sales | Saved sales are locked; fix by cancel (with reason; stock and payments reversed) and re-create. | RQ-020, D-009 |
+| R3-Q6 | Partial payment on non-installment sales | Yes; remainder becomes an open balance with optional due date; registered customer required. | RQ-021 |
+| R3-Q7 | Alternate contact extra fields | Relationship, Primary alternate flag, Notes. | RQ-022 |
+| R3-Q8 | Receipts | Printable sale and payment receipts (normal printer), savable as PDF via print dialog. No thermal layout. | RQ-023 |
