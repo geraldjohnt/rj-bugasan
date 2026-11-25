@@ -27,5 +27,7 @@ CLAUDE.md → README.md → PROJECT_STATUS.md → DEVELOPMENT_PHASES.md → OPEN
 | TESTING_STATUS.md | Tests run, results, outstanding tests. |
 | IMPLEMENTATION_NOTES.md | Code locations, patterns, how to continue development. |
 | SESSION_LOG.md | Chronological session summaries. |
+| TESTING_STRATEGY.md | Test levels, tools, critical scenarios. |
+| FIREBASE_SETUP.md | Owner's step-by-step Firebase project setup. |
 
 Status vocabulary: **Planned** → **In progress** → **Implemented** → **Tested** → **Verified**.

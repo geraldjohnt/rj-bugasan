@@ -9,8 +9,8 @@
 | 4 | Payment methods, installments, due-date rules, partial/advance/over-payments, rescheduling | Answered 2026-11-25 |
 | 5 | Collections, calendar, deliveries, restocking, suppliers, purchase orders | Answered 2026-11-25 |
 | 6 | Reports, dashboard, profitability definitions | Answered 2026-11-25 |
-| 7 | Authentication, users/roles, security, backup & recovery | Pending |
-| 8 | Offline/online behavior, Firebase decisions, appearance, future expansion | Pending |
+| 7 | Authentication, users/roles, security, backup & recovery | Answered 2026-11-25 |
+| 8 | Offline/online behavior, Firebase decisions, appearance, future expansion | Answered 2026-11-25 |
 
 ---
 
@@ -96,3 +96,26 @@ Installment count 3/4/5 (max 5) is taken from the original brief (confirmed requ
 | R6-Q2 | Expense tracking | Yes, simple expenses (category, amount, date, note); Gross and Net profit. | RQ-037 |
 | R6-Q3 | Reports | Sales, Receivables aging, Profit by item & period, Customer statement, Inventory & restock. | RQ-038 |
 | R6-Q4 | Export | Print/PDF and CSV. | RQ-039 |
+
+---
+
+## Round 7 — Login, security, backup (asked & answered 2026-11-25)
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R7-Q1 | Sign-in method | Username + password (Claude had recommended email). | RQ-040, D-011 |
+| R7-Q2 | Session duration | Stay signed in until logout, with idle lock requiring password. | RQ-041 |
+| R7-Q3 | Backup | One-click export file + weekly reminder; owner-only restore with confirmation. | RQ-042 |
+| R7-Q4 | Activity log | Yes, owner-only, read-only, searchable. | RQ-043 |
+
+## Round 8 — Offline, appearance, future, locale, Firebase (asked & answered 2026-11-25)
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R8-Q1 | Password recovery with username login | Hidden recovery email behind the username; "Forgot password" sends reset link there. | RQ-040, D-011 |
+| R8-Q2 | Offline behavior | View-only with Offline banner; saving disabled until reconnected. | RQ-044, D-012 |
+| R8-Q3 | Default color direction | Navy blue (Claude had recommended deep green). | RQ-045 |
+| R8-Q4 | Future expansion to design for | Staff accounts & roles only. | RQ-046 |
+| R8-Q5 | Locale | PHP, Asia/Manila, format "Nov 25, 2026". (Confirms A-001..A-003.) | RQ-047 |
+| R8-Q6 | Interface language | English. | RQ-047 |
+| R8-Q7 | Firebase project | User creates it following a written guide (FIREBASE_SETUP.md). | D-013 |

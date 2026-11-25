@@ -42,6 +42,14 @@
 | RQ-037 | Expenses module: category, amount, date, note; Net profit = Gross profit - expenses for the period. | R6-Q2 |
 | RQ-038 | Reports: Sales; Receivables aging (Current/1-30/31-60/60+); Profit by item and period; Customer statement (printable); Inventory valuation, movements, losses and restocks by supplier. All filterable by date range. | R6-Q3 |
 | RQ-039 | Reports printable / PDF and exportable to CSV. | R6-Q4 |
+| RQ-040 | Login with username + password via Firebase Authentication; each username is tied to a recovery email used for "Forgot password". Passwords are never stored by the app. Owner can change password in Settings. | R7-Q1, R8-Q1 |
+| RQ-041 | Session persists across app restarts until logout (Firebase Auth persistence, not a localStorage flag). Idle lock after N minutes (default 30, configurable) requires password. Unauthenticated users see only the login page. | R7-Q2 |
+| RQ-042 | One-click full backup export to a file; reminder when last backup is older than 7 days; owner-only restore with typed confirmation. | R7-Q3 |
+| RQ-043 | Append-only activity log of significant actions; owner-only searchable screen. | R7-Q4 |
+| RQ-044 | When offline: app opens, shows cached data read-only, shows an Offline banner, disables all saving. | R8-Q2 |
+| RQ-045 | Light and dark themes; predefined palettes; default palette Navy. | R8-Q3 |
+| RQ-046 | Data model and security rules allow adding restricted staff users later. | R8-Q4 |
+| RQ-047 | Currency PHP (₱), time zone Asia/Manila, date format "MMM D, YYYY" (configurable), English UI. | R8-Q5, R8-Q6 |
 
 ## Deferred
 | ID | Requirement | Reason |
@@ -49,6 +57,9 @@
 | DF-001 | Calendar Week and Day views | User chose Month + Agenda for v1 (R5-Q4) |
 | DF-002 | Formal purchase orders | Not needed for single store (R5-Q1) |
 | DF-003 | Thermal receipt layout | Not selected (R3-Q8) |
+| DF-004 | Staff accounts & roles UI | Future (R8-Q4); model prepared now |
+| DF-005 | SMS sending, barcode/scale hardware, multiple branches | Not selected for future planning (R8-Q4) |
+| DF-006 | Automatic cloud backups (Blaze plan) | Manual export chosen (R7-Q3) |
 
 ## Rejected
 | ID | Requirement | Reason |
@@ -56,3 +67,5 @@
 | RJ-001 | Late payment fees | R4-Q6 |
 | RJ-002 | Installment interest/markup | R4-Q8 |
 | RJ-003 | Editing saved sales | Cancel & re-create instead (R3-Q5) |
+| RJ-004 | Offline sale queuing | Risk of overselling across devices (R8-Q2) |
+| RJ-005 | Language switching | English only (R8-Q6) |
