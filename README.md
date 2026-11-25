@@ -21,8 +21,8 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 | 3 | Domain core (money, dates, schedules, allocation) | Complete | 27 unit tests |
 | 4 | Inventory (items, movements, adjustments, open sack, stock count, low stock, valuation) | Implemented & tested (demo + rules emulator); released in 0.2.0 | Owner to publish rules + indexes and try it on the real database; sample data available |
 | 5 | Customers (list, detail, alternate contacts, credit limit, archive, Walk-in) | Implemented & tested (demo + rules emulator); released in 0.3.0 | Owner to re-publish rules; sample customers available |
-| 6 | Sales (new sale, sales list/detail, cancel, delivery, receipts) | Implemented & tested (demo + rules emulator) | Not released yet; owner to re-publish rules after release; sample sales available |
-| 7 | Installments, payments, collections | Implemented & tested (demo + rules emulator) | Record/void payments, reschedule, Collections screen, reminders, customer statement; not released yet |
+| 6 | Sales (new sale, sales list/detail, cancel, delivery, receipts) | Implemented & tested (demo + rules emulator); released in 0.4.0 | Owner to re-publish rules; sample sales available |
+| 7 | Installments, payments, collections | Implemented & tested (demo + rules emulator); released in 0.4.0 | Record/void payments, reschedule, Collections screen, reminders, customer statement; owner to re-publish rules |
 | 8 | Restocking, suppliers, expenses | Planned | Next |
 | 9 | Calendar | Planned | |
 | 10 | Dashboard & reports | Planned | |

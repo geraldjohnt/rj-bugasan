@@ -34,3 +34,4 @@ Planned tests: see TESTING_STRATEGY.md.
 | E2E shell 16/16, inventory 15/15, customers 12/12 on /build after Phases 6–7 (+ offline smoke on /build) | PASS | 2026-11-25 | Shell test now uses Calendar as its "not built yet" example; customers test now expects the real Sales/Payments/Schedule tabs |
 | Sales/payments on the real Firebase project | Not run | — | Needs release + rules published by the owner |
 | Printing on a real printer / Save as PDF | Not run | — | E2E stubs `window.print`; owner to try a receipt on the store PC |
+| Release 0.4.0 verification on minified /dist | PASS | 2026-11-25 | unit 76/76, rules 35/35, dist smoke, E2E shell 16/16 + inventory 15/15 + customers 12/12 + sales 16/16 |
