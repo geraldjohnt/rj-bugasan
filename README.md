@@ -19,7 +19,7 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 | 1 | Foundation & Firebase spike | In progress (nearly done) | Only the Windows Edge/Chrome/Firefox check on the store PC remains (KI-009) |
 | 2 | Design system & app shell (login, settings) | Implemented & tested (demo) | Awaiting real-Firebase login check after go-live steps |
 | 3 | Domain core (money, dates, schedules, allocation) | Complete | 27 unit tests |
-| 4 | Inventory (items, movements, adjustments, open sack, stock count, low stock, valuation) | Implemented & tested (demo + rules emulator) | Owner to publish rules + indexes and try it on the real database; sample data available |
+| 4 | Inventory (items, movements, adjustments, open sack, stock count, low stock, valuation) | Implemented & tested (demo + rules emulator); released in 0.2.0 | Owner to publish rules + indexes and try it on the real database; sample data available |
 | 5 | Customers | Planned | Next |
 | 6 | Sales | Planned | |
 | 7 | Installments, payments, collections | Planned | |

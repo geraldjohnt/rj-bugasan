@@ -31,3 +31,4 @@
 - **Source code question:** confirmed the readable source in `/src` is committed; `/dist` is generated from it.
 - **Not done:** no release to `/dist` (only on "create PR and merge to main"); real-Firebase check of Phase 4 needs the owner to publish rules + indexes.
 - **Next session objective:** Phase 5 (Customers) with sample customers.
+- Release 0.2.0: release build verified on `/dist` (unit 53/53, rules 22/22, smoke, E2E 16/16 + 15/15), PR https://github.com/geraldjohnt/rj-bugasan/pull/3 created and merged to main.

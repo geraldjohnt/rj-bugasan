@@ -23,3 +23,4 @@ Planned tests: see TESTING_STRATEGY.md.
 | E2E inventory, demo mode, file:// on /build — 15 steps (validation, add sack/kg, link, duplicate name, open sack, adjust incl. limits, edit price, movements filter, stock count draft/reload/finalize, archive/restore, sample data ×2, low-stock filter, phone width, no JS errors) | PASS 15/15 | 2026-11-25 | `node tests/e2e/inventory.e2e.js build`; found and fixed: wide tables pushed the page sideways on phones |
 | E2E shell on /build after Phase 4 (+ offline smoke on /build) | PASS 16/16, smoke PASS | 2026-11-25 | `npm run test:e2e` runs shell + inventory |
 | Inventory on the real Firebase project | Not run | — | Needs rules + indexes published by the owner |
+| Release 0.2.0 verification on minified /dist | PASS | 2026-11-25 | unit 53/53, rules 22/22, dist smoke, E2E shell 16/16 + inventory 15/15 |
