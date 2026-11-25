@@ -17,3 +17,6 @@
 - Spike part 1 (no credentials) passed in Chromium from file://: Firestore and Auth servers accept the origin; persistence enables. Auth not yet enabled in console.
 - Next: user enables Email/Password + `_spike` rule → spike part 2; continue Phases 2–3.
 - Spike part 2 passed 9/9 with a throwaway account (deleted afterwards). Decision D-019: GO for Firestore from file://.
+- Phases 2 and 3 built (user chose "Start Phases 2 & 3"). Domain core with 27 tests; shell, login (username + first-time owner setup + reset + idle lock + change password), settings, design system; Firestore rules with 15 emulator tests (mutation-checked).
+- Bugs found by tests and fixed: void left inconsistent row shape; drawer scrim pushed page content below the sidebar; sidebar did not fit 1366×768; field errors lingered while typing; setup race (auth event before profile existed).
+- Next: first release (on user's "create PR and merge to main"), then owner go-live steps, then Phases 4–5.

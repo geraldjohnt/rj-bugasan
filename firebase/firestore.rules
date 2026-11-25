@@ -1,0 +1,71 @@
+rules_version = '2';
+/*
+ * RJ Inventory & Sales — Firestore Security Rules.
+ * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
+ * Scope: Phase 2 (owner bootstrap, users, usernames, settings). Every other path is denied until its phase adds rules.
+ * Tests: tests/rules/firestore.rules.test.js (Firestore emulator) — `npm run test:rules`.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function userPath(uid) { return /databases/$(database)/documents/users/$(uid); }
+    function bootstrapPath() { return /databases/$(database)/documents/settings/bootstrap; }
+    function isActive() { return signedIn() && exists(userPath(request.auth.uid)) && get(userPath(request.auth.uid)).data.active == true; }
+    function isOwner() { return isActive() && get(userPath(request.auth.uid)).data.role == 'owner'; }
+
+    // True only inside the one-time setup batch: no owner exists yet, and the same batch names this user as owner.
+    function isBootstrapping() {
+      return signedIn()
+        && !exists(bootstrapPath())
+        && existsAfter(bootstrapPath())
+        && getAfter(bootstrapPath()).data.ownerUid == request.auth.uid;
+    }
+
+    // ---- Settings ------------------------------------------------------------------------------------------
+    match /settings/bootstrap {
+      allow get: if true;                    // login screen checks whether first-time setup is needed
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['ownerUid', 'createdAt'])
+        && request.resource.data.ownerUid == request.auth.uid
+        && existsAfter(userPath(request.auth.uid));
+      allow update, delete: if false;        // the owner can never be replaced from the app
+    }
+    match /settings/{doc} {
+      allow read: if isActive();
+      allow create, update: if isOwner() && doc != 'bootstrap';
+      allow delete: if false;
+    }
+
+    // ---- Users -------------------------------------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
+      allow create: if isBootstrapping()
+        && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['username', 'displayName', 'role', 'active', 'preferences', 'createdAt'])
+        && request.resource.data.role == 'owner'
+        && request.resource.data.active == true;
+      // Users may change only their own appearance preferences. Role/active changes come with staff accounts (DF-004).
+      allow update: if isActive() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['preferences']);
+      allow delete: if false;
+    }
+
+    // ---- Usernames (pre-login lookup → recovery email; D-011, D-015) ------------------------------------
+    match /usernames/{name} {
+      allow get: if true;                    // exact-name lookup only
+      allow list: if false;                  // never enumerable
+      allow create: if isBootstrapping()
+        && name.matches('^[a-z0-9._-]{3,32}$')
+        && request.resource.data.keys().hasOnly(['email', 'uid'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email;
+      allow update, delete: if false;
+    }
+
+    // ---- Everything else: denied until the module's phase adds rules ------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

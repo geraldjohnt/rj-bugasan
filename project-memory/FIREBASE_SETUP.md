@@ -23,3 +23,13 @@
 9. The developer will provide `firestore.rules` and `firestore.indexes.json` to paste/deploy, and a one-time setup page that creates the `users` and `usernames` records.
 
 Optional (recommended for phone access, decision D-014): Firebase **Hosting** to open the app on a phone via an HTTPS link.
+
+## Phase 2 — go-live of login (do these in order, right after each other)
+1. **Publish the real rules:** Firestore Database → Rules → replace everything with the contents of `firebase/firestore.rules` → Publish.
+   (This also removes the temporary `_spike` rule.)
+2. **Create the owner account:** open the app (`dist/index.html`) → the sign-in page shows "No owner account yet" → **Set up** →
+   enter your name, a username that is not easy to guess, the recovery email, and a password (8+ characters).
+3. **Close public sign-up:** Authentication → Settings → User actions → untick **Enable create (sign-up)** → Save. (KI-010, KI-011)
+4. Optional clean-up: Authentication → Users → delete any leftover `spike-…@rj-bugasan-test.com` user (the spike already deleted its own).
+
+Do steps 1–3 in one sitting: until the owner exists, the first person to complete setup becomes the owner (KI-011).

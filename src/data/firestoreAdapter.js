@@ -24,6 +24,7 @@ export function createFirestoreAdapter(firebase, config) {
 
   return {
     kind: 'firestore',
+    app,
     persistence,
     auth: app.auth(),
     async get(name, id) { const s = await db.collection(name).doc(id).get(); return s.exists ? { id: s.id, ...s.data() } : null; },

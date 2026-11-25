@@ -1,0 +1,9 @@
+/* Predefined palettes swap only the primary set; neutrals and status colors stay (UI_UX_GUIDELINES §2). Navy is in tokens.css. */
+:root[data-palette="forest"]   { --primary: #23563F; --primary-hover: #1C4633; --primary-subtle: #E6F0EA; }
+:root[data-palette="graphite"] { --primary: #3A4452; --primary-hover: #2E3642; --primary-subtle: #EBEDF0; }
+:root[data-palette="burgundy"] { --primary: #6B2537; --primary-hover: #561D2C; --primary-subtle: #F5E8EB; }
+:root[data-palette="teal"]     { --primary: #155B63; --primary-hover: #10494F; --primary-subtle: #E3F0F1; }
+:root[data-theme="dark"][data-palette="forest"]   { --primary: #7CC29E; --primary-hover: #9AD3B5; --primary-subtle: #16291F; }
+:root[data-theme="dark"][data-palette="graphite"] { --primary: #A9B4C2; --primary-hover: #C3CCD7; --primary-subtle: #222A35; }
+:root[data-theme="dark"][data-palette="burgundy"] { --primary: #E09AAB; --primary-hover: #EAB5C2; --primary-subtle: #33181F; }
+:root[data-theme="dark"][data-palette="teal"]     { --primary: #6CC3CC; --primary-hover: #8FD3DA; --primary-subtle: #12292C; }

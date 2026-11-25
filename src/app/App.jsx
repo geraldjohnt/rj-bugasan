@@ -1,54 +1,90 @@
-/* Phase 1 foundation screen. Proves the file:// runtime; replaced by the real app shell in Phase 2. */
-import { checkEnvironment } from './environment.js';
-import { useOnline } from './useOnline.js';
+/*
+ * Root component: providers, route guard (RQ-041), shell.
+ * No page renders until Firebase Auth has reported the session state; unauthenticated users only see public pages.
+ */
+import { useLocation, navigate, matchPath } from './router.jsx';
+import { activeNavItem } from './routes.js';
+import { PrefsProvider, usePrefs } from './prefs.jsx';
+import { Shell } from './Shell.jsx';
+import { AuthProvider, useAuth } from '../auth/AuthContext.jsx';
+import { LoginPage, SetupPage, LockScreen } from '../auth/AuthPages.jsx';
+import { ToastProvider } from '../components/Toast.jsx';
+import { Spinner } from '../components/Feedback.jsx';
+import { PlannedPage, NotFoundPage } from '../features/placeholder/PlannedPage.jsx';
+import { SettingsPage } from '../features/settings/SettingsPage.jsx';
+import { SystemCheckPage } from '../features/system/SystemCheckPage.jsx';
+import { UiReferencePage } from '../features/dev/UiReferencePage.jsx';
+import { loadGeneralSettings, DEFAULT_GENERAL } from '../data/settingsRepo.js';
 
-const BADGE = { ok: ['badge-success', 'OK'], fail: ['badge-danger', 'Problem'], info: ['badge-neutral', 'Info'] };
+const PUBLIC = ['/login', '/setup', '/system-check'];
 
-export function App({ adapter }) {
-  const online = useOnline();
-  const [checks, setChecks] = React.useState(null);
-  const [theme, setTheme] = React.useState('light');
+function Redirect({ to }) {
+  React.useEffect(() => { navigate(to, { replace: true }); }, [to]);
+  return null;
+}
 
-  React.useEffect(() => { checkEnvironment(window).then(setChecks); }, []);
-  React.useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+function Splash() {
+  return <div className="splash"><Spinner label="Starting" /></div>;
+}
 
+function Routes({ adapter, general, setGeneral }) {
+  const { path, query } = useLocation();
+  const auth = useAuth();
+  const { adopt } = usePrefs();
+
+  React.useEffect(() => {
+    if (auth.status !== 'signedIn') return;
+    if (auth.user.preferences) adopt(auth.user.preferences);
+    loadGeneralSettings(adapter).then(setGeneral);
+  }, [auth.status, auth.user && auth.user.uid]);
+
+  const nav = activeNavItem(path);
+  React.useEffect(() => {
+    const t = path === '/settings' || path.startsWith('/settings/') ? 'Settings' : nav ? nav.label : path === '/login' ? 'Sign in' : null;
+    document.title = (t ? t + ' · ' : '') + (general.businessName || 'RJ Inventory & Sales');
+  }, [path, general.businessName]);
+
+  if (auth.status === 'loading') return <Splash />;
+  if (path === '/system-check') return <SystemCheckPage adapterKind={adapter.kind} />;
+
+  if (auth.status === 'signedOut') {
+    if (path === '/setup') return <SetupPage />;
+    if (path !== '/login') return <Redirect to={'/login' + (path !== '/' ? '?next=' + encodeURIComponent(path) : '')} />;
+    return <LoginPage next={query.next || '/'} />;
+  }
+
+  // Signed in
+  if (PUBLIC.includes(path)) return <Redirect to={query.next || '/'} />;
+  if (auth.locked) return <LockScreen />;
+
+  let page;
+  const settings = matchPath('/settings', path) ? {} : matchPath('/settings/:tab', path);
+  if (settings) page = <SettingsPage tab={settings.tab} adapter={adapter} onGeneralSaved={setGeneral} />;
+  else if (path === '/dev/ui' && __BUILD_MODE__ === 'development') page = <UiReferencePage />;
+  else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
+  else page = <NotFoundPage />;
+
+  return <Shell path={path} demo={adapter.kind === 'mock'}>{page}</Shell>;
+}
+
+export function App({ adapter, authService }) {
+  const [general, setGeneral] = React.useState(DEFAULT_GENERAL);
+  const persistPrefs = React.useCallback((p) => authService.savePreferences(p), [authService]);
   return (
-    <div data-app-ready={checks ? 'true' : 'false'}>
-      {adapter.kind === 'mock' && (
-        <div className="banner banner-info">Demo data — Firebase is not configured. Nothing is saved to the cloud.</div>
-      )}
-      {!online && (
-        <div className="banner banner-warning">Offline — viewing saved data. Changes are disabled until the connection returns.</div>
-      )}
-      <main className="foundation">
-        <header className="foundation-header">
-          <div>
-            <h1>RJ Inventory &amp; Sales</h1>
-            <p>Foundation build — Phase 1. Version {__APP_VERSION__} ({__BUILD_MODE__}).</p>
-          </div>
-          <button className="btn" type="button" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-            {theme === 'light' ? 'Dark theme' : 'Light theme'}
-          </button>
-        </header>
-        <section className="panel" aria-label="Environment checks">
-          <div className="panel-header">Environment checks</div>
-          <table className="check-table">
-            <thead><tr><th>Check</th><th>Result</th><th>Detail</th></tr></thead>
-            <tbody>
-              {(checks || []).map((c) => (
-                <tr key={c.name} data-check={c.name} data-status={c.status}>
-                  <td>{c.name}</td>
-                  <td><span className={`badge ${BADGE[c.status][0]}`}>{BADGE[c.status][1]}</span></td>
-                  <td>{c.detail}</td>
-                </tr>
-              ))}
-              <tr><td>Data adapter</td><td><span className="badge badge-neutral">Info</span></td><td>{adapter.kind === 'mock' ? 'Demo (local)' : 'Firebase Firestore'}</td></tr>
-              <tr><td>Network</td><td><span className={`badge ${online ? 'badge-success' : 'badge-warning'}`}>{online ? 'Online' : 'Offline'}</span></td><td>{online ? 'Connected' : 'No connection'}</td></tr>
-            </tbody>
-          </table>
-        </section>
-        <p className="foot">This screen is temporary and will be replaced by the application shell in Phase 2.</p>
-      </main>
-    </div>
+    <ToastProvider>
+      <PrefsProvider onPersist={persistPrefs}>
+        <AuthProvider service={authService} idleMinutes={general.idleLockMinutes || 30}>
+          <ReadyMarker />
+          <Routes adapter={adapter} general={general} setGeneral={setGeneral} />
+        </AuthProvider>
+      </PrefsProvider>
+    </ToastProvider>
   );
+}
+
+/** Marks the document once the session state is known (used by the smoke and E2E tests). */
+function ReadyMarker() {
+  const auth = useAuth();
+  React.useEffect(() => { document.documentElement.setAttribute('data-app-ready', auth.status === 'loading' ? 'false' : 'true'); }, [auth.status]);
+  return null;
 }

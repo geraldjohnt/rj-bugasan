@@ -12,3 +12,8 @@ Planned tests: see TESTING_STRATEGY.md.
 | Smoke: `/build` from file://, offline, Chromium (Playwright, Linux) | PASS | 2026-11-25 | `npm run test:build` |
 | Smoke: `/dist` (release, minified) from file://, offline, Chromium (Playwright, Linux) | PASS | 2026-11-25 | `npm run test:dist` |
 | Windows Edge / Chrome / Firefox manual open | Not run | — | Needs owner's PC |
+| Unit: domain (money, quantity, dates, schedule, allocation, sale totals) — 27 tests | PASS 27/27 | 2026-11-25 | `npm test` (35 total with mock adapter) |
+| Security rules (Firestore emulator) — 15 tests | PASS 15/15 | 2026-11-25 | `npm run test:rules`; mutation check: weakening the bootstrap/owner rules made 2 tests fail as expected |
+| E2E shell, demo mode, file:// — 17 steps (redirect, wrong/right login, session reload, layout, nav fits 1366×768, 404, dark/palette persist, density, settings validate+save, password mismatch, lock survives reload, sign-out, phone drawer, no JS errors) | PASS 17/17 | 2026-11-25 | `npm run test:e2e` (build) and on minified dist |
+| Smoke /build and trial /dist (Phase 2 shell) | PASS | 2026-11-25 | dist not committed (release rule D-018) |
+| Real Firebase login flow (setup owner, sign in, change password, reset email) | Not run | — | Needs rules published; owner performs setup |

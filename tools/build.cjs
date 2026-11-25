@@ -29,6 +29,7 @@ const LICENSES = [
   ['react-dom/LICENSE', 'react-dom.LICENSE.txt'],
   ['firebase/LICENSE', 'firebase.LICENSE.txt'],
   ['@fontsource/inter/LICENSE', 'inter-font.LICENSE.txt'],
+  ['lucide/LICENSE', 'lucide-icons.LICENSE.txt'],
 ];
 const FONTS = [400, 500, 600, 700].map((w) => `inter-latin-${w}-normal.woff2`);
 

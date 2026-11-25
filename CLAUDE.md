@@ -43,8 +43,9 @@ Whenever the user asks to **create a PR and merge to main**:
 1. Run the release build (`npm run release`). It produces a **minified, client-ready** app in the root `/dist` folder:
    minified JS bundle, minified CSS, minified HTML, production (`.min`) vendor files only, no source maps,
    no dev/test/spike files, relative paths only.
-2. **Verify it still runs:** run the smoke test that opens `dist/index.html` via `file://` with the network disabled
-   (`npm run test:dist`) plus the unit tests. Do not create the PR if anything fails; report the failure instead.
+2. **Verify it still runs:** `npm test` (unit), `npm run test:rules` (security rules, emulator), `npm run test:dist`
+   (opens `dist/index.html` via `file://` offline) and `node tests/e2e/shell.e2e.js dist` (click-through in demo mode).
+   Do not create the PR if anything fails; report the failure instead.
 3. Commit the updated `/dist`, create the PR, and merge to main.
 4. `/dist` must always be self-contained so the user can zip it and send it to a client or deploy it.
    Never put secrets in `/dist` (the Firebase web config is not a secret).

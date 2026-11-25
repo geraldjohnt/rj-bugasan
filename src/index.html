@@ -6,6 +6,16 @@
     <meta name="app-version" content="__APP_VERSION__" />
     <title>RJ Inventory &amp; Sales</title>
     <link rel="stylesheet" href="app.css" />
+    <script>
+      /* Apply saved appearance before first paint (no theme flash). Mirrors src/app/prefs.jsx. */
+      (function () {
+        var p = {}; try { p = JSON.parse(localStorage.getItem('rj-ims-prefs')) || {}; } catch (e) {}
+        var t = p.theme || 'light';
+        if (t === 'system') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        var r = document.documentElement;
+        r.setAttribute('data-theme', t); r.setAttribute('data-palette', p.palette || 'navy'); r.setAttribute('data-density', p.density || 'comfortable');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

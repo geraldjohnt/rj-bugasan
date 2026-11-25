@@ -25,12 +25,13 @@ Never mark a phase complete until its acceptance criteria are verified.
 ## Phase 2 — Design system & app shell
 - **Scope:** tokens.css, components (Button, Input, MoneyInput, QtyInput, Select, Combobox, Table, Dialog, Toast, Badge, EmptyState, Skeleton, Tabs), layout, hash router, route guard, login page, idle lock, change password, theme/palette/density settings, offline & demo banners, general settings.
 - **Acceptance:** all components shown on an internal "kitchen sink" page in light/dark × 5 palettes; unauthenticated access redirects to login; idle lock works; keyboard navigation verified.
-- **Status:** Not started.
+- **Status:** Implemented and tested in demo mode (2026-11-25). Remaining for completion: real-Firebase login check after the owner publishes rules and runs setup; manual keyboard pass; Combobox/MoneyInput/QtyInput components move to Phases 4–6 where first needed.
+- **Built:** components (Button, IconButton, TextField, PasswordField, SelectField, TextAreaField, Segmented, Badge, Banner, Spinner, EmptyState, PageHeader, Panel, Tabs, DataTable, Dialog, Toast, Icon), hash router, app shell (sidebar groups, collapsible, phone drawer, top bar, user menu, online status, demo/offline banners), auth (username login, first-time owner setup, forgot password, idle lock, change password, sign out), settings (General, Appearance, Account, System), public System check page, dev-only UI reference (#/dev/ui), Firestore rules for Phase 2 collections.
 
 ## Phase 3 — Domain core
 - **Scope:** money.js, quantity.js, dates.js (Asia/Manila business dates, 15th/EOM candidates), schedule.js, allocation.js, saleTotals.js, reports.js.
 - **Acceptance:** unit tests for every BR in §0, §3–5, §7 pass, including rounding (sum = financed), Feb/leap years, semi-monthly, overpayment allocation, void reversal.
-- **Status:** Not started.
+- **Status:** Complete (2026-11-25) for money, quantity, dates, schedule, allocation/void, sale totals/discount/terms, credit-limit, reliability, aging, doc numbers — 27 tests pass. Report aggregation functions deferred to Phase 10 (they depend on stored data shapes).
 
 ## Phase 4 — Inventory
 - **Scope:** item CRUD/archive, sack–kg link, movements list, item history, adjustments with reasons, open sack, stock count, low-stock, valuation.
