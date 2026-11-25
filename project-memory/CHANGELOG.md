@@ -9,3 +9,4 @@
 - Connected Firebase project `rj-bugasan` (web config); spike part 1 passed.
 - Firebase spike passed (D-019 GO).
 - Phase 3 domain core; Phase 2 app shell, authentication, settings, design system; Firestore rules (Phase 2 scope).
+- **Release 0.1.0** merged to main via https://github.com/geraldjohnt/rj-bugasan/pull/1 (minified `/dist`).

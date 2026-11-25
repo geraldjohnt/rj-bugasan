@@ -20,3 +20,4 @@
 - Phases 2 and 3 built (user chose "Start Phases 2 & 3"). Domain core with 27 tests; shell, login (username + first-time owner setup + reset + idle lock + change password), settings, design system; Firestore rules with 15 emulator tests (mutation-checked).
 - Bugs found by tests and fixed: void left inconsistent row shape; drawer scrim pushed page content below the sidebar; sidebar did not fit 1366×768; field errors lingered while typing; setup race (auth event before profile existed).
 - Next: first release (on user's "create PR and merge to main"), then owner go-live steps, then Phases 4–5.
+- Release 0.1.0: release build verified (unit 35/35, rules 15/15, dist smoke, dist E2E 17/17), committed `/dist`, PR https://github.com/geraldjohnt/rj-bugasan/pull/1 created and merged to main.
