@@ -13,6 +13,7 @@
 ## Releases
 - 0.1.0 — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/1 (merged). Verified: unit 35/35, rules 15/15, dist smoke, dist E2E 16/16 (earlier recorded as 17/17; the script has 16 steps).
 - 0.2.0 — 2026-11-25 — Phase 4 Inventory — https://github.com/geraldjohnt/rj-bugasan/pull/3. Verified on minified `/dist`: unit 53/53, rules 22/22, dist smoke, E2E shell 16/16 + inventory 15/15.
+- 0.3.0 — 2026-11-25 — Phase 5 Customers — https://github.com/geraldjohnt/rj-bugasan/pull/4. Verified on minified `/dist`: unit 62/62, rules 28/28, dist smoke, E2E shell 16/16 + inventory 15/15 + customers 12/12.
 - GitHub Pages deploy — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/2 (merged). `.github/workflows/static.yml` publishes `/dist` on every push to main (D-023). Same checks passed; `/dist` unchanged.
 
 ## Completed 2026-11-25 (later)
@@ -48,7 +49,7 @@
 3a. Owner: set GitHub Settings → Pages → Source to "GitHub Actions" and add `geraldjohnt.github.io` to Firebase Auth authorized domains, then share https://geraldjohnt.github.io/rj-bugasan/ with the client.
 3b. Owner: re-publish `firebase/firestore.rules` and create the two indexes (FIREBASE_SETUP "Phase 4"), then try Inventory (optionally Load sample data).
 4. ✅ Phase 4 (Inventory) built and released as 0.2.0 (https://github.com/geraldjohnt/rj-bugasan/pull/3); GitHub Pages republishes `/dist` on merge.
-4a. ✅ Phase 5 (Customers) built and released as 0.3.0.
+4a. ✅ Phase 5 (Customers) built and released as 0.3.0 (https://github.com/geraldjohnt/rj-bugasan/pull/4); GitHub Pages republishes `/dist` on merge.
 4b. Owner: re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phase 5"), open Customers once online (creates Walk-in).
 4c. Next development: Phase 6 (Sales), including its sample data.
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).

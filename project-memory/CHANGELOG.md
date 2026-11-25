@@ -13,4 +13,4 @@
 - **Phase 4 — Inventory:** items (add/edit/archive/restore, sack ↔ per-kg link, opening stock), stock adjustments with reasons, open sack, movements list and item history, stock count (draft → finalize), low stock and valuation, activity-log entries, Firestore rules + indexes, sample data loader (Settings → System). Root README now shows the phase table.
 - **Release 0.2.0** (Phase 4 Inventory) via https://github.com/geraldjohnt/rj-bugasan/pull/3 (minified `/dist`).
 - **Phase 5 — Customers:** customer list and detail, add/edit with credit limit, alternate contacts (single primary), archive/restore (blocked while a balance is owed), built-in Walk-in customer, search by phone digits and contact names, activity-log entries, Firestore rules for customers, sample customers.
-- **Release 0.3.0** (Phase 5 Customers).
+- **Release 0.3.0** (Phase 5 Customers) via https://github.com/geraldjohnt/rj-bugasan/pull/4 (minified `/dist`).
