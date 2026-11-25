@@ -9,7 +9,7 @@
 - Project memory structure created (2026-11-25).
 
 ## In progress
-- Requirements interview — Round 1 (Business operations, users, environment) asked; awaiting answers.
+- Rounds 1-2 answered (2026-11-25). Round 3 (Customers, sales, Sale ID, discounts) being asked.
 
 ## Not started
 - All application modules (Auth, Inventory, Customers, Sales, Installments, Payments, Calendar, Purchasing, Reports, Settings).
@@ -21,6 +21,6 @@
 - Firebase config not yet provided (needed for the compatibility spike).
 
 ## Immediate next actions
-1. Record the user's Round 1 answers in INTERVIEW_LOG.md and update OPEN_QUESTIONS.md.
-2. Ask Round 2: Inventory, units (KG/Sack), quantity precision, pricing and cost.
+1. Record Round 3 answers.
+2. Ask Round 4 as option prompts (user preference).
 3. Continue rounds per the interview plan in INTERVIEW_LOG.md.
