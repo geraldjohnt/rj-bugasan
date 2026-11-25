@@ -6,7 +6,7 @@
 | 1 | Business operations, users, devices, internet, current process, priorities | Answered 2026-11-25 |
 | 2 | Inventory rules, KG/Sack units, quantity precision, pricing, cost | Answered 2026-11-25 |
 | 3 | Customers, alternate contacts, sales transactions, Sale ID format, discounts | Answered 2026-11-25 |
-| 4 | Payment methods, installments, due-date rules, partial/advance/over-payments, rescheduling | Pending |
+| 4 | Payment methods, installments, due-date rules, partial/advance/over-payments, rescheduling | Answered 2026-11-25 |
 | 5 | Collections, calendar, deliveries, restocking, suppliers, purchase orders | Pending |
 | 6 | Reports, dashboard, profitability definitions | Pending |
 | 7 | Authentication, users/roles, security, backup & recovery | Pending |
@@ -57,3 +57,20 @@
 | R3-Q6 | Partial payment on non-installment sales | Yes; remainder becomes an open balance with optional due date; registered customer required. | RQ-021 |
 | R3-Q7 | Alternate contact extra fields | Relationship, Primary alternate flag, Notes. | RQ-022 |
 | R3-Q8 | Receipts | Printable sale and payment receipts (normal printer), savable as PDF via print dialog. No thermal layout. | RQ-023 |
+
+---
+
+## Round 4 — Installments and payments (asked & answered 2026-11-25)
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R4-Q1 | Payment frequency | Chosen per sale: Monthly 15th, Monthly end-of-month, or Semi-monthly (15th + end of month). | RQ-024 |
+| R4-Q2 | First due date | Next qualifying date at least 7 days after sale (gap configurable in Settings); owner can edit any date. | RQ-025 |
+| R4-Q3 | Down payment | Optional. | RQ-026 |
+| R4-Q4 | Rounding | Whole pesos; remainder added to last installment. | RQ-027 |
+| R4-Q5 | Overpayment | Applied to oldest unpaid installments in order; nothing beyond full balance is stored (returned as change). | RQ-028 |
+| R4-Q6 | Late fees | None; overdue flagged only. | RQ-029 |
+| R4-Q7 | Rescheduling | Due dates and unpaid amounts may be changed; total unchanged; old values + reason kept. | RQ-030 |
+| R4-Q8 | Interest/markup | None; installment total = sale total. | RQ-031 |
+
+Installment count 3/4/5 (max 5) is taken from the original brief (confirmed requirement).

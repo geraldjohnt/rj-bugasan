@@ -26,6 +26,14 @@
 | RQ-021 | Cash / Bank Transfer / E-Wallet sales may be partially paid; remainder is an outstanding balance with optional due date; later payments can be recorded. | R3-Q6 |
 | RQ-022 | Customers have 0..n alternate contacts: name, address, contact number, email, Facebook, relationship, primary flag, notes. | R3-Q7 |
 | RQ-023 | Printable sale and payment receipts for standard printers; PDF via browser print. | R3-Q8 |
+| RQ-024 | Installment frequency chosen per sale: Monthly on 15th, Monthly on last day of month, or Semi-monthly (15th and last day). Installment count 3, 4 or 5 (max 5). | R4-Q1, brief |
+| RQ-025 | First due date = first qualifying date at least N days after sale date (N default 7, configurable). Each due date editable. | R4-Q2 |
+| RQ-026 | Optional down payment; remainder split into installments. | R4-Q3 |
+| RQ-027 | Installment amounts in whole pesos; remainder (including centavos) on the last installment; sum always equals the amount financed exactly. | R4-Q4 |
+| RQ-028 | Payments apply to the oldest unpaid installment first; excess flows to subsequent installments; payment cannot exceed total outstanding (excess returned as change). | R4-Q5 |
+| RQ-029 | No late fees; installments past due and not fully paid are marked Overdue. | R4-Q6 |
+| RQ-030 | Owner may reschedule unpaid installments (dates and amounts) if the total remains equal; history and reason recorded. | R4-Q7 |
+| RQ-031 | No interest or markup on installment sales. | R4-Q8 |
 
 ## Proposed / Deferred / Rejected
 _None yet._
