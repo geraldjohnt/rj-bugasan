@@ -15,7 +15,7 @@ export const FREQUENCY_LABELS = {
   MONTHLY_EOM: 'Monthly, end of month',
   SEMI_MONTHLY: 'Twice a month (15th and end of month)',
 };
-export const ALLOWED_COUNTS = [3, 4, 5];
+export const ALLOWED_COUNTS = [2, 3, 4, 5];
 
 /** Candidate due dates of a frequency within a month, in order. */
 function candidatesInMonth(y, m, frequency) {

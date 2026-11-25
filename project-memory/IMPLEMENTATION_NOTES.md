@@ -99,3 +99,13 @@ See root CLAUDE.md "Release procedure".
 - Routes: `/` dashboard, `/calendar/:view?m=YYYY-MM`, `/reports/:tab?from&to`, `/suppliers`, `/suppliers/:id`, `/restocks`, `/restocks/new?supplier=`, `/restocks/:id`, `/restocks/:id/edit`, `/expenses`.
 - Restock form and receive rows reuse the `.sale-line` grid from New sale.
 - E2E: `restocks.e2e.js`, `calendar.e2e.js` (dates computed in Asia/Manila), `reports.e2e.js` (uses `acceptDownloads` for CSV).
+
+## Phases 11–12 notes
+- `src/domain/backup.js` — file format, `encodeValue`/`decodeValue` (`{$ts}`), `buildBackup`, `parseBackup` (plain-language errors, strips BOM), `planRestore` (replace: deletes extras), `backupAge`/`backupIsDue`. `src/data/backupService.js` — `exportBackup` (records `settings/backup`, logs), `restoreBackup` (opens/closes `settings/restore` window, batches of 400, progress callback, logs).
+- Adapters gained `batchWrite(ops)`, `isTimestamp(v)`, `timestampFromISO(iso)`; `wrapFirestore(db, FieldValue, Timestamp)` — pass `firebase.firestore.Timestamp` (rules tests do for restore).
+- `src/domain/openingBalance.js` (`validateOpeningBalanceForm`, `splitEvenly`), `src/data/openingBalanceService.js` (`createOpeningBalance`). `cancelSale` skips the total-purchases reversal for OB.
+- Screens: `src/features/system/ActivityLogPage.jsx`, `src/features/system/BackupPage.jsx` (+ `BackupReminder`, `downloadJson` without BOM), `src/features/sales/OpeningBalancesPage.jsx` (+ `OpeningBalanceDialog`, reused on the customer page). SaleDetailPage/SaleTables/SalesPage handle `kind === 'OPENING_BALANCE'`.
+- Routes: `/activity`, `/backup`, `/opening-balances`. Nav items are now 30 px high so all 20 fit a 1366×768 screen.
+- User guide: `src/guide.html` copied by `tools/build.cjs` (minified in release); link in the user menu (`href="guide.html"`, new tab).
+- E2E `tests/e2e/system.e2e.js` (uses Playwright downloads and `setInputFiles('#backup-file')`). Sales E2E: Carmen's outstanding/statement include the sample OB (₱5,200).
+- Header "Online" indicator uses `--success` (green) — user request 2026-11-25.

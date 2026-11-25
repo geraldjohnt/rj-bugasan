@@ -22,6 +22,7 @@ export const NAV = [
     { path: '/reports', label: 'Reports', icon: 'reports', phase: 10 },
   ] },
   { group: 'System', items: [
+    { path: '/opening-balances', label: 'Opening balances', icon: 'statement', phase: 11 },
     { path: '/activity', label: 'Activity log', icon: 'activity', phase: 11 },
     { path: '/backup', label: 'Backup', icon: 'backup', phase: 11 },
     { path: '/settings', label: 'Settings', icon: 'settings' },

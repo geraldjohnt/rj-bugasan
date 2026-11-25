@@ -23,3 +23,7 @@
 - **Phase 10 — Dashboard & reports:** dashboard KPIs (revenue vs cash, gross/net profit, receivables, overdue, stock value), needs-attention list, 14-day chart, upcoming collections, recent sales, low stock; Reports (Sales, Profit by item, Profit & loss, Cash collected, Receivables aging, Inventory valuation, Movements & losses, Restocks by supplier) with presets, print/PDF and CSV.
 - Tests: unit/service 97/97, rules 39/39 (mutation-checked), E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 on `/build`. Not yet released.
 - **Release 0.5.0** (Phases 8–10) via https://github.com/geraldjohnt/rj-bugasan/pull/6: minified `/dist`, verified (unit 97/97, rules 39/39, dist smoke, E2E 16+15+12+16+12+10+12).
+- **Installments:** 2-payment plans added (2, 3, 4 or 5) and **2 is now the default** (D-043).
+- **Phase 11:** Activity log screen; Backup (download, 7-day reminder, owner-only restore with typed RESTORE); Opening balances (`OB-YYYY-NNNNN`) with own screen, customer-page button, sample data; rules + index.
+- **Phase 12:** in-app User guide (`guide.html`), `npm run deploy:rules`, `npm run verify:release`, go-live checklist.
+- Header "Online" indicator is green.

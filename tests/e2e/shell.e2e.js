@@ -49,7 +49,7 @@ await step('Correct sign-in goes to the requested page', async () => {
   await page.fill('input[autocomplete="current-password"]', 'demo1234');
   await page.click('button[type="submit"]');
   await page.waitForSelector('h1:has-text("Activity log")');
-  expect(await page.isVisible('text=scheduled for Phase 11'), 'placeholder text missing');
+  expect(await page.isVisible('text=Entries cannot be edited or deleted'), 'activity log page missing');
   expect(await page.isVisible('.nav-item.is-active:has-text("Activity log")'), 'active nav not highlighted');
   await shot(page, '02-shell-placeholder');
 });

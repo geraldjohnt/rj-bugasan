@@ -94,6 +94,10 @@ async function main() {
   html = html.replace(/__APP_VERSION__/g, pkg.version);
   fs.writeFileSync(path.join(OUT, 'index.html'), RELEASE ? minifyHtml(html) : html);
 
+  // User guide (Phase 12): self-contained page opened from the user menu.
+  const guide = fs.readFileSync(path.join(ROOT, 'src/guide.html'), 'utf8');
+  fs.writeFileSync(path.join(OUT, 'guide.html'), RELEASE ? minifyHtml(guide) : guide);
+
   // Vendor scripts + licenses
   for (const [src, name] of VENDOR) copy(path.join(NM, src), path.join(OUT, 'vendor', name), RELEASE ? stripSourceMapRef : null);
   for (const [src, name] of LICENSES) {

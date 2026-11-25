@@ -56,7 +56,7 @@ export function NewSalePage({ adapter }) {
   const [reference, setReference] = React.useState('');
   const [paidNow, setPaidNow] = React.useState('');
   const [dueDate, setDueDate] = React.useState('');
-  const [plan, setPlan] = React.useState({ count: 3, frequency: 'MONTHLY_15', downPayment: '' });
+  const [plan, setPlan] = React.useState({ count: 2, frequency: 'MONTHLY_15', downPayment: '' });
   const [dueDates, setDueDates] = React.useState([]);
   const [fulfillment, setFulfillment] = React.useState('PICKED_UP');
   const [deliveryDate, setDeliveryDate] = React.useState('');
@@ -67,7 +67,7 @@ export function NewSalePage({ adapter }) {
   const [saveError, setSaveError] = React.useState(null);
   const [addingCustomer, setAddingCustomer] = React.useState(false);
 
-  React.useEffect(() => { setPlan((p) => ({ ...p, count: settings.defaultInstallmentCount || 3, frequency: settings.defaultFrequency || 'MONTHLY_15' })); }, [settings]);
+  React.useEffect(() => { setPlan((p) => ({ ...p, count: settings.defaultInstallmentCount || 2, frequency: settings.defaultFrequency || 'MONTHLY_15' })); }, [settings]);
   React.useEffect(() => { setDueDates([]); }, [plan.count, plan.frequency, saleDate]);
   React.useEffect(() => { if (customerId === WALK_IN_ID) setTerms(TERMS.FULL); setCreditOk(false); }, [customerId]);
 

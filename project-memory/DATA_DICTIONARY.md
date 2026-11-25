@@ -19,7 +19,7 @@ All main docs carry `createdAt, createdBy, updatedAt, updatedBy` (not repeated b
 
 ## settings/general · sales · appearance · backup
 general: businessName, address, contactNumber, email, logoDataUrl (small, ≤ 200 KB), currency `PHP`, dateFormat, timeZone `Asia/Manila`, idleLockMinutes (30).
-sales: saleIdPrefix `RJ-` (D-035), sequenceDigits 5, defaultInstallmentCount (3), defaultFrequency, firstDueGapDays (7), reminderTemplate, receiptFooter, adjustmentReasons[], expenseCategories[], customerTypes[].
+sales: saleIdPrefix `RJ-` (D-035), sequenceDigits 5, defaultInstallmentCount (2; was 3 until 2026-11-25), defaultFrequency, firstDueGapDays (7), reminderTemplate, receiptFooter, adjustmentReasons[], expenseCategories[], customerTypes[].
 appearance (business defaults): defaultTheme, defaultPalette `navy`.
 backup: lastBackupAt, reminderDays (7).
 
@@ -124,3 +124,10 @@ title (≤ 120), date, time (`HH:MM` or ''), note, category `OTHER` (only custom
 
 ## activityLogs/{id}
 at, by, byName, action (e.g. `SALE_CREATE`, `SALE_CANCEL`, `PAYMENT_VOID`, `ITEM_PRICE_CHANGE`, `STOCK_ADJUST`, `SCHEDULE_REVISE`, `RESTORE`), entityType, entityId, summary, changes (small map of before/after).
+
+## Phase 11 additions (2026-11-25)
+- `sales` kind `OPENING_BALANCE` (id `OB-YYYY-NNNNN`, counter `ob-YYYY`): `lines: []`, `description` (required, ≤ 200), `totalC = balanceC` at creation, `paidC 0`, `terms` OPEN_BALANCE (1 row) or INSTALLMENT (2–5 rows), `paymentMethod 'OPENING'`, `plan null`, `fulfillment 'PICKED_UP'` (unused), `costC 0`.
+- `installments.openingBalance: true` on rows of an opening balance.
+- `settings/backup`: `lastBackupAt` (ISO string), `lastBackupBy`, `lastBackupByName`, `lastBackupRecords`.
+- `settings/restore`: `active` (bool — opens the restore window in the rules), `startedAt`, `finishedAt`, `by`, `byName`, `backupExportedAt`, `written`, `deleted`.
+- activityLogs actions added: `OPENING_BALANCE_CREATE`, `BACKUP_EXPORT`, `BACKUP_RESTORE` (entityType `backup`).

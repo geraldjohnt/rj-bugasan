@@ -6,7 +6,7 @@ import { DomainError } from './errors.js';
 import { UNITS, formatQty } from './quantity.js';
 import { isValidDate, compareDates } from './dates.js';
 import { computeTotals, stockShortages, validateTerms, creditLimitWarning, TERMS, DISCOUNT, WALK_IN_ID } from './saleTotals.js';
-import { buildSchedule, FREQUENCIES } from './schedule.js';
+import { buildSchedule, FREQUENCIES, ALLOWED_COUNTS } from './schedule.js';
 
 export const METHODS = { CASH: 'CASH', BANK: 'BANK', EWALLET: 'EWALLET' };
 export const METHOD_LABELS = { CASH: 'Cash', BANK: 'Bank transfer', EWALLET: 'E-wallet', INSTALLMENT: 'Installment' };
@@ -19,7 +19,7 @@ export const PAYMENT_STATUS_LABELS = { UNPAID: 'Unpaid', PARTIAL: 'Partly paid',
 export const MAX_LINES = 40;
 
 export const DEFAULT_SALES_SETTINGS = {
-  saleIdPrefix: 'RJ-', sequenceDigits: 5, defaultInstallmentCount: 3, defaultFrequency: FREQUENCIES.MONTHLY_15, firstDueGapDays: 7,
+  saleIdPrefix: 'RJ-', sequenceDigits: 5, defaultInstallmentCount: 2, defaultFrequency: FREQUENCIES.MONTHLY_15, firstDueGapDays: 7,
   reminderTemplate: 'Hi {customer}, this is a friendly reminder from {business}: {amount} for {sale} (installment {installment}) is due on {dueDate}. Thank you!',
   receiptFooter: 'Thank you for your purchase!',
 };
@@ -34,7 +34,7 @@ export function validateSalesSettings(form) {
   if (!Number.isInteger(gap) || gap < 0 || gap > 60) errors.firstDueGapDays = 'Enter 0 to 60 days.';
   else data.firstDueGapDays = gap;
   data.defaultInstallmentCount = Number(form.defaultInstallmentCount);
-  if (![3, 4, 5].includes(data.defaultInstallmentCount)) errors.defaultInstallmentCount = 'Choose 3, 4 or 5.';
+  if (!ALLOWED_COUNTS.includes(data.defaultInstallmentCount)) errors.defaultInstallmentCount = 'Choose 2, 3, 4 or 5.';
   if (!FREQUENCIES[form.defaultFrequency]) errors.defaultFrequency = 'Choose a frequency.';
   data.reminderTemplate = String(form.reminderTemplate ?? '').trim();
   if (!data.reminderTemplate) errors.reminderTemplate = 'Required.';

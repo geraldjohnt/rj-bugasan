@@ -7,7 +7,7 @@ test('example from requirements: ₱2,500 in 3 → 833, 833, 834', () => {
 });
 
 test('installments always sum exactly to the amount financed (exhaustive sample)', () => {
-  for (const count of [3, 4, 5]) {
+  for (const count of [2, 3, 4, 5]) {
     for (let c = 500; c <= 2000000; c += 7919) { // includes odd centavos
       const parts = splitAmount(c, count);
       assert.equal(parts.reduce((a, b) => a + b, 0), c, `${c} / ${count}`);
@@ -17,13 +17,19 @@ test('installments always sum exactly to the amount financed (exhaustive sample)
   }
 });
 
+test('2 installments (added 2026-11-25): ₱2,501.50 → 1,250 and 1,251.50', () => {
+  assert.deepEqual(splitAmount(250150, 2), [125000, 125150]);
+  const s = buildSchedule({ totalC: 300000, downPaymentC: 50000, count: 2, frequency: F.MONTHLY_15, saleDate: '2026-11-25' });
+  assert.deepEqual(s.installments.map((r) => [r.dueDate, r.amountC]), [['2026-12-15', 125000], ['2027-01-15', 125000]]);
+});
+
 test('centavo remainder goes to the last installment', () => {
   assert.deepEqual(splitAmount(250050, 3), [83300, 83300, 83450]);
 });
 
 test('rejects invalid counts and tiny installments', () => {
   assert.throws(() => splitAmount(10000, 6), { code: 'INVALID_COUNT' });
-  assert.throws(() => splitAmount(10000, 2), { code: 'INVALID_COUNT' });
+  assert.throws(() => splitAmount(10000, 1), { code: 'INVALID_COUNT' });
   assert.throws(() => splitAmount(250, 3), { code: 'INSTALLMENT_TOO_SMALL' });
   assert.throws(() => splitAmount(0, 3), { code: 'NOTHING_TO_FINANCE' });
 });

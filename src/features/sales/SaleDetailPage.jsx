@@ -41,7 +41,7 @@ function CancelSaleDialog({ open, onClose, adapter, sale, activePayments }) {
     <Dialog open={open} onClose={onClose} title={`Cancel ${sale.id}?`}
       footer={<><Button onClick={onClose}>Keep sale</Button><Button variant="danger" type="submit" form="cancel-form" loading={busy} disabled={!online}>Cancel sale</Button></>}>
       <form id="cancel-form" onSubmit={submit} noValidate className="form-stack">
-        <p>Cancelling {sale.id} returns <strong>{linesText(sale.lines)}</strong> to stock
+        <p>Cancelling {sale.id} {sale.lines.length ? <>returns <strong>{linesText(sale.lines)}</strong> to stock</> : 'removes this opening balance'}
           {activePayments.length ? <> and voids <strong>{activePayments.length} payment(s) totalling {formatMoney(paidC)}</strong> as a refund to the customer</> : null}.
           {sale.balanceC > 0 && <> The unpaid balance of {formatMoney(sale.balanceC)} is removed from {sale.customerName}'s account.</>}</p>
         <p className="muted">This cannot be undone. To correct a sale, cancel it and create a new one.</p>
@@ -98,6 +98,7 @@ export function SaleDetailPage({ adapter, id }) {
   const payments = (paysQ.rows || []).slice().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id.localeCompare(b.id)));
   const activePayments = payments.filter((p) => p.status === 'ACTIVE');
   const active = sale.status === 'ACTIVE';
+  const isOB = sale.kind === 'OPENING_BALANCE';
   const hasOpenRows = rows.some((r) => r.status === 'PENDING' || r.status === 'PARTIAL');
   const marginC = sale.totalC - (sale.costC ?? sale.lines.reduce((s, l) => s + Math.round(l.qtyH * l.unitCostC / 100), 0));
 
@@ -114,31 +115,34 @@ export function SaleDetailPage({ adapter, id }) {
   return (
     <div className="page stack">
       <div>
-        <Link to="/sales" className="back-link"><Icon name="back" size={16} />Sales</Link>
+        {isOB ? <Link to="/opening-balances" className="back-link"><Icon name="back" size={16} />Opening balances</Link>
+          : <Link to="/sales" className="back-link"><Icon name="back" size={16} />Sales</Link>}
         <PageHeader
-          title={<span className="page-title-row">{sale.id} <PaymentStatusBadge sale={sale} /><FulfillmentBadge sale={sale} /></span>}
+          title={<span className="page-title-row">{sale.id} <PaymentStatusBadge sale={sale} />{isOB ? <Badge tone="info">Opening balance</Badge> : <FulfillmentBadge sale={sale} />}</span>}
           description={<>{formatDate(sale.saleDate)} · {sale.customerId === 'WALK_IN' ? 'Walk-in' : <Link to={`/customers/${sale.customerId}`}>{sale.customerName}</Link>} · {TERMS_LABELS[sale.terms]}</>}
           actions={<div className="button-row">
             {active && sale.balanceC > 0 && <Button variant="primary" icon="payment" onClick={() => setDialog({ kind: 'pay' })} disabled={!online}>Record payment</Button>}
-            <Button icon="print" onClick={printReceipt}>Print receipt</Button>
+            {!isOB && <Button icon="print" onClick={printReceipt}>Print receipt</Button>}
             {active && hasOpenRows && <Button icon="reschedule" onClick={() => setDialog({ kind: 'reschedule' })} disabled={!online}>Reschedule</Button>}
-            {active && <Button icon="items" onClick={() => setDialog({ kind: 'delivery' })} disabled={!online}>Delivery</Button>}
-            {active && <Button icon="cancel" variant="ghost" onClick={() => setDialog({ kind: 'cancel' })} disabled={!online}>Cancel sale</Button>}
+            {active && !isOB && <Button icon="items" onClick={() => setDialog({ kind: 'delivery' })} disabled={!online}>Delivery</Button>}
+            {active && <Button icon="cancel" variant="ghost" onClick={() => setDialog({ kind: 'cancel' })} disabled={!online}>{isOB ? 'Cancel entry' : 'Cancel sale'}</Button>}
           </div>} />
       </div>
-      {!active && <Banner tone="info">Cancelled {sale.cancel && sale.cancel.at ? formatDateTime(sale.cancel.at) : ''}: {sale.cancel && sale.cancel.reason}. Stock was returned{sale.cancel && sale.cancel.refundedC ? ` and ${formatMoney(sale.cancel.refundedC)} refunded` : ''}. This sale no longer counts in sales or profit.</Banner>}
+      {!active && <Banner tone="info">Cancelled {sale.cancel && sale.cancel.at ? formatDateTime(sale.cancel.at) : ''}: {sale.cancel && sale.cancel.reason}. {isOB ? 'It no longer counts in the customer\'s balance' : 'Stock was returned'}{sale.cancel && sale.cancel.refundedC ? ` and ${formatMoney(sale.cancel.refundedC)} refunded` : ''}. {isOB ? '.' : ' This sale no longer counts in sales or profit.'}</Banner>}
+      {isOB && active && <Banner tone="info">Opening balance carried over from earlier records: {sale.description}. It is collected like a sale but does not count as revenue or profit.</Banner>}
       {sale.creditLimitOverride && active && <Banner tone="warning">This sale was saved over the customer's credit limit.</Banner>}
       <div className="stat-strip">
         <div className="stat"><div className="stat-label">Total</div><div className={`stat-value ${active ? '' : 'strike'}`}>{formatMoney(sale.totalC)}</div>{sale.discountC > 0 && <div className="stat-sub">after {formatMoney(sale.discountC)} discount</div>}</div>
         <div className="stat"><div className="stat-label">Paid</div><div className="stat-value">{formatMoney(active ? sale.paidC : 0)}</div></div>
         <div className="stat"><div className="stat-label">Balance</div><div className={`stat-value ${active && sale.balanceC ? 'is-warning' : ''}`}>{formatMoney(active ? sale.balanceC : 0)}</div></div>
-        <div className="stat"><div className="stat-label">Gross profit</div><div className={`stat-value ${marginC < 0 ? 'is-danger' : ''}`}>{active ? formatMoney(marginC) : '—'}</div></div>
+        {isOB ? <div className="stat"><div className="stat-label">Original date</div><div className="stat-value">{formatDate(sale.saleDate)}</div></div>
+          : <div className="stat"><div className="stat-label">Gross profit</div><div className={`stat-value ${marginC < 0 ? 'is-danger' : ''}`}>{active ? formatMoney(marginC) : '—'}</div></div>}
       </div>
 
-      <Panel title="Items" flush>
+      {!isOB && <Panel title="Items" flush>
         <DataTable caption="Sale lines" columns={lineColumns} rows={sale.lines.map((l, i) => ({ ...l, id: i }))} footer={lineFooter} />
         {sale.discountC > 0 && <div className="panel-footer totals-line"><span>Discount{sale.discountType === 'PERCENT' ? ` (${sale.discountValue / 100}%)` : ''}</span><strong>−{formatMoney(sale.discountC)}</strong><span>Total</span><strong>{formatMoney(sale.totalC)}</strong></div>}
-      </Panel>
+      </Panel>}
 
       {rows.length > 0 && (
         <Panel title={sale.terms === 'INSTALLMENT' ? 'Installment schedule' : 'Balance'} flush>
@@ -155,9 +159,10 @@ export function SaleDetailPage({ adapter, id }) {
       <Panel title="Details">
         <dl className="detail-list">
           <div><dt>Customer</dt><dd>{sale.customerName}{sale.customerContact && ` · ${sale.customerContact}`}</dd></div>
-          <div><dt>Payment</dt><dd>{TERMS_LABELS[sale.terms]}{sale.terms !== 'INSTALLMENT' && sale.paymentMethod ? ` · ${METHOD_LABELS[sale.paymentMethod]}` : ''}</dd></div>
+          {isOB && <div className="span-2"><dt>Description</dt><dd>{sale.description}</dd></div>}
+          <div><dt>Payment</dt><dd>{TERMS_LABELS[sale.terms]}{sale.terms !== 'INSTALLMENT' && METHOD_LABELS[sale.paymentMethod] ? ` · ${METHOD_LABELS[sale.paymentMethod]}` : ''}</dd></div>
           {sale.plan && <div><dt>Plan</dt><dd>{sale.plan.count} installments · {FREQUENCY_LABELS[sale.plan.frequency]}{sale.plan.downPaymentC ? ` · down payment ${formatMoney(sale.plan.downPaymentC)}` : ''}</dd></div>}
-          <div><dt>Delivery</dt><dd>{FULFILLMENT_LABELS[sale.fulfillment]}{sale.deliveryDate ? ` · ${formatDate(sale.deliveryDate)}` : ''}</dd></div>
+          {!isOB && <div><dt>Delivery</dt><dd>{FULFILLMENT_LABELS[sale.fulfillment]}{sale.deliveryDate ? ` · ${formatDate(sale.deliveryDate)}` : ''}</dd></div>}
           <div><dt>Recorded</dt><dd>{formatDateTime(sale.createdAt)}</dd></div>
           {sale.notes && <div className="span-2"><dt>Notes</dt><dd>{sale.notes}</dd></div>}
         </dl>
@@ -167,7 +172,7 @@ export function SaleDetailPage({ adapter, id }) {
       <VoidPaymentDialog open={!!dialog && dialog.kind === 'void'} onClose={() => setDialog(null)} adapter={adapter} payment={dialog && dialog.payment} />
       <RescheduleDialog open={!!dialog && dialog.kind === 'reschedule'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} rows={rows} />
       {active && <CancelSaleDialog open={!!dialog && dialog.kind === 'cancel'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} activePayments={activePayments} />}
-      {active && <DeliveryDialog open={!!dialog && dialog.kind === 'delivery'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} />}
+      {active && !isOB && <DeliveryDialog open={!!dialog && dialog.kind === 'delivery'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} />}
       {printNode}
     </div>
   );

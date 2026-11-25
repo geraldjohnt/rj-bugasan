@@ -21,7 +21,8 @@ export function SalesPage({ adapter }) {
   const [to, setTo] = React.useState('');
 
   const q = search.trim().toLowerCase();
-  const all = (rows || []).slice().sort((a, b) => (a.saleDate < b.saleDate ? 1 : a.saleDate > b.saleDate ? -1 : b.id.localeCompare(a.id)));
+  // Opening balances have their own screen (Phase 11) and are not sales (D-045).
+  const all = (rows || []).filter((s) => s.kind !== 'OPENING_BALANCE').sort((a, b) => (a.saleDate < b.saleDate ? 1 : a.saleDate > b.saleDate ? -1 : b.id.localeCompare(a.id)));
   const shown = all.filter((s) => (!status || s.status === status) && (!pay || (s.status === 'ACTIVE' && s.paymentStatus === pay))
     && (!terms || s.terms === terms) && (!delivery || (s.status === 'ACTIVE' && s.fulfillment === delivery))
     && (!from || s.saleDate >= from) && (!to || s.saleDate <= to)

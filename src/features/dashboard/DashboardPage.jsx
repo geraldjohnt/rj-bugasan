@@ -16,6 +16,7 @@ import { stockStatus, inventorySummary } from '../../domain/inventory.js';
 import { isOpenRestock } from '../../domain/purchasing.js';
 import { salesSummary, cashCollected, expensesSummary, dailySeries, monthBounds, receivablesAging, formatPct } from '../../domain/reports.js';
 import { SampleDataButton } from '../system/SampleData.jsx';
+import { BackupReminder } from '../system/BackupPage.jsx';
 
 const SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const short = (d) => { const p = parseDate(d); return `${SHORT[p.m - 1]} ${p.d}`; };
@@ -128,6 +129,7 @@ export function DashboardPage({ adapter }) {
       <PageHeader title="Dashboard" description={`Today is ${formatDate(now)}. Revenue counts sales on their sale date; cash counts payments on the day they were received.`}
         actions={<div className="button-row"><Button variant="primary" icon="newSale" onClick={() => navigate('/sales/new')}>New sale</Button><Button icon="reports" onClick={() => navigate('/reports')}>Reports</Button></div>} />
       {error && <Banner tone="danger">{errorMessage(error)}</Banner>}
+      {!empty && <BackupReminder adapter={adapter} />}
       {empty && <EmptyState icon="dashboard" title="Nothing to show yet" action={<SampleDataButton adapter={adapter} variant="primary" />}>Add items and record sales, or load sample data to see the dashboard filled in.</EmptyState>}
 
       <div className="stat-strip kpi-strip">

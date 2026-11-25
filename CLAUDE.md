@@ -51,7 +51,7 @@ Whenever the user asks to **create a PR and merge to main**:
    no dev/test/spike files, relative paths only.
 2. **Verify it still runs:** `npm test` (unit), `npm run test:rules` (security rules, emulator), `npm run test:dist`
    (opens `dist/index.html` via `file://` offline), `node tests/e2e/shell.e2e.js dist` and
-   `node tests/e2e/inventory.e2e.js dist`, `node tests/e2e/customers.e2e.js dist`, `node tests/e2e/sales.e2e.js dist`, `node tests/e2e/restocks.e2e.js dist`, `node tests/e2e/calendar.e2e.js dist`, `node tests/e2e/reports.e2e.js dist` (click-throughs in demo mode; add each new phase's E2E script here).
+   `node tests/e2e/inventory.e2e.js dist`, `node tests/e2e/customers.e2e.js dist`, `node tests/e2e/sales.e2e.js dist`, `node tests/e2e/restocks.e2e.js dist`, `node tests/e2e/calendar.e2e.js dist`, `node tests/e2e/reports.e2e.js dist`, `node tests/e2e/system.e2e.js dist` (click-throughs in demo mode; add each new phase's E2E script here).
    Do not create the PR if anything fails; report the failure instead.
 3. Commit the updated `/dist`, create the PR, and merge to main.
 4. `/dist` must always be self-contained so the user can zip it and send it to a client or deploy it.

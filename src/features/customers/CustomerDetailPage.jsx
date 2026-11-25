@@ -3,6 +3,7 @@ import { PageHeader, Panel, Banner, EmptyState, LoadingRows, Badge, Tabs } from 
 import { Button, IconButton } from '../../components/Button.jsx';
 import { Icon } from '../../components/Icon.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import { OpeningBalanceDialog } from '../sales/OpeningBalancesPage.jsx';
 import { Link, navigate } from '../../app/router.jsx';
 import { useOnline } from '../../app/useOnline.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
@@ -83,6 +84,7 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
           description={c.system ? 'Built-in customer for fully paid counter sales. It cannot be edited or archived.' : [c.type, c.contactNumber, c.address].filter(Boolean).join(' · ')}
           actions={<div className="button-row">
             {active && <Button variant="primary" icon="newSale" onClick={() => navigate(`/sales/new?customer=${id}`)}>New sale</Button>}
+            {active && !c.system && <Button icon="statement" onClick={() => setDialog({ kind: 'ob' })} disabled={!online}>Opening balance</Button>}
             {!c.system && <Button icon="edit" onClick={() => setDialog({ kind: 'edit' })} disabled={!online}>Edit</Button>}
             {!c.system && <Button icon={active ? 'archive' : 'restore'} onClick={() => setDialog({ kind: 'archive' })} disabled={!online}>{active ? 'Archive' : 'Restore'}</Button>}
           </div>} />
@@ -163,6 +165,7 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
         {active ? <p>Archived customers are hidden from new sales. Their history is kept and they can be restored later.{c.outstandingC > 0 && <> They still owe <strong>{formatMoney(c.outstandingC)}</strong>, so archiving is not possible yet.</>}</p>
           : <p>The customer becomes available for new sales again.</p>}
       </ConfirmDialog>
+      {!c.system && <OpeningBalanceDialog open={!!dialog && dialog.kind === 'ob'} adapter={adapter} customerId={id} onClose={(sid) => { setDialog(null); if (sid) navigate(`/sales/${sid}`); }} />}
       {printNode}
     </div>
   );

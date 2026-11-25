@@ -24,11 +24,11 @@ export function createFirestoreAdapter(firebase, config) {
     .then(() => 'enabled')
     .catch((err) => `unavailable (${err.code || err.message})`);
 
-  return { ...wrapFirestore(db, firebase.firestore.FieldValue), app, persistence, auth: app.auth() };
+  return { ...wrapFirestore(db, firebase.firestore.FieldValue, firebase.firestore.Timestamp), app, persistence, auth: app.auth() };
 }
 
 /** Adapter interface over a compat Firestore instance (also used by the rules tests with the emulator). */
-export function wrapFirestore(db, FieldValue) {
+export function wrapFirestore(db, FieldValue, Timestamp) {
   return {
     kind: 'firestore',
     async get(name, id) { const s = await db.collection(name).doc(id).get(); return s.exists ? { id: s.id, ...s.data() } : null; },
@@ -37,6 +37,12 @@ export function wrapFirestore(db, FieldValue) {
     async update(name, id, data) { await db.collection(name).doc(id).update(data); },
     async add(name, data) { const ref = await db.collection(name).add(data); return ref.id; },
     newId() { return db.collection('_ids').doc().id; },
+    /** Non-transactional batch of writes (restore; max 500 per batch). ops: [{ op: 'set' | 'delete', col, id, data }]. */
+    async batchWrite(ops) {
+      const b = db.batch();
+      for (const o of ops) { const ref = db.collection(o.col).doc(o.id); if (o.op === 'delete') b.delete(ref); else b.set(ref, o.data); }
+      await b.commit();
+    },
     runTransaction(fn) {
       return db.runTransaction(async (t) => fn({
         async get(name, id) { const s = await t.get(db.collection(name).doc(id)); return { id, exists: s.exists, data: s.exists ? s.data() : undefined }; },
@@ -48,5 +54,7 @@ export function wrapFirestore(db, FieldValue) {
     subscribe(name, q, cb, onError) { return applyQuery(db.collection(name), q).onSnapshot((s) => cb(rows(s)), onError); },
     subscribeDoc(name, id, cb, onError) { return db.collection(name).doc(id).onSnapshot((s) => cb(s.exists ? { id: s.id, ...s.data(EST) } : null), onError); },
     serverTime() { return FieldValue.serverTimestamp(); },
+    isTimestamp(v) { return !!v && typeof v === 'object' && typeof v.toDate === 'function' && typeof v.seconds === 'number'; },
+    timestampFromISO(iso) { return Timestamp ? Timestamp.fromDate(new Date(iso)) : iso; },
   };
 }
