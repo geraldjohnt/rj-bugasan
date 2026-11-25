@@ -34,6 +34,21 @@
 | RQ-029 | No late fees; installments past due and not fully paid are marked Overdue. | R4-Q6 |
 | RQ-030 | Owner may reschedule unpaid installments (dates and amounts) if the total remains equal; history and reason recorded. | R4-Q7 |
 | RQ-031 | No interest or markup on installment sales. | R4-Q8 |
+| RQ-032 | Supplier management; restock records with supplier, items, quantity, unit cost, expected date; status Ordered / Partially Received / Received / Cancelled; stock-in movements only on receipt. | R5-Q1 |
+| RQ-033 | On receiving stock at a different cost, prompt to update item cost price (pre-checked). | R5-Q2 |
+| RQ-034 | Collections screen: due today, due this week, overdue; shows contact and alternate contacts; one-click copy of a reminder message (template in Settings). | R5-Q3 |
+| RQ-035 | Calendar: Month and Agenda views; filters (Sales, Payment due, Overdue, Restocking, Deliveries, Other); custom events; click-through to source record. | R5-Q4 |
 
-## Proposed / Deferred / Rejected
-_None yet._
+## Deferred
+| ID | Requirement | Reason |
+|---|---|---|
+| DF-001 | Calendar Week and Day views | User chose Month + Agenda for v1 (R5-Q4) |
+| DF-002 | Formal purchase orders | Not needed for single store (R5-Q1) |
+| DF-003 | Thermal receipt layout | Not selected (R3-Q8) |
+
+## Rejected
+| ID | Requirement | Reason |
+|---|---|---|
+| RJ-001 | Late payment fees | R4-Q6 |
+| RJ-002 | Installment interest/markup | R4-Q8 |
+| RJ-003 | Editing saved sales | Cancel & re-create instead (R3-Q5) |

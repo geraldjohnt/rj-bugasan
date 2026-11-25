@@ -7,7 +7,7 @@
 | 2 | Inventory rules, KG/Sack units, quantity precision, pricing, cost | Answered 2026-11-25 |
 | 3 | Customers, alternate contacts, sales transactions, Sale ID format, discounts | Answered 2026-11-25 |
 | 4 | Payment methods, installments, due-date rules, partial/advance/over-payments, rescheduling | Answered 2026-11-25 |
-| 5 | Collections, calendar, deliveries, restocking, suppliers, purchase orders | Pending |
+| 5 | Collections, calendar, deliveries, restocking, suppliers, purchase orders | Answered 2026-11-25 |
 | 6 | Reports, dashboard, profitability definitions | Pending |
 | 7 | Authentication, users/roles, security, backup & recovery | Pending |
 | 8 | Offline/online behavior, Firebase decisions, appearance, future expansion | Pending |
@@ -74,3 +74,14 @@
 | R4-Q8 | Interest/markup | None; installment total = sale total. | RQ-031 |
 
 Installment count 3/4/5 (max 5) is taken from the original brief (confirmed requirement).
+
+---
+
+## Round 5 — Restocking, collections, calendar (asked & answered 2026-11-25)
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R5-Q1 | Purchasing scope | Suppliers + restock records (Ordered -> Received, partial receipts; stock increases only on receipt). No formal POs. | RQ-032 |
+| R5-Q2 | Item cost update on receipt | Prompt "Update item cost?" pre-checked with new cost; owner confirms. (Resolves R5-pending.) | RQ-033 |
+| R5-Q3 | Collection help | Collections screen (due today / this week / overdue) with customer + alternate contacts and copyable reminder message; dashboard alert. | RQ-034 |
+| R5-Q4 | Calendar views | Month + Agenda list, filters, owner-created custom events. Week/Day views deferred. | RQ-035 |

@@ -13,4 +13,4 @@ Status values: Open · Answered (see INTERVIEW_LOG) · Deferred
 | R1-Q7 | Existing records / migration | Need for import tools and opening balances | Opening-balance import for stock and receivables | Answered (see INTERVIEW_LOG) |
 | R1-Q8 | Pain points & v1 priorities | Scoping of first release | — | Answered (see INTERVIEW_LOG) |
 | TQ-1 | Firebase SDK + Auth under `file://` | Must be validated by a spike before committing to Firestore | Run spike once Firebase config is available | Open |
-| R5-pending | Should a restock (stock-in) automatically update the item cost price? | Affects profit accuracy under D-007 | Ask in Round 5 | Open |
+| R5-pending | Should a restock (stock-in) automatically update the item cost price? | Affects profit accuracy under D-007 | Ask in Round 5 | Answered (R5-Q2) |
