@@ -22,3 +22,4 @@
 - **Phase 9 — Calendar:** month and agenda views derived from sales, installments (due/overdue), deliveries and restocks, category filters, custom events (add/edit/delete), click-through, overdue banner.
 - **Phase 10 — Dashboard & reports:** dashboard KPIs (revenue vs cash, gross/net profit, receivables, overdue, stock value), needs-attention list, 14-day chart, upcoming collections, recent sales, low stock; Reports (Sales, Profit by item, Profit & loss, Cash collected, Receivables aging, Inventory valuation, Movements & losses, Restocks by supplier) with presets, print/PDF and CSV.
 - Tests: unit/service 97/97, rules 39/39 (mutation-checked), E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 on `/build`. Not yet released.
+- **Release 0.5.0** (Phases 8–10) via https://github.com/geraldjohnt/rj-bugasan/pull/6: minified `/dist`, verified (unit 97/97, rules 39/39, dist smoke, E2E 16+15+12+16+12+10+12).
