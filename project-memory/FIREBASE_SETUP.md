@@ -33,3 +33,13 @@ Optional (recommended for phone access, decision D-014): Firebase **Hosting** to
 4. Optional clean-up: Authentication → Users → delete any leftover `spike-…@rj-bugasan-test.com` user (the spike already deleted its own).
 
 Do steps 1–3 in one sitting: until the owner exists, the first person to complete setup becomes the owner (KI-011).
+
+## Phase 4 — inventory on the real database
+1. **Re-publish the rules:** Firestore Database → Rules → replace everything with the current `firebase/firestore.rules` → Publish.
+   (Phase 4 adds rules for items, movements, stock counts and the activity log; without them those screens show a permission error.)
+2. **Create the indexes** (Firestore Database → Indexes → Composite → Create index), from `firebase/firestore.indexes.json`:
+   - Collection `inventoryMovements`: `itemId` Ascending, `createdAt` Descending (item stock history)
+   - Collection `inventoryMovements`: `type` Ascending, `createdAt` Descending (Movements page filtered by type)
+   Alternatively a developer with the Firebase CLI runs `firebase deploy --only firestore:rules,firestore:indexes`.
+   An index takes a few minutes to build; until then the affected list shows "The database needs an index".
+3. Optional: Settings → System → **Load sample data** to try the inventory screens (writes sample records to the real database).

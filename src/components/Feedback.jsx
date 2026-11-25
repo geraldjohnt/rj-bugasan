@@ -61,21 +61,33 @@ export function Tabs({ tabs, value, onChange, label }) {
 }
 
 /**
- * Simple data table. columns: [{ key, header, align: 'left'|'right', render(row) }]
+ * Simple data table. columns: [{ key, header, align: 'left'|'right', render(row), className }]
+ * footer: optional array of cells (same length as columns) for a totals row.
  */
-export function DataTable({ columns, rows, rowKey = 'id', empty, caption }) {
+export function DataTable({ columns, rows, rowKey = 'id', empty, caption, footer, rowClassName }) {
   if (!rows.length && empty) return empty;
+  const cls = (c) => [c.align === 'right' ? 'num-col num' : '', c.className || ''].join(' ').trim() || undefined;
   return (
     <div className="table-wrap">
       <table className="table">
         {caption && <caption className="sr-only">{caption}</caption>}
-        <thead><tr>{columns.map((c) => <th key={c.key} className={c.align === 'right' ? 'num-col' : ''} scope="col">{c.header}</th>)}</tr></thead>
+        <thead><tr>{columns.map((c) => <th key={c.key} className={c.align === 'right' ? 'num-col' : undefined} scope="col">{c.header}</th>)}</tr></thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r[rowKey]}>{columns.map((c) => <td key={c.key} className={c.align === 'right' ? 'num-col num' : ''}>{c.render ? c.render(r) : r[c.key]}</td>)}</tr>
+            <tr key={r[rowKey]} className={rowClassName ? rowClassName(r) : undefined}>{columns.map((c) => <td key={c.key} className={cls(c)}>{c.render ? c.render(r) : r[c.key]}</td>)}</tr>
           ))}
         </tbody>
+        {footer && <tfoot><tr>{columns.map((c, i) => <td key={c.key} className={cls(c)}>{footer[i]}</td>)}</tr></tfoot>}
       </table>
+    </div>
+  );
+}
+
+/** Skeleton rows while a list loads. */
+export function LoadingRows({ label = 'Loading' }) {
+  return (
+    <div className="loading-rows" role="status" aria-label={label}>
+      {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton-row" />)}
     </div>
   );
 }

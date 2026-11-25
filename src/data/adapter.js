@@ -1,7 +1,7 @@
 /*
  * Data adapter selection. Both adapters implement the same interface:
  *   kind, get(col, id), query(col, {where, orderBy, limit}), set(col, id, data), update(col, id, patch),
- *   add(col, data), runTransaction(fn(tx)), subscribe(col, q, cb), serverTime()
+ *   add(col, data), runTransaction(fn(tx)), subscribe(col, q, cb, onError), subscribeDoc(col, id, cb, onError), newId(), serverTime()
  * tx: get(col, id), set(col, id, data), update(col, id, patch), delete(col, id)  (all reads before writes)
  */
 import { createMockAdapter, browserStorage } from './mockAdapter.js';

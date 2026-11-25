@@ -8,6 +8,7 @@ import { useOnline } from '../../app/useOnline.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { ChangePasswordDialog } from '../../auth/AuthPages.jsx';
 import { SystemChecks } from '../system/SystemCheckPage.jsx';
+import { SampleDataPanel } from '../system/SampleData.jsx';
 import { loadGeneralSettings, saveGeneralSettings } from '../../data/settingsRepo.js';
 
 const TABS = [
@@ -27,7 +28,7 @@ export function SettingsPage({ tab = 'general', adapter, onGeneralSaved }) {
         {current === 'general' && <GeneralSettings adapter={adapter} onSaved={onGeneralSaved} />}
         {current === 'appearance' && <AppearanceSettings />}
         {current === 'account' && <AccountSettings />}
-        {current === 'system' && <Panel title="System check" flush><SystemChecks adapterKind={adapter.kind} /></Panel>}
+        {current === 'system' && <><Panel title="System check" flush><SystemChecks adapterKind={adapter.kind} /></Panel><SampleDataPanel adapter={adapter} /></>}
       </div>
     </div>
   );

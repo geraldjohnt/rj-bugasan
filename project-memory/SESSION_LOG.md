@@ -21,3 +21,14 @@
 - Bugs found by tests and fixed: void left inconsistent row shape; drawer scrim pushed page content below the sidebar; sidebar did not fit 1366×768; field errors lingered while typing; setup race (auth event before profile existed).
 - Next: first release (on user's "create PR and merge to main"), then owner go-live steps, then Phases 4–5.
 - Release 0.1.0: release build verified (unit 35/35, rules 15/15, dist smoke, dist E2E 17/17), committed `/dist`, PR https://github.com/geraldjohnt/rj-bugasan/pull/1 created and merged to main.
+
+## 2026-11-25 — Session 2: Phase 4 (Inventory)
+- **Objective:** "Continue phase 4"; add phase table to root README (kept up to date); add sample data when a phase is done; keep the unminified source.
+- **Work completed:** Phase 4 built end to end (domain, services, screens, rules, indexes, tests). Root README rewritten with phase table (D-024). Sample data loader (D-025). CLAUDE.md updated (README rule, sample-data rule, inventory E2E in the release checks).
+- **Decisions:** D-024 … D-027.
+- **Tests:** unit/service 53/53, rules 22/22 (mutation-checked), E2E inventory 15/15, shell E2E re-run (see TESTING_STATUS).
+- **Bugs found and fixed:** page overflowed sideways at phone width with wide tables; rules test files raced on the shared emulator.
+- **Source code question:** confirmed the readable source in `/src` is committed; `/dist` is generated from it.
+- **Not done:** no release to `/dist` (only on "create PR and merge to main"); real-Firebase check of Phase 4 needs the owner to publish rules + indexes.
+- **Next session objective:** Phase 5 (Customers) with sample customers.
+- Release 0.2.0: release build verified on `/dist` (unit 53/53, rules 22/22, smoke, E2E 16/16 + 15/15), PR https://github.com/geraldjohnt/rj-bugasan/pull/3 created and merged to main.

@@ -14,6 +14,10 @@ import { PlannedPage, NotFoundPage } from '../features/placeholder/PlannedPage.j
 import { SettingsPage } from '../features/settings/SettingsPage.jsx';
 import { SystemCheckPage } from '../features/system/SystemCheckPage.jsx';
 import { UiReferencePage } from '../features/dev/UiReferencePage.jsx';
+import { ItemsPage } from '../features/inventory/ItemsPage.jsx';
+import { ItemDetailPage } from '../features/inventory/ItemDetailPage.jsx';
+import { MovementsPage } from '../features/inventory/MovementsPage.jsx';
+import { StockCountListPage, StockCountPage } from '../features/inventory/StockCountPages.jsx';
 import { loadGeneralSettings, DEFAULT_GENERAL } from '../data/settingsRepo.js';
 
 const PUBLIC = ['/login', '/setup', '/system-check'];
@@ -61,6 +65,11 @@ function Routes({ adapter, general, setGeneral }) {
   const settings = matchPath('/settings', path) ? {} : matchPath('/settings/:tab', path);
   if (settings) page = <SettingsPage tab={settings.tab} adapter={adapter} onGeneralSaved={setGeneral} />;
   else if (path === '/dev/ui' && __BUILD_MODE__ === 'development') page = <UiReferencePage />;
+  else if (path === '/items') page = <ItemsPage adapter={adapter} />;
+  else if (matchPath('/items/:id', path)) { const { id } = matchPath('/items/:id', path); page = <ItemDetailPage key={id} adapter={adapter} id={id} />; }
+  else if (path === '/movements') page = <MovementsPage adapter={adapter} />;
+  else if (path === '/stock-count') page = <StockCountListPage adapter={adapter} />;
+  else if (matchPath('/stock-count/:id', path)) { const { id } = matchPath('/stock-count/:id', path); page = <StockCountPage key={id} adapter={adapter} id={id} />; }
   else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
   else page = <NotFoundPage />;
 
