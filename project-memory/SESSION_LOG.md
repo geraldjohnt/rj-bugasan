@@ -49,4 +49,4 @@
 - **Problems found and fixed:** Collections table overflowed at 1366 px; New sale item picker too narrow; shell and customers E2E still expected Phase 6–7 placeholders.
 - **Not done:** no release (only on "create PR and merge to main", D-018); real-Firebase check and paper printing need the owner.
 - **Next session objective:** release 0.4.0 when asked; then Phase 8 (Restocking, suppliers, expenses).
-- Release 0.4.0: version bumped, release build verified on `/dist` (unit 76/76, rules 35/35, smoke, E2E 16/16 + 15/15 + 12/12 + 16/16), committed `/dist`, PR created and merged to main.
+- Release 0.4.0: version bumped, release build verified on `/dist` (unit 76/76, rules 35/35, smoke, E2E 16/16 + 15/15 + 12/12 + 16/16), committed `/dist`, PR https://github.com/geraldjohnt/rj-bugasan/pull/5 created and merged to main.
