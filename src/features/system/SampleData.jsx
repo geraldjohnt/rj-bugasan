@@ -20,9 +20,9 @@ export function SampleDataButton({ adapter, variant = 'secondary' }) {
         onConfirm={async () => {
           const r = await loadSampleData(adapter, actorOf(auth.user));
           const any = r.created || r.customers || r.sales || r.suppliers || r.restocks || r.expenses;
-          toast({ message: any ? `Sample data loaded: ${r.created} item(s), ${r.customers} customer(s), ${r.sales || 0} sale(s), ${r.suppliers || 0} supplier(s), ${r.restocks || 0} restock(s) and ${r.expenses || 0} expense(s) added.` : 'Sample data is already loaded.' });
+          toast({ message: any ? `Sample data loaded: ${r.created} item(s), ${r.customers} customer(s), ${r.sales || 0} sale(s), ${r.openingBalances || 0} opening balance(s), ${r.suppliers || 0} supplier(s), ${r.restocks || 0} restock(s) and ${r.expenses || 0} expense(s) added.` : 'Sample data is already loaded.' });
         }}>
-        <p>Adds sample rice items with opening stock, an opened sack and two adjustments, sample customers with alternate contacts, sample sales with installments, payments (one voided) and a cancelled sale, suppliers with restock orders (received, partly received, ordered, cancelled), expenses and calendar reminders, so you can try the system.</p>
+        <p>Adds sample rice items with opening stock, an opened sack and two adjustments, sample customers with alternate contacts, sample sales with installments, payments (one voided) and a cancelled sale, two opening balances carried over from old records, suppliers with restock orders (received, partly received, ordered, cancelled), expenses and calendar reminders, so you can try the system.</p>
         {adapter.kind === 'firestore'
           ? <Banner tone="warning">This writes to your real database. Use it only for testing; sample records are kept like any other record.</Banner>
           : <p className="muted">Demo mode: the data stays in this browser only.</p>}
@@ -35,7 +35,7 @@ export function SampleDataButton({ adapter, variant = 'secondary' }) {
 export function SampleDataPanel({ adapter }) {
   return (
     <Panel title="Sample data" actions={<SampleDataButton adapter={adapter} />}>
-      <p className="muted">Fills the system with realistic test records for the modules built so far (currently: Inventory, Customers, Sales, Payments, Collections, Restocks, Suppliers, Expenses and Calendar; the Dashboard and Reports use all of it).</p>
+      <p className="muted">Fills the system with realistic test records for the modules built so far (currently: Inventory, Customers, Sales, Payments, Collections, Opening balances, Restocks, Suppliers, Expenses and Calendar; the Dashboard and Reports use all of it).</p>
     </Panel>
   );
 }

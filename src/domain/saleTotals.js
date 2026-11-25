@@ -78,7 +78,7 @@ export function validateTerms({ terms, totalC, paidNowC = 0, customerId, plan })
       break;
     case TERMS.INSTALLMENT:
       if (isWalkIn) throw new DomainError('WALK_IN_BALANCE', 'Installment sales need a registered customer.');
-      if (!plan || !ALLOWED_COUNTS.includes(plan.count)) throw new DomainError('INVALID_COUNT', 'Choose 3, 4 or 5 installments.');
+      if (!plan || !ALLOWED_COUNTS.includes(plan.count)) throw new DomainError('INVALID_COUNT', 'Choose 2, 3, 4 or 5 installments.');
       if (paidNowC !== (plan.downPaymentC || 0)) throw new DomainError('DOWN_PAYMENT_MISMATCH', 'Amount paid now must equal the down payment.');
       break;
     default:

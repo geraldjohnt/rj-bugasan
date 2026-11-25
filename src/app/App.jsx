@@ -28,6 +28,9 @@ import { SuppliersPage, SupplierDetailPage } from '../features/purchasing/Suppli
 import { RestocksPage, RestockFormPage } from '../features/purchasing/RestocksPage.jsx';
 import { RestockDetailPage } from '../features/purchasing/RestockDetailPage.jsx';
 import { ExpensesPage } from '../features/purchasing/ExpensesPage.jsx';
+import { ActivityLogPage } from '../features/system/ActivityLogPage.jsx';
+import { BackupPage } from '../features/system/BackupPage.jsx';
+import { OpeningBalancesPage } from '../features/sales/OpeningBalancesPage.jsx';
 import { CalendarPage } from '../features/calendar/CalendarPage.jsx';
 import { DashboardPage } from '../features/dashboard/DashboardPage.jsx';
 import { ReportsPage } from '../features/reports/ReportsPage.jsx';
@@ -102,6 +105,9 @@ function Routes({ adapter, general, setGeneral }) {
   else if (matchPath('/restocks/:id', path)) { const { id } = matchPath('/restocks/:id', path); page = <RestockDetailPage key={id} adapter={adapter} id={id} />; }
   else if (path === '/calendar' || matchPath('/calendar/:view', path)) page = <CalendarPage adapter={adapter} view={(matchPath('/calendar/:view', path) || {}).view} monthParam={query.m} />;
   else if (path === '/expenses') page = <ExpensesPage adapter={adapter} />;
+  else if (path === '/activity') page = <ActivityLogPage adapter={adapter} />;
+  else if (path === '/backup') page = <BackupPage adapter={adapter} />;
+  else if (path === '/opening-balances') page = <OpeningBalancesPage adapter={adapter} />;
   else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
   else page = <NotFoundPage />;
 

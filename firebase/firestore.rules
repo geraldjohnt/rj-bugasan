@@ -4,7 +4,7 @@ rules_version = '2';
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
  * Scope: Phase 2 (owner bootstrap, users, usernames, settings), Phase 4 (items, inventoryMovements, stockCounts,
  * activityLogs), Phase 5 (customers), Phases 6–7 (counters, sales, installments, payments), Phase 8 (suppliers, restocks,
- * expenses) and Phase 9 (calendarEvents).
+ * expenses), Phase 9 (calendarEvents) and Phase 11 (opening balances, backup restore).
  * Every other path is denied until its phase adds rules.
  * Cross-document consistency (item quantity == sum of its movements) is enforced by client transactions (KI-003, D-016);
  * these rules enforce per-document shape and invariants.
@@ -157,7 +157,7 @@ service cloud.firestore {
     // Sequence counters (BR-030, BR-050): sale-YYYY and payment-YYYY; each write takes exactly the next number.
     match /counters/{name} {
       allow read: if isActive();
-      allow create: if isOwner() && name.matches('^(sale|payment|restock)-[0-9]{4}$')
+      allow create: if isOwner() && name.matches('^(sale|payment|restock|ob)-[0-9]{4}$')
         && request.resource.data.keys().hasOnly(['next']) && request.resource.data.next is int && request.resource.data.next >= 2;
       allow update: if isOwner() && request.resource.data.keys().hasOnly(['next'])
         && request.resource.data.next == resource.data.next + 1;
@@ -170,6 +170,22 @@ service cloud.firestore {
     }
     match /sales/{id} {
       allow read: if isActive();
+      // Phase 11 (BR-081, D-045): opening balances carried over from Excel — no lines, nothing paid, no revenue.
+      allow create: if isOwner()
+        && request.resource.data.saleNo == id
+        && id.matches('^OB-[0-9]{4}-[0-9]{5}$')
+        && request.resource.data.kind == 'OPENING_BALANCE'
+        && request.resource.data.status == 'ACTIVE'
+        && isDate(request.resource.data.saleDate)
+        && request.resource.data.customerId is string && request.resource.data.customerId != 'WALK_IN'
+        && request.resource.data.lines is list && request.resource.data.lines.size() == 0
+        && validSaleMoney(request.resource.data) && request.resource.data.discountC == 0
+        && request.resource.data.totalC > 0 && request.resource.data.paidC == 0 && request.resource.data.balanceC == request.resource.data.totalC
+        && request.resource.data.terms in ['OPEN_BALANCE', 'INSTALLMENT']
+        && request.resource.data.paymentIds is list && request.resource.data.paymentIds.size() == 0
+        && request.resource.data.installmentCount is int && request.resource.data.installmentCount >= 1 && request.resource.data.installmentCount <= 5
+        && request.resource.data.description is string && request.resource.data.description.size() > 0
+        && request.resource.data.createdBy == request.auth.uid;
       allow create: if isOwner()
         && request.resource.data.saleNo == id
         && id.matches('^[A-Z0-9]{1,6}-?[0-9]{4}-[0-9]{5}$')
@@ -329,6 +345,26 @@ service cloud.firestore {
       allow create: if isActive() && request.resource.data.by == request.auth.uid
         && request.resource.data.action is string && request.resource.data.summary is string;
       allow update, delete: if false;
+    }
+
+    // ---- Phase 11: restore a backup (RQ-042, BR-094, D-044) --------------------------------------------------
+    // A restore makes the database equal to a backup file, so it must write documents (paid installments, used
+    // counters, old activity entries) that the normal lifecycle rules above would refuse. The owner opens the window
+    // by setting settings/restore.active = true (allowed by the settings rule above, owner only); while it is open
+    // the owner may write and delete business collections. Sign-in data (users, usernames) and settings/bootstrap
+    // are never reachable this way. The app closes the window when the restore finishes (and logs it).
+    function restoring() {
+      return isOwner()
+        && exists(/databases/$(database)/documents/settings/restore)
+        && get(/databases/$(database)/documents/settings/restore).data.active == true;
+    }
+    match /{col}/{id} {
+      allow create, update, delete: if col in ['counters', 'items', 'inventoryMovements', 'stockCounts', 'customers', 'sales',
+          'installments', 'payments', 'suppliers', 'restocks', 'expenses', 'calendarEvents', 'activityLogs']
+        && restoring();
+    }
+    match /settings/{doc} {
+      allow delete: if doc != 'bootstrap' && doc != 'restore' && restoring();
     }
 
     // ---- Everything else: denied until the module's phase adds rules ------------------------------------

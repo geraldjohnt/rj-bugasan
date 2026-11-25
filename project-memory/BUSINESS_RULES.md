@@ -42,7 +42,7 @@
 
 ## 4. Installments and balances
 - BR-040 Receivable rows (`installments` collection) exist for every sale with a balance: N rows for an installment plan, 1 row for an open balance.
-- BR-041 Plan options: count 3, 4 or 5; frequency Monthly-15th, Monthly-end-of-month, or Semi-monthly (15th and end of month); optional down payment.
+- BR-041 Plan options: count 2, 3, 4 or 5 (default 2 — D-043); frequency Monthly-15th, Monthly-end-of-month, or Semi-monthly (15th and end of month); optional down payment.
 - BR-042 First due date = first candidate date ≥ sale date + gap days (default 7). Following dates = next candidates. Example: sale Nov 12, Monthly-15th → Dec 15, Jan 15, … Sale Nov 12, Semi-monthly → Nov 30, Dec 15, Dec 31, … End of month respects month length (Feb 28/29).
 - BR-043 Amount financed = total − down payment. Each installment = floor(financed ÷ count) to whole pesos; the last installment takes the remainder (including centavos). The sum always equals the amount financed exactly. Example: ₱2,500 / 3 → 833, 833, 834. A plan whose regular installment would be below ₱1 is rejected.
 - BR-044 Installment status stored: PENDING, PARTIAL, PAID, CANCELLED. **Overdue is derived** (due date < today and not PAID), so it is always current without a background job.
@@ -73,7 +73,7 @@
 
 ## 8. Opening balances (RQ-007)
 - BR-080 Opening stock is entered as OPENING movements.
-- BR-081 Existing installment accounts from Excel are entered as **Opening balance** entries (`OB-{YYYY}-{NNNNN}`): customer, original date, description, remaining balance and remaining schedule. They create receivable rows but no stock movement and no revenue/profit.
+- BR-081 Existing installment accounts from Excel are entered as **Opening balance** entries (`OB-{YYYY}-{NNNNN}`): customer, original date, description, remaining balance and remaining schedule. They create receivable rows but no stock movement and no revenue/profit. Stored as a `sales` document of kind `OPENING_BALANCE` with no lines (D-045); 1 row (plain balance, due date optional) or 2–5 installments; not added to the customer's total purchases. Payments, reschedule and cancel use the normal sale rules.
 
 ## 9. Sessions, security, backup
 - BR-090 All data operations require an authenticated, active user. Authorization is enforced by Firestore Security Rules, not by hidden UI.

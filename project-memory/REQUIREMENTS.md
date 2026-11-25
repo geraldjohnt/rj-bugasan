@@ -27,7 +27,7 @@
 | RQ-022 | Customers have 0..n alternate contacts: name, address, contact number, email, Facebook, relationship, primary flag, notes. | R3-Q7 |
 | RQ-023 | Printable sale and payment receipts for standard printers; PDF via browser print. | R3-Q8 |
 | RQ-048 | Business rules A-005..A-009 confirmed: cancellation refunds payments, no partial returns; credit limit warns; reliability thresholds; contact number required; opening-balance entries. | AQ-4 |
-| RQ-024 | Installment frequency chosen per sale: Monthly on 15th, Monthly on last day of month, or Semi-monthly (15th and last day). Installment count 3, 4 or 5 (max 5). | R4-Q1, brief |
+| RQ-024 | Installment frequency chosen per sale: Monthly on 15th, Monthly on last day of month, or Semi-monthly (15th and last day). Installment count 2, 3, 4 or 5 (max 5); **default 2** (user request 2026-11-25, D-043; originally 3–5). | R4-Q1, brief, 2026-11-25 |
 | RQ-025 | First due date = first qualifying date at least N days after sale date (N default 7, configurable). Each due date editable. | R4-Q2 |
 | RQ-026 | Optional down payment; remainder split into installments. | R4-Q3 |
 | RQ-027 | Installment amounts in whole pesos; remainder (including centavos) on the last installment; sum always equals the amount financed exactly. | R4-Q4 |

@@ -5,7 +5,7 @@
 ## Business
 A single rice store in the Philippines (PHP, Asia/Manila). Sells rice only, by the sack and by the kilo, to a mix
 of households, sari-sari stores, carinderias and resellers. Sales are cash, bank transfer, e-wallet, open balance
-(pay later) or formal installment (3–5 payments). Some orders are delivered. Records are currently kept in Excel.
+(pay later) or formal installment (2–5 payments). Some orders are delivered. Records are currently kept in Excel.
 
 ## Users
 v1: one Owner account, used from a PC and a phone, possibly at the same time. Restricted staff accounts are a

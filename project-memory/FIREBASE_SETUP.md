@@ -63,3 +63,15 @@ Do steps 1–3 in one sitting: until the owner exists, the first person to compl
    Without them those screens, the Calendar and the Dashboard show a permission error.) **No new indexes** are needed (D-041).
 2. Optional: Settings → System → **Load sample data** adds 3 suppliers, 5 restocks, 11 expenses and 2 calendar reminders on a first, complete load.
 3. Try Reports → **Export CSV** and **Print / PDF** once on the store PC (KI-015, KI-019).
+
+## Phases 11–12 — go-live checklist (owner)
+1. **Publish rules and indexes.** Either Firestore Database → Rules → paste the current `firebase/firestore.rules` → Publish, and
+   Indexes → Composite → create `activityLogs`: `entityType` Ascending, `at` Descending (plus the two `inventoryMovements` indexes from Phase 4);
+   or, on a PC with the Firebase CLI and access to the project: `npm run deploy:rules`.
+2. **Owner account:** open the app (`index.html` or the GitHub Pages address), complete the one-time setup (`#/setup`) with your username, name and recovery email.
+3. **Close public sign-up** right after (Authentication → Settings → User actions → untick "Enable create (sign-up)") — KI-011.
+4. **Business details:** Settings → General and Settings → Sales (default installments is now 2).
+5. **Enter your records:** items with opening stock, customers, then **Opening balances** for everyone who still owes from Excel.
+6. **First backup:** System → Backup → Download backup; keep the file on a USB drive. Repeat weekly (the dashboard reminds you).
+7. **Check on the store PC** (Edge/Chrome/Firefox): sign in, one sale, one receipt print, one CSV export, one backup download (KI-009, KI-015, KI-019, KI-021).
+8. Hand the client the `/dist` folder (zip) or the GitHub Pages link, plus `guide.html` (also in the app's user menu → User guide).

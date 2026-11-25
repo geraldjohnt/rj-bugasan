@@ -109,6 +109,8 @@ export function createMockAdapter({ storage = null, maxRetries = 5, now = () => 
     async update(name, id, data) { commit([{ op: 'update', col: name, id, data }]); },
     async add(name, data) { const id = newId(); commit([{ op: 'set', col: name, id, data }]); return id; },
     runTransaction,
+    /** Non-transactional batch of writes (restore). ops: [{ op: 'set' | 'delete', col, id, data }]. */
+    async batchWrite(ops) { commit(ops.map((o) => ({ op: o.op, col: o.col, id: o.id, data: o.data }))); },
     newId,
     subscribe(name, q, cb) {
       const l = { col: name, run: () => cb(runQuery(name, q)) };
@@ -123,6 +125,9 @@ export function createMockAdapter({ storage = null, maxRetries = 5, now = () => 
       return () => listeners.delete(l);
     },
     serverTime() { return now().toISOString(); },
+    /** Backups: the mock stores times as ISO strings, so a timestamp is restored as one. */
+    isTimestamp() { return false; },
+    timestampFromISO(iso) { return iso; },
     reset() { db = {}; persist(); },
   };
 }

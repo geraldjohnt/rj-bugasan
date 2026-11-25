@@ -107,7 +107,7 @@ await step('Stock guard: more than available is flagged and cannot be saved', as
 });
 
 let instSale;
-await step('Installment sale for a registered customer: down payment, 3-row preview with editable dates', async () => {
+await step('Installment sale for a registered customer: default 2 payments, then 3-row preview with editable dates', async () => {
   await page.goto(url + '#/sales/new');
   await pick(customerBox(), 'Carmen Dela Cruz');
   await pick(page.locator('.sale-line').first().locator('input[role="combobox"]'), 'Brown Rice 25kg Sack');
@@ -116,6 +116,12 @@ await step('Installment sale for a registered customer: down payment, 3-row prev
   await page.waitForSelector('.sale-line .field-help:has-text("List price")');
   await page.locator('.sale-summary select').first().selectOption('INSTALLMENT');
   await field('Down payment', '.sale-summary').fill('300');
+  // Default plan is 2 payments (user request 2026-11-25); then switch to 3.
+  await page.waitForSelector('.schedule-row >> nth=1');
+  expect(await page.locator('.schedule-row').count() === 2, 'default is 2 installments');
+  const two = await page.locator('.schedule-row strong').allInnerTexts();
+  expect(two.join('|') === '₱750.00|₱750.00', 'two amounts ' + two.join('|'));
+  await page.locator('.sale-summary .field:has(.field-label:text-is("Number of installments")) .segmented-option:has-text("3")').click();
   await page.waitForSelector('.schedule-row >> nth=2');
   const amounts = await page.locator('.schedule-row strong').allInnerTexts();
   expect(amounts.join('|') === '₱500.00|₱500.00|₱500.00', 'amounts ' + amounts.join('|'));
@@ -233,16 +239,19 @@ await step('Customer detail: sales, payments, schedule and statement tabs filled
   await page.goto(url + '#/customers');
   await page.click(`.table a:has-text("Carmen Dela Cruz")`);
   await page.waitForSelector('h1:has-text("Carmen Dela Cruz")');
-  expect(await stat('Outstanding balance') === '₱1,500.00', 'outstanding ' + await stat('Outstanding balance'));
+  // ₱1,500.00 from this run + ₱5,200.00 sample opening balance (Phase 11)
+  expect(await stat('Outstanding balance') === '₱6,700.00', 'outstanding ' + await stat('Outstanding balance'));
   await page.waitForSelector('.list-row:has-text("' + instSale + '")');
   await tab('Sales');
   await page.waitForSelector(`.table a:has-text("${instSale}")`);
   await tab('Payments');
   await page.waitForSelector('.table:has-text("GCASH-123")');
   await tab('Schedule');
-  expect(await page.locator('.table tbody tr').count() === 3, 'schedule rows');
+  await page.waitForSelector('.table tbody tr >> nth=4', { timeout: 5000 }).catch(() => {}); // rows load after the tab opens
+  const n = await page.locator('.table tbody tr').count();
+  expect(n === 5, 'schedule rows (3 + 2 opening-balance rows): ' + n);
   await tab('Statement');
-  await page.waitForSelector('.doc-total:has-text("₱1,500.00")');
+  await page.waitForSelector('.doc-total:has-text("₱6,700.00")');
   await page.click('button:has-text("Print statement")');
   await page.waitForFunction(() => window.__printed.some((t) => /STATEMENT OF ACCOUNT/i.test(t)));
 });

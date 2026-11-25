@@ -26,13 +26,13 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 | 8 | Restocking, suppliers, expenses | Implemented & tested (demo + rules emulator); released in 0.5.0 | Suppliers, restock orders with partial receipts and cost update, expenses; sample data available |
 | 9 | Calendar | Implemented & tested (demo + rules emulator); released in 0.5.0 | Month + agenda, filters, custom events; sample reminders |
 | 10 | Dashboard & reports | Implemented & tested (demo); released in 0.5.0 | KPIs, 14-day chart, 8 reports with print and CSV |
-| 11 | Activity log UI, backup/restore, opening balances | Planned | Next |
-| 12 | Firebase go-live & release | Planned | |
+| 11 | Activity log UI, backup/restore, opening balances | Implemented & tested (demo + rules emulator); released in 0.6.0 | Owner-only activity log, backup download + 7-day reminder, restore with typed RESTORE, opening balances (`OB-`); sample OBs |
+| 12 | Firebase go-live & release | Implemented; released in 0.6.0 | User guide (`guide.html`), `npm run deploy:rules`, `npm run verify:release`, go-live checklist; owner steps remain (FIREBASE_SETUP) |
 
 ## Trying it with sample data
 
 Sign in, then **Settings → System → Load sample data** (or the button on the empty Items page). Each finished phase
-adds its own sample records (currently: rice items, customers, sales with installments, payments and collections, suppliers with restocks, expenses and calendar reminders; the dashboard and reports use all of it). In demo mode (no Firebase config) the data stays in your browser only.
+adds its own sample records (currently: rice items, customers, sales with installments, payments and collections, opening balances, suppliers with restocks, expenses and calendar reminders; the dashboard and reports use all of it). In demo mode (no Firebase config) the data stays in your browser only.
 
 ## Developer commands
 
@@ -43,5 +43,7 @@ adds its own sample records (currently: rice items, customers, sales with instal
 | `npm run release` | Minified client build → `/dist` (only when releasing) |
 | `npm test` | Unit and service tests |
 | `npm run test:rules` | Firestore security-rules tests (emulator, needs Java) |
+| `npm run verify:release` | Every release check on `/dist` (unit, rules, smoke, all E2E) |
+| `npm run deploy:rules` | Publish Firestore rules + indexes to project `rj-bugasan` (Firebase CLI, owner/developer machine) |
 | `npm run test:e2e` | Click-through tests (demo mode) on `/build` |
 | `npm run test:build` / `npm run test:dist` | Offline `file://` smoke test |

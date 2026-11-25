@@ -54,6 +54,7 @@ function UserMenu() {
         <div className="menu" role="menu">
           <div className="menu-header"><div className="menu-title">{auth.user.displayName}</div><div className="menu-sub">@{auth.user.username} · Owner</div></div>
           <button role="menuitem" className="menu-item" onClick={() => { setOpen(false); setPwOpen(true); }}><Icon name="key" size={16} />Change password</button>
+          <a role="menuitem" className="menu-item" href="guide.html" target="_blank" rel="noopener" onClick={() => setOpen(false)}><Icon name="info" size={16} />User guide</a>
           <button role="menuitem" className="menu-item" onClick={() => { setOpen(false); auth.lock(); }}><Icon name="lock" size={16} />Lock screen</button>
           <button role="menuitem" className="menu-item" onClick={() => auth.signOut()}><Icon name="logout" size={16} />Sign out</button>
         </div>

@@ -210,7 +210,8 @@ export async function cancelSale(adapter, actor, saleId, reason) {
       const d = sumDeltas(deltas);
       tx.update('customers', sale.customerId, {
         outstandingC: Math.max(0, (c.outstandingC || 0) - sale.balanceC),
-        totalPurchasesC: Math.max(0, (c.totalPurchasesC || 0) - sale.totalC),
+        // Opening balances never counted as purchases (D-045).
+        totalPurchasesC: sale.kind === 'OPENING_BALANCE' ? (c.totalPurchasesC || 0) : Math.max(0, (c.totalPurchasesC || 0) - sale.totalC),
         paidInstallments: Math.max(0, (c.paidInstallments || 0) + d.paidInstallments),
         paidOnTime: Math.max(0, (c.paidOnTime || 0) + d.paidOnTime),
         ...stamp(adapter, actor),
@@ -219,7 +220,7 @@ export async function cancelSale(adapter, actor, saleId, reason) {
     const returnedText = linesText(sale.lines);
     logWrite(tx, adapter, actor, {
       action: 'SALE_CANCEL', entityType: 'sale', entityId: sale.id,
-      summary: `Cancelled ${sale.id} (${why}): returned ${returnedText} to stock` + (payments.length ? `, voided ${payments.length} payment(s) totalling ${formatMoney(refundedC)}` : ''),
+      summary: `Cancelled ${sale.id} (${why})` + (sale.lines.length ? `: returned ${returnedText} to stock` : '') + (payments.length ? `, voided ${payments.length} payment(s) totalling ${formatMoney(refundedC)}` : ''),
       changes: { voidedPayments: payments.map((p) => p.id), refundedC },
     });
     return { returnedText, refundedC, voidedPayments: payments.length };

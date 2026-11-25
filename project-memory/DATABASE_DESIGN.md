@@ -87,5 +87,15 @@ items invariant:           request.resource.data.qtyH >= 0
 ```
 
 ## 6. Backup format
-A single JSON file: `{ app: "rj-ims", schemaVersion, exportedAt, collections: { name: [ {id, data} ] } }`.
-Timestamps serialized as ISO strings. Restore writes in batches of ≤ 500 (not one atomic operation — documented in KI-005).
+A single JSON file: `{ app: "rj-ims", schemaVersion: 1, exportedAt, exportedBy, counts: { name: n }, collections: { name: [ {id, data} ] } }`
+(implemented in `src/domain/backup.js`, D-044). Database timestamps are written as `{ "$ts": "<ISO>" }` (not plain ISO strings as first
+planned) so a restore can turn them back into timestamps without confusing them with date strings the app stores on purpose.
+Collections: settings (except `bootstrap`, `restore`), counters, items, inventoryMovements, stockCounts, customers, sales, installments,
+payments, suppliers, restocks, expenses, calendarEvents, activityLogs. `users`/`usernames` are never exported or restored.
+Restore makes the database equal to the file (writes every document, deletes documents not in it) in batches of 400 while
+`settings/restore.active` is true; the rules allow those writes only during that window (D-044). Not atomic — KI-005.
+
+## Phase 11 additions (2026-11-25)
+- Index `activityLogs`: entityType ASC, at DESC — now actually in `firebase/firestore.indexes.json` (Activity log area filter).
+- Rules: counters accept `ob-YYYY`; `sales` create branch for `OB-YYYY-NNNNN` (kind OPENING_BALANCE, no lines, nothing paid, not Walk-in, description required);
+  restore window `match /{col}/{id}` allowing owner create/update/delete on business collections while `settings/restore.active == true`, and deleting settings other than bootstrap/restore.

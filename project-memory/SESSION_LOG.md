@@ -60,3 +60,10 @@
 - **Not done:** no release (only on "create PR and merge to main", D-018); real-Firebase check, paper printing and CSV on Windows browsers need the owner.
 - **Next session objective:** release 0.5.0 when asked; then Phase 11 (Activity log UI, backup/restore, opening balances).
 - Release 0.5.0: merged origin/main into the branch, version bumped, release build verified on `/dist` (unit 97/97, rules 39/39, dist smoke, E2E shell 16/16 + inventory 15/15 + customers 12/12 + sales 16/16 + restocks 12/12 + calendar 10/10 + reports 12/12.), committed `/dist`, PR https://github.com/geraldjohnt/rj-bugasan/pull/6 created and merged to main.
+
+## 2026-11-25 — Session 6: Phases 11–12, 2-payment installments
+- **Objective:** "Continue phases 11 and 12. Also add an installment plan of 2 payments" → later "make 2 the default", "make Online green", "create PR and merge to main; not complete unless the workflow run succeeds".
+- **Work completed:** 2-payment plans + default 2 (D-043); Activity log, Backup/restore (D-044), Opening balances (D-045); rules + index; sample OBs; user guide; deploy/verify scripts; go-live checklist; green Online indicator; docs.
+- **Tests:** unit/service 104/104, rules 43/43 (mutation-checked), E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 + system 11, smoke on /build.
+- **Problems found and fixed:** new nav item pushed Settings below 768 px (nav items 32 → 30 px); shell E2E still expected the Activity-log placeholder; sales E2E counts changed by the sample OB and had a load-timing race on the Schedule tab.
+- **Not done:** owner go-live steps (publish rules/index, owner account, close sign-up, Windows checks) — cannot be done from the container.

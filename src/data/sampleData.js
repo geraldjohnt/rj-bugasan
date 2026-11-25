@@ -15,6 +15,7 @@ import { validateSupplierForm, validateRestockForm, validateExpenseForm } from '
 import { validateEventForm } from '../domain/calendar.js';
 import { createSupplier, createRestock, receiveRestock, cancelRestock, createExpense, voidExpense } from './purchasingService.js';
 import { createEvent } from './calendarService.js';
+import { createOpeningBalance } from './openingBalanceService.js';
 
 const P = (pesos) => Math.round(pesos * 100);
 
@@ -89,7 +90,7 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
     customers++;
   }
   // Sales only on a fresh load (all sample customers and items were just created), so a second run adds nothing.
-  if (customers !== CUSTOMERS.length || Object.keys(itemIds).length !== ITEMS.length) return { customers, sales: 0 };
+  if (customers !== CUSTOMERS.length || Object.keys(itemIds).length !== ITEMS.length) return { customers, sales: 0, openingBalances: 0 };
   const it = async (name) => adapter.get('items', itemIds[name]);
   const line = async (name, qty) => { const i = await it(name); return { itemId: i.id, qtyH: Math.round(qty * 100), unitPriceC: i.priceC }; };
   const sell = (input) => createSale(adapter, actor, { discount: { type: 'NONE' }, method: 'CASH', fulfillment: 'PICKED_UP', ...input }, DEFAULT_SALES_SETTINGS, asOf);
@@ -133,7 +134,13 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
   await cancelSale(adapter, actor, s6.saleId, 'Customer changed the order');
   sales++;
   await updateFulfillment(adapter, actor, s1.saleId, { fulfillment: 'DELIVERED', deliveryDate: addDays(d1, 1), notes: 'Deliver to the store.' });
-  return { customers, sales };
+
+  // Phase 11 — opening balances carried over from the Excel records: one in 2 installments (first overdue), one plain balance.
+  await createOpeningBalance(adapter, actor, { customerId: cid[CUSTOMERS[4].name], originalDate: addDays(asOf, -120), description: '4 sacks Sinandomeng (Excel ledger)',
+    rows: [{ dueDate: addDays(asOf, -15), amount: '2600' }, { dueDate: addDays(asOf, 15), amount: '2600' }] }, asOf);
+  const ob2 = await createOpeningBalance(adapter, actor, { customerId: cid[CUSTOMERS[1].name], originalDate: addDays(asOf, -100), description: 'Old balance from notebook', rows: [{ dueDate: '', amount: '1250' }] }, asOf);
+  await recordPayment(adapter, actor, { saleId: ob2.saleId, date: addDays(asOf, -7), amountC: P(500), method: 'CASH' }, asOf);
+  return { customers, sales, openingBalances: 2 };
 }
 
 // Phase 8 — suppliers, restocks (received with a cost change, partly received, ordered, cancelled) and expenses.

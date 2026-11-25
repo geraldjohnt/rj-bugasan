@@ -32,11 +32,11 @@ export function SalesTable({ rows, showCustomer = true, empty }) {
   const columns = [
     { key: 'no', header: 'Sale', className: 'key-col', render: (s) => <><Link to={`/sales/${s.id}`}>{s.id}</Link><span className="cell-sub">{formatDate(s.saleDate)}</span></> },
     ...(showCustomer ? [{ key: 'customer', header: 'Customer', render: (s) => (s.customerId === 'WALK_IN' ? <span className="muted">Walk-in</span> : <Link to={`/customers/${s.customerId}`}>{s.customerName}</Link>) }] : []),
-    { key: 'items', header: 'Items', className: 'wrap', render: (s) => <span className="cell-clip">{s.lines.map((l) => l.itemName).join(', ')}</span> },
+    { key: 'items', header: 'Items', className: 'wrap', render: (s) => <span className="cell-clip">{s.kind === 'OPENING_BALANCE' ? <><Badge tone="info">Opening balance</Badge> {s.description}</> : s.lines.map((l) => l.itemName).join(', ')}</span> },
     { key: 'terms', header: 'Terms', render: (s) => TERMS_LABELS[s.terms] },
     { key: 'total', header: 'Total', align: 'right', render: (s) => <span className={s.status === 'CANCELLED' ? 'strike' : ''}>{formatMoney(s.totalC)}</span> },
     { key: 'balance', header: 'Balance', align: 'right', render: (s) => (s.status === 'CANCELLED' ? '—' : s.balanceC ? <strong>{formatMoney(s.balanceC)}</strong> : formatMoney(0)) },
-    { key: 'status', header: 'Status', render: (s) => <span className="badge-row"><PaymentStatusBadge sale={s} /><FulfillmentBadge sale={s} /></span> },
+    { key: 'status', header: 'Status', render: (s) => <span className="badge-row"><PaymentStatusBadge sale={s} />{s.kind !== 'OPENING_BALANCE' && <FulfillmentBadge sale={s} />}</span> },
   ];
   return <DataTable caption="Sales" columns={columns} rows={rows} empty={empty} rowClassName={(s) => (s.status === 'CANCELLED' ? 'is-muted' : '')} />;
 }
