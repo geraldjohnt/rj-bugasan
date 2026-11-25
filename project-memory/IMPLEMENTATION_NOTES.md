@@ -23,6 +23,12 @@
 - `config/firebase-config.js` — `window.RJ_FIREBASE_CONFIG` (null = demo mode). Not a secret.
 - `tests/services/`, `tests/smoke/dist-smoke.js`.
 
+## Firebase
+- Project `rj-bugasan`; config in `config/firebase-config.js` (committed; not a secret). With a config present the app uses the Firestore adapter; set to `null` for demo mode.
+- Probing from this cloud container: launch Chromium with `proxy: { server: process.env.HTTPS_PROXY }` (CA already trusted in NSS; never disable TLS checks).
+- Analytics is deliberately not loaded.
+- The offline smoke test forbids network requests; once screens load data at startup, it must allow (and expect failures from) Firestore/Auth hosts while offline.
+
 ## Patterns and gotchas
 - No imports of React: JSX compiles to `React.createElement` against the global from `vendor/react.js`.
 - React 18.3.1 is the last version with UMD builds; do not upgrade to 19 without replacing the loading strategy.

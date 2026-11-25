@@ -11,3 +11,8 @@
 - **Files created:** package.json, package-lock.json, .gitignore, tools/build.cjs, config/firebase-config.js, src/**, tests/**.
 - **Problems encountered:** firebase npm package has no LICENSE file (build writes a notice); Node 22 test runner needs a glob; npm audit grpc warning (KI-008).
 - **Recommended next session objective:** Phase 2 + Phase 3 on demo data; run the spike once Firebase config arrives.
+
+## 2026-11-25 — Session 1 (cont.): Firebase project connected
+- User provided the Firebase web config (project `rj-bugasan`); committed to `config/firebase-config.js` per user instruction (not a secret; Analytics omitted).
+- Spike part 1 (no credentials) passed in Chromium from file://: Firestore and Auth servers accept the origin; persistence enables. Auth not yet enabled in console.
+- Next: user enables Email/Password + `_spike` rule → spike part 2; continue Phases 2–3.
