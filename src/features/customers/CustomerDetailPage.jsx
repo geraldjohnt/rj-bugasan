@@ -1,7 +1,4 @@
-/*
- * Customer detail (Phase 5): balance + reliability header; tabs Summary, Sales, Payments, Schedule, Contacts.
- * Sales, Payments and Schedule are filled by Phases 6–7; the tabs are present so the page layout is final.
- */
+/* Customer detail (Phases 5–7): balance + reliability header; tabs Summary, Sales, Payments, Schedule, Contacts, Statement. */
 import { PageHeader, Panel, Banner, EmptyState, LoadingRows, Badge, Tabs } from '../../components/Feedback.jsx';
 import { Button, IconButton } from '../../components/Button.jsx';
 import { Icon } from '../../components/Icon.jsx';
@@ -9,25 +6,24 @@ import { useToast } from '../../components/Toast.jsx';
 import { Link, navigate } from '../../app/router.jsx';
 import { useOnline } from '../../app/useOnline.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
-import { useDoc, actorOf, errorMessage } from '../../data/useData.js';
+import { useDoc, useQuery, actorOf, errorMessage } from '../../data/useData.js';
 import { setCustomerStatus, removeContact } from '../../data/customerService.js';
 import { formatMoney } from '../../domain/money.js';
-import { formatDate } from '../../domain/dates.js';
+import { formatDate, today } from '../../domain/dates.js';
+import { buildStatement } from '../../domain/collections.js';
 import { sortContacts, customerReliability } from '../../domain/customers.js';
 import { CustomerFormDialog, ContactDialog } from './CustomerDialogs.jsx';
 import { ReliabilityBadge } from './CustomerBadges.jsx';
 import { ConfirmDialog } from '../inventory/InventoryDialogs.jsx';
 import { useCustomers } from './CustomersPage.jsx';
+import { SalesTable, PaymentsTable, ScheduleTable, byDateDesc } from '../sales/SaleTables.jsx';
+import { RecordPaymentDialog, VoidPaymentDialog } from '../sales/PaymentDialogs.jsx';
+import { usePrint, useBusiness, PaymentReceipt, StatementDoc } from '../sales/Print.jsx';
 
 const TABS = [
-  { value: 'summary', label: 'Summary' }, { value: 'contacts', label: 'Contacts' },
-  { value: 'sales', label: 'Sales' }, { value: 'payments', label: 'Payments' }, { value: 'schedule', label: 'Schedule' },
+  { value: 'summary', label: 'Summary' }, { value: 'sales', label: 'Sales' }, { value: 'payments', label: 'Payments' },
+  { value: 'schedule', label: 'Schedule' }, { value: 'contacts', label: 'Contacts' }, { value: 'statement', label: 'Statement' },
 ];
-const LATER = {
-  sales: ['Sales', 'This customer\'s sales appear here once the Sales module (Phase 6) is built.'],
-  payments: ['Payments', 'Payments appear here once payments and collections (Phase 7) are built.'],
-  schedule: ['Schedule', 'Installment due dates appear here once installments (Phase 7) are built.'],
-};
 
 export function ContactCard({ c, onEdit, onRemove }) {
   return (
@@ -53,7 +49,13 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
   const online = useOnline();
   const { doc: c, error } = useDoc(adapter, 'customers', id);
   const { customers } = useCustomers(adapter);
-  const [dialog, setDialog] = React.useState(null); // { kind, contact? }
+  const business = useBusiness(adapter);
+  const [printNode, print] = usePrint();
+  const sales = useQuery(adapter, 'sales', { where: [['customerId', '==', id]] }, `cust-sales-${id}`);
+  const payments = useQuery(adapter, 'payments', { where: [['customerId', '==', id]] }, `cust-pay-${id}`);
+  const rows = useQuery(adapter, 'installments', { where: [['customerId', '==', id]] }, `cust-rows-${id}`);
+  const [dialog, setDialog] = React.useState(null); // { kind, contact?, payment?, saleId? }
+  const now = today();
   const current = TABS.some((t) => t.value === tab) ? tab : 'summary';
 
   if (error) return <div className="page"><Banner tone="danger">{errorMessage(error)}</Banner></div>;
@@ -63,6 +65,13 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
   const active = c.status === 'ACTIVE';
   const rel = customerReliability(c);
   const contacts = sortContacts(c.alternateContacts);
+  const sortedSales = (sales.rows || []).slice().sort(byDateDesc('saleDate'));
+  const sortedPayments = (payments.rows || []).slice().sort(byDateDesc('date'));
+  const openRows = (rows.rows || []).filter((r) => r.status !== 'CANCELLED')
+    .sort((a, b) => (a.dueDate || '9999') < (b.dueDate || '9999') ? -1 : (a.dueDate || '9999') > (b.dueDate || '9999') ? 1 : a.no - b.no);
+  const statement = buildStatement(sales.rows || [], payments.rows || []);
+  const openSales = sortedSales.filter((s) => s.status === 'ACTIVE' && s.balanceC > 0);
+  const loading = !sales.rows || !payments.rows || !rows.rows;
   const go = (t) => navigate(`/customers/${id}${t === 'summary' ? '' : '/' + t}`, { replace: true });
 
   return (
@@ -72,9 +81,10 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
         <PageHeader
           title={<span className="page-title-row">{c.name} <ReliabilityBadge customer={c} />{!active && <Badge>Archived</Badge>}{c.system && <Badge>Built-in</Badge>}</span>}
           description={c.system ? 'Built-in customer for fully paid counter sales. It cannot be edited or archived.' : [c.type, c.contactNumber, c.address].filter(Boolean).join(' · ')}
-          actions={!c.system && <div className="button-row">
-            <Button icon="edit" onClick={() => setDialog({ kind: 'edit' })} disabled={!online}>Edit</Button>
-            <Button icon={active ? 'archive' : 'restore'} onClick={() => setDialog({ kind: 'archive' })} disabled={!online}>{active ? 'Archive' : 'Restore'}</Button>
+          actions={<div className="button-row">
+            {active && <Button variant="primary" icon="newSale" onClick={() => navigate(`/sales/new?customer=${id}`)}>New sale</Button>}
+            {!c.system && <Button icon="edit" onClick={() => setDialog({ kind: 'edit' })} disabled={!online}>Edit</Button>}
+            {!c.system && <Button icon={active ? 'archive' : 'restore'} onClick={() => setDialog({ kind: 'archive' })} disabled={!online}>{active ? 'Archive' : 'Restore'}</Button>}
           </div>} />
       </div>
       {!active && <Banner tone="info">This customer is archived and hidden from new sales. History is kept; restore them to sell again.</Banner>}
@@ -101,8 +111,27 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
               <div><dt>Primary alternate contact</dt><dd>{contacts[0] ? `${contacts[0].name}${contacts[0].contactNumber ? ' · ' + contacts[0].contactNumber : ''}` : '—'}</dd></div>
               {c.notes && <div className="span-2"><dt>Notes</dt><dd>{c.notes}</dd></div>}
             </dl>
+            {openSales.length > 0 && (
+              <>
+                <h3 className="section-title">Unpaid sales</h3>
+                <div className="list-rows">
+                  {openSales.map((s) => (
+                    <div key={s.id} className="list-row">
+                      <span><Link to={`/sales/${s.id}`}>{s.id}</Link> <span className="muted">· {formatDate(s.saleDate)}</span></span>
+                      <strong className="num">{formatMoney(s.balanceC)}</strong>
+                      <Button size="sm" icon="payment" onClick={() => setDialog({ kind: 'pay', saleId: s.id })} disabled={!online}>Record payment</Button>
+                    </div>))}
+                </div>
+              </>
+            )}
           </div>
         )}
+        {current === 'sales' && (loading ? <LoadingRows /> : <SalesTable rows={sortedSales} showCustomer={false} empty={<EmptyState icon="sales" title="No sales yet" />} />)}
+        {current === 'payments' && (loading ? <LoadingRows /> : <PaymentsTable rows={sortedPayments}
+          onAction={(kind, p) => (kind === 'print' ? print(<PaymentReceipt payment={p} sale={(sales.rows || []).find((s) => s.id === p.saleId)} business={business} />) : setDialog({ kind: 'void', payment: p }))}
+          empty={<EmptyState icon="payment" title="No payments yet" />} />)}
+        {current === 'schedule' && (loading ? <LoadingRows /> : <ScheduleTable rows={openRows} today={now} showSale
+          empty={<EmptyState icon="reschedule" title="Nothing scheduled">Installments and open balances of this customer appear here.</EmptyState>} />)}
         {current === 'contacts' && (
           <div className="panel-body">
             {!c.system && <div><Button icon="plus" onClick={() => setDialog({ kind: 'contact' })} disabled={!online}>Add contact</Button></div>}
@@ -112,11 +141,19 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
                   onRemove={() => setDialog({ kind: 'removeContact', contact: ct })} />)}</div>}
           </div>
         )}
-        {LATER[current] && <EmptyState icon="planned" title={`${LATER[current][0]} — not built yet`}>{LATER[current][1]}</EmptyState>}
+        {current === 'statement' && (
+          <div className="panel-body">
+            <div className="button-row"><Button icon="print" onClick={() => print(<StatementDoc customer={c} statement={statement} business={business} />)} disabled={loading}>Print statement</Button>
+              <span className="muted">Cancelled sales and voided payments are left out.</span></div>
+            {loading ? <LoadingRows /> : <div className="statement-preview"><StatementDoc customer={c} statement={statement} business={business} /></div>}
+          </div>
+        )}
       </Panel>
 
       {!c.system && <CustomerFormDialog open={!!dialog && dialog.kind === 'edit'} onClose={() => setDialog(null)} adapter={adapter} customer={c} customers={customers || []} />}
       {!c.system && <ContactDialog open={!!dialog && dialog.kind === 'contact'} onClose={() => setDialog(null)} adapter={adapter} customer={c} contact={dialog && dialog.contact} />}
+      <RecordPaymentDialog open={!!dialog && dialog.kind === 'pay'} onClose={() => setDialog(null)} adapter={adapter} saleId={dialog && dialog.saleId} />
+      <VoidPaymentDialog open={!!dialog && dialog.kind === 'void'} onClose={() => setDialog(null)} adapter={adapter} payment={dialog && dialog.payment} />
       <ConfirmDialog open={!!dialog && dialog.kind === 'removeContact'} onClose={() => setDialog(null)} title="Remove contact?" confirmLabel="Remove contact" tone="danger"
         onConfirm={async () => { await removeContact(adapter, actorOf(auth.user), id, dialog.contact.id); toast({ message: 'Contact removed.' }); }}>
         <p>{dialog && dialog.contact && dialog.contact.name} will no longer be listed for {c.name}.</p>
@@ -126,6 +163,7 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
         {active ? <p>Archived customers are hidden from new sales. Their history is kept and they can be restored later.{c.outstandingC > 0 && <> They still owe <strong>{formatMoney(c.outstandingC)}</strong>, so archiving is not possible yet.</>}</p>
           : <p>The customer becomes available for new sales again.</p>}
       </ConfirmDialog>
+      {printNode}
     </div>
   );
 }

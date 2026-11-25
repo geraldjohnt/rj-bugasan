@@ -52,6 +52,9 @@ Firestore limits respected: all reads before writes; < 500 writes per transactio
 (this is what prevents two devices from overselling the same stock).
 
 ## 4. Composite indexes (`firebase/firestore.indexes.json`)
+*Implementation note (Phases 6–7, 2026-11-25):* the screens built so far filter on a single field and sort in memory
+(sales list: `orderBy saleDate`; customer tabs: `customerId ==`; sale detail: `saleId ==`; Collections: `status in [PENDING, PARTIAL]`),
+so no composite index is needed yet. The indexes below are added when a screen needs them (reports, Phase 10).
 | Collection | Fields | Used by |
 |---|---|---|
 | installments | status ASC, dueDate ASC | Collections, Calendar, Dashboard, Aging |

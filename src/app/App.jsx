@@ -20,6 +20,10 @@ import { MovementsPage } from '../features/inventory/MovementsPage.jsx';
 import { StockCountListPage, StockCountPage } from '../features/inventory/StockCountPages.jsx';
 import { CustomersPage } from '../features/customers/CustomersPage.jsx';
 import { CustomerDetailPage } from '../features/customers/CustomerDetailPage.jsx';
+import { NewSalePage } from '../features/sales/NewSalePage.jsx';
+import { SalesPage } from '../features/sales/SalesPage.jsx';
+import { SaleDetailPage } from '../features/sales/SaleDetailPage.jsx';
+import { CollectionsPage } from '../features/sales/CollectionsPage.jsx';
 import { loadGeneralSettings, DEFAULT_GENERAL } from '../data/settingsRepo.js';
 
 const PUBLIC = ['/login', '/setup', '/system-check'];
@@ -77,6 +81,10 @@ function Routes({ adapter, general, setGeneral }) {
     const { id, tab } = matchPath('/customers/:id', path) || matchPath('/customers/:id/:tab', path);
     page = <CustomerDetailPage key={id} adapter={adapter} id={id} tab={tab} />;
   }
+  else if (path === '/sales/new') page = <NewSalePage key={query.customer || 'new'} adapter={adapter} />;
+  else if (path === '/sales') page = <SalesPage adapter={adapter} />;
+  else if (matchPath('/sales/:id', path)) { const { id } = matchPath('/sales/:id', path); page = <SaleDetailPage key={id} adapter={adapter} id={id} />; }
+  else if (path === '/collections' || matchPath('/collections/:tab', path)) page = <CollectionsPage adapter={adapter} tab={(matchPath('/collections/:tab', path) || {}).tab} />;
   else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
   else page = <NotFoundPage />;
 

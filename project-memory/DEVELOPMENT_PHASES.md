@@ -49,10 +49,17 @@ Never mark a phase complete until its acceptance criteria are verified.
 
 ## Phase 6 — Sales
 - **Scope:** new sale form, Sale ID generation, discount, terms (full/open balance/installment), stock re-validation in transaction, sales list/detail, cancel with reversal, delivery status, receipts.
-- **Acceptance:** concurrent-sale test cannot oversell; IDs never duplicate; cancel restores stock and voids payments exactly.
+- **Acceptance:** concurrent-sale test cannot oversell ✅ (Mock adapter: 3 concurrent sales of the last sack → exactly 1 succeeds; emulator: sale after stock ran out refused); IDs never duplicate ✅ (counter inside the transaction + ID as document key + rules allow the counter only +1); cancel restores stock and voids payments exactly ✅ (ledger and receivable invariants checked after every service scenario).
+- **Status:** Implemented and tested (2026-11-25) in demo mode (service tests, E2E 16/16) and against the Firestore emulator (real services through the rules, mutation-checked). Not released yet. Remaining for "Verified": release, owner re-publishes rules (FIREBASE_SETUP "Phases 6–7") and tries it on the real database.
+- **Built:** New sale (customer search incl. phone, quick "New customer", item search showing stock and price, multiple lines, live stock check across lines, unit-price override with list price/below-cost hints, % or ₱ discount, terms Paid in full / Partial-pay later (optional due date) / Installment (3–5, frequency, down payment, live schedule with editable dates), method Cash/Bank/E-wallet + reference, credit-limit warning with explicit override, delivery status/date, notes, Walk-in locked to full payment); Sales list (search, status/payment/terms/delivery/date filters, totals excluding cancelled, show more); Sale detail (lines with cost and margin, schedule, payments, details, delivery dialog, cancel dialog stating the consequence, print receipt); Settings → Sales; Combobox component; print stylesheet; sample sales (D-025); rules for counters and sales.
+- **Decisions:** D-032, D-033, D-035, D-037.
 
 ## Phase 7 — Installments, payments, collections
 - **Scope:** schedule creation and preview, payment recording with allocation, void, reschedule with revisions, collections screen, reminder copy, customer statement data.
+- **Acceptance:** allocation oldest-first with overflow ✅; overpayment rejected (change shown) ✅; void reverses allocations and reliability ✅; reschedule keeps the total, cannot go below paid, keeps revision history ✅; collections grouped with overdue first ✅; statement closing balance equals outstanding ✅ (invariant in service tests).
+- **Status:** Implemented and tested (2026-11-25) together with Phase 6 (same test runs). Not released yet.
+- **Built:** Record payment dialog (prefilled with the next amount due, allocation preview, change warning), void dialog (reason), reschedule dialog (dates + amounts, live total check, reason), Collections page (Overdue / Due today / Next 7 days / Later / No due date with counts and totals, search, contacts incl. alternate contacts, copy reminder from the Settings template, record payment), payment receipts, customer detail tabs Sales / Payments / Schedule / Statement (printable) and "Unpaid sales" on Summary, reliability counters (BR-025, D-034), rules for installments and payments.
+- **Decisions:** D-034, D-036.
 
 ## Phase 8 — Restocking, suppliers, expenses
 ## Phase 9 — Calendar

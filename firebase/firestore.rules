@@ -3,7 +3,8 @@ rules_version = '2';
  * RJ Inventory & Sales — Firestore Security Rules.
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
  * Scope: Phase 2 (owner bootstrap, users, usernames, settings), Phase 4 (items, inventoryMovements, stockCounts,
- * activityLogs) and Phase 5 (customers). Every other path is denied until its phase adds rules.
+ * activityLogs), Phase 5 (customers) and Phases 6–7 (counters, sales, installments, payments).
+ * Every other path is denied until its phase adds rules.
  * Cross-document consistency (item quantity == sum of its movements) is enforced by client transactions (KI-003, D-016);
  * these rules enforce per-document shape and invariants.
  * Tests: tests/rules/firestore.rules.test.js (Firestore emulator) — `npm run test:rules`.
@@ -142,6 +143,109 @@ service cloud.firestore {
               .hasOnly(['outstandingC', 'totalPurchasesC', 'lastSaleDate', 'paidInstallments', 'paidOnTime', 'updatedAt', 'updatedBy']))
         // BR-026: cannot archive while a balance is outstanding
         && (request.resource.data.status == 'ACTIVE' || request.resource.data.outstandingC == 0);
+      allow delete: if false;
+    }
+
+    // ---- Phases 6–7: counters, sales, installments (receivable rows), payments -----------------------------
+    // Cross-document consistency (sale totals vs rows vs payments vs stock) is kept by client transactions (KI-003);
+    // these rules keep each document's own arithmetic and lifecycle honest.
+    function isMethod(m) { return m in ['CASH', 'BANK', 'EWALLET']; }
+    function isDate(v) { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function optDate(v) { return v == null || isDate(v); }
+
+    // Sequence counters (BR-030, BR-050): sale-YYYY and payment-YYYY; each write takes exactly the next number.
+    match /counters/{name} {
+      allow read: if isActive();
+      allow create: if isOwner() && name.matches('^(sale|payment)-[0-9]{4}$')
+        && request.resource.data.keys().hasOnly(['next']) && request.resource.data.next is int && request.resource.data.next >= 2;
+      allow update: if isOwner() && request.resource.data.keys().hasOnly(['next'])
+        && request.resource.data.next == resource.data.next + 1;
+      allow delete: if false;
+    }
+
+    function validSaleMoney(d) {
+      return nonNegInt(d.subtotalC) && nonNegInt(d.discountC) && nonNegInt(d.totalC) && nonNegInt(d.paidC) && nonNegInt(d.balanceC)
+        && d.discountC <= d.subtotalC && d.totalC == d.subtotalC - d.discountC;
+    }
+    match /sales/{id} {
+      allow read: if isActive();
+      allow create: if isOwner()
+        && request.resource.data.saleNo == id
+        && id.matches('^[A-Z0-9]{1,6}-?[0-9]{4}-[0-9]{5}$')
+        && request.resource.data.kind == 'SALE'
+        && request.resource.data.status == 'ACTIVE'
+        && isDate(request.resource.data.saleDate)
+        && request.resource.data.customerId is string
+        && request.resource.data.lines is list && request.resource.data.lines.size() > 0 && request.resource.data.lines.size() <= 40
+        && validSaleMoney(request.resource.data)
+        && request.resource.data.paidC + request.resource.data.balanceC == request.resource.data.totalC
+        && request.resource.data.terms in ['FULL', 'OPEN_BALANCE', 'INSTALLMENT']
+        && (request.resource.data.terms != 'FULL' || request.resource.data.balanceC == 0)
+        // BR-021: Walk-in sales are paid in full
+        && (request.resource.data.customerId != 'WALK_IN' || request.resource.data.balanceC == 0)
+        && request.resource.data.fulfillment in ['PENDING', 'DELIVERED', 'PICKED_UP']
+        && request.resource.data.createdBy == request.auth.uid;
+      // BR-035: saved sales are locked; only payments, delivery, notes and cancellation change them. Cancelled = final.
+      allow update: if isOwner() && resource.data.status == 'ACTIVE'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['paidC', 'balanceC', 'paymentStatus', 'paymentIds',
+             'fulfillment', 'deliveryDate', 'notes', 'status', 'cancel', 'updatedAt', 'updatedBy'])
+        && nonNegInt(request.resource.data.paidC) && nonNegInt(request.resource.data.balanceC)
+        && request.resource.data.fulfillment in ['PENDING', 'DELIVERED', 'PICKED_UP']
+        && optDate(request.resource.data.deliveryDate)
+        && (
+          (request.resource.data.status == 'ACTIVE'
+            && request.resource.data.paidC + request.resource.data.balanceC == resource.data.totalC)
+          || (request.resource.data.status == 'CANCELLED'
+            && request.resource.data.paidC == 0 && request.resource.data.balanceC == 0
+            && request.resource.data.cancel.reason is string && request.resource.data.cancel.reason.size() > 0)
+        );
+      allow delete: if false;
+    }
+
+    function rowStatusOk(d) {
+      return d.status == 'CANCELLED'
+        || (d.status == 'PAID' && d.paidC == d.amountC)
+        || (d.status == 'PARTIAL' && d.paidC > 0 && d.paidC < d.amountC)
+        || (d.status == 'PENDING' && d.paidC == 0);
+    }
+    match /installments/{id} {
+      allow read: if isActive();
+      allow create: if isOwner()
+        && request.resource.data.saleId is string
+        && id == request.resource.data.saleId + '-' + string(request.resource.data.no)
+        && request.resource.data.kind in ['INSTALLMENT', 'OPEN_BALANCE']
+        && request.resource.data.no is int && request.resource.data.no >= 1 && request.resource.data.no <= 5
+        && request.resource.data.amountC is int && request.resource.data.amountC > 0
+        && request.resource.data.paidC == 0 && request.resource.data.status == 'PENDING'
+        && optDate(request.resource.data.dueDate)
+        && request.resource.data.revisions is list && request.resource.data.revisions.size() == 0;
+      // Payments, voids, reschedules (BR-045: revisions only grow) and cancellation. Cancelled rows are final.
+      allow update: if isOwner() && resource.data.status != 'CANCELLED'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amountC', 'dueDate', 'paidC', 'status', 'paidDate', 'revisions', 'updatedAt', 'updatedBy'])
+        && request.resource.data.amountC is int && request.resource.data.amountC > 0
+        && nonNegInt(request.resource.data.paidC) && request.resource.data.paidC <= request.resource.data.amountC
+        && rowStatusOk(request.resource.data)
+        && optDate(request.resource.data.dueDate)
+        && request.resource.data.revisions is list && request.resource.data.revisions.size() >= resource.data.revisions.size();
+      allow delete: if false;
+    }
+
+    // BR-052: payments are never edited or deleted; the only change is ACTIVE → VOIDED with a reason.
+    match /payments/{id} {
+      allow read: if isActive();
+      allow create: if isOwner()
+        && id.matches('^PAY-[0-9]{4}-[0-9]{5}$')
+        && request.resource.data.saleId is string && request.resource.data.customerId is string
+        && isDate(request.resource.data.date)
+        && request.resource.data.amountC is int && request.resource.data.amountC > 0
+        && isMethod(request.resource.data.method)
+        && request.resource.data.allocations is list
+        && request.resource.data.status == 'ACTIVE' && request.resource.data.void == null
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isOwner() && resource.data.status == 'ACTIVE'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'void'])
+        && request.resource.data.status == 'VOIDED'
+        && request.resource.data.void.reason is string && request.resource.data.void.reason.size() > 0;
       allow delete: if false;
     }
 

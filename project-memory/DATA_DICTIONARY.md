@@ -19,7 +19,7 @@ All main docs carry `createdAt, createdBy, updatedAt, updatedBy` (not repeated b
 
 ## settings/general · sales · appearance · backup
 general: businessName, address, contactNumber, email, logoDataUrl (small, ≤ 200 KB), currency `PHP`, dateFormat, timeZone `Asia/Manila`, idleLockMinutes (30).
-sales: saleIdPrefix `RJ-`, sequenceDigits 5, defaultInstallmentCount (3), defaultFrequency, firstDueGapDays (7), reminderTemplate, receiptFooter, adjustmentReasons[], expenseCategories[], customerTypes[].
+sales: saleIdPrefix `RJ-` (D-035), sequenceDigits 5, defaultInstallmentCount (3), defaultFrequency, firstDueGapDays (7), reminderTemplate, receiptFooter, adjustmentReasons[], expenseCategories[], customerTypes[].
 appearance (business defaults): defaultTheme, defaultPalette `navy`.
 backup: lastBackupAt, reminderDays (7).
 
@@ -82,7 +82,8 @@ date, status `DRAFT`\|`FINALIZED`, note, lines[{itemId, itemName, unit, systemQt
 | saleDate | date | |
 | customerId, customerName, customerContact | | snapshot |
 | lines | array | {itemId, itemName, unit, sackWeightKg, qtyH, listPriceC, unitPriceC, priceOverridden, unitCostC, lineTotalC} |
-| subtotalC, discountType (`NONE`\|`PERCENT`\|`FIXED`), discountValue, discountC, totalC | | |
+| subtotalC, discountType (`NONE`\|`PERCENT`\|`FIXED`), discountValue, discountC, totalC | | discountValue: hundredths of a percent (PERCENT) or centavos (FIXED) |
+| costC | int | Σ snapshot line cost (COGS of this sale) |
 | terms | `FULL` \| `OPEN_BALANCE` \| `INSTALLMENT` | |
 | paymentMethod | `CASH` \| `BANK` \| `EWALLET` \| `INSTALLMENT` | as chosen on the form |
 | plan | map? | {count, frequency, downPaymentC, firstDueGapDays} |
@@ -94,14 +95,18 @@ date, status `DRAFT`\|`FINALIZED`, note, lines[{itemId, itemName, unit, systemQt
 | notes | string? | |
 | cancel | map? | {reason, at, by} |
 | creditLimitOverride | bool | logged when warning bypassed |
+| paymentIds | string[] | every payment of this sale (D-033) |
+| installmentCount | int | number of receivable rows `{saleId}-1 … -n` (D-033) |
+| cancel | map? | {reason, at, by, refundedC} |
 
 ## installments/{saleId}-{n}
-saleId, customerId, customerName, kind (`INSTALLMENT`\|`OPEN_BALANCE`), no, count, dueDate (date?, optional for open balance),
+saleId, customerId, customerName, saleDate, kind (`INSTALLMENT`\|`OPEN_BALANCE`), no, count, dueDate (date?, optional for open balance),
 amountC, paidC, status (`PENDING`\|`PARTIAL`\|`PAID`\|`CANCELLED`), paidDate (date when fully paid), revisions[{at, by, reason, from{dueDate, amountC}, to{…}}].
 
 ## payments/{paymentNo}
 saleId, customerId, customerName, date, amountC, method (`CASH`\|`BANK`\|`EWALLET`), reference, note, allocations[{installmentId, amountC}],
-isDownPayment (bool), status (`ACTIVE`\|`VOIDED`), void {reason, at, by}.
+isDownPayment (bool), atSale (bool, taken when the sale was saved — D-032), status (`ACTIVE`\|`VOIDED`), void {reason, at, by, refund (true when voided by a sale cancellation)}.
+Payment numbers use the year of the payment date (`payment-YYYY` counter).
 
 ## suppliers/{id}
 name, contactPerson, contactNumber, email, address, notes, status.
