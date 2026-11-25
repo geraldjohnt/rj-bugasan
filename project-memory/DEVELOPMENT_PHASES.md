@@ -18,7 +18,7 @@ Never mark a phase complete until its acceptance criteria are verified.
   - ✅ Vendored React 18.3.1 UMD, Firebase 12.13.0 compat (app/auth/firestore), Inter font, license notices.
   - ✅ Foundation screen with environment checks; Mock adapter (transactions, optimistic concurrency); Firestore adapter (unverified).
   - ✅ Verified: `/build` and `/dist` open from `file://` with network disabled in Chromium (Playwright) — no errors, no network requests.
-  - ☐ Firebase spike (`build/spike.html`) — blocked on the user's Firebase project.
+  - ✅ Firebase spike passed in Chromium (D-019): auth, write, read, transaction, listener, session restore, offline cache.
   - ☐ Manual check in Edge / Chrome / Firefox on the owner's Windows PC.
   - ☐ Icons (moved to Phase 2 with the component library).
 

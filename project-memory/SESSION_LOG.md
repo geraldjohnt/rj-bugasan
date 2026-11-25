@@ -16,3 +16,4 @@
 - User provided the Firebase web config (project `rj-bugasan`); committed to `config/firebase-config.js` per user instruction (not a secret; Analytics omitted).
 - Spike part 1 (no credentials) passed in Chromium from file://: Firestore and Auth servers accept the origin; persistence enables. Auth not yet enabled in console.
 - Next: user enables Email/Password + `_spike` rule → spike part 2; continue Phases 2–3.
+- Spike part 2 passed 9/9 with a throwaway account (deleted afterwards). Decision D-019: GO for Firestore from file://.

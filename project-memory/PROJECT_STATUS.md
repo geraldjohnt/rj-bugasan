@@ -11,20 +11,20 @@
   Mock adapter with transactions (8/8 tests pass), Firestore adapter (unverified), foundation screen, offline file:// smoke test (passes in Chromium).
 
 ## In progress
-- Phase 1: Firebase `file://` spike (TQ-1).
+- Phase 1: only the Windows-browser check remains (KI-009); otherwise complete.
 
 ## Not started
 - Phases 2–12 (app shell, domain core, all business modules).
 
 ## Blockers
-- Spike part 2 needs Email/Password enabled and the temporary `_spike` rule. Not blocking Phase 2/3 work.
+- None.
 
 ## Standing instructions
 - Release rule (D-018): on "create PR and merge to main" → `npm run release` → `npm test` + `npm run test:dist` → commit `/dist` → PR → merge.
 - User prefers questions as click-to-answer options with a recommended default.
 
 ## Immediate next actions
-0. Firebase project `rj-bugasan` exists; config committed in `config/firebase-config.js` (2026-11-25). Spike part 1 passed.
-1. Owner: enable Authentication → Email/Password; publish the temporary `_spike` rule (FIREBASE_SETUP.md step 8). Then Claude runs spike part 2 with a throwaway test account (no password shared in chat).
-2. Run the spike (`build/spike.html`) in Edge/Chrome/Firefox on the owner's PC; record results; decide go/no-go for Firestore under file://.
-3. Meanwhile start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).
+0. Firebase project `rj-bugasan` connected; Email/Password enabled; spike passed → GO (D-019).
+1. Owner: replace the temporary `_spike` rule with deny-all until real rules ship in Phase 2.
+2. Owner: open the first `/dist` release in Edge/Chrome/Firefox on the store PC (KI-009).
+3. Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).

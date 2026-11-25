@@ -12,7 +12,7 @@ Status values: Open · Answered (see INTERVIEW_LOG) · Deferred
 | R1-Q6 | Sale workflow, walk-ins, deliveries | Whether customer is mandatory; delivery tracking scope | "Walk-in" default customer for cash sales | Answered (see INTERVIEW_LOG) |
 | R1-Q7 | Existing records / migration | Need for import tools and opening balances | Opening-balance import for stock and receivables | Answered (see INTERVIEW_LOG) |
 | R1-Q8 | Pain points & v1 priorities | Scoping of first release | — | Answered (see INTERVIEW_LOG) |
-| TQ-1 | Firebase SDK + Auth under `file://` | Must be validated by a spike before committing to Firestore | Run spike in Phase 1 once the user creates the Firebase project (FIREBASE_SETUP.md) | Partly answered 2026-11-25 (see TESTING_STATUS); part 2 needs Email/Password enabled + `_spike` rule |
+| TQ-1 | Firebase SDK + Auth under `file://` | Must be validated by a spike before committing to Firestore | Run spike in Phase 1 once the user creates the Firebase project (FIREBASE_SETUP.md) | Answered 2026-11-25: GO (D-019); Windows browsers pending (KI-009) |
 | R5-pending | Should a restock (stock-in) automatically update the item cost price? | Affects profit accuracy under D-007 | Ask in Round 5 | Answered (R5-Q2) |
 
 ## Approval items (raised 2026-11-25, Phase 0 close)

@@ -27,6 +27,8 @@
 - Project `rj-bugasan`; config in `config/firebase-config.js` (committed; not a secret). With a config present the app uses the Firestore adapter; set to `null` for demo mode.
 - Probing from this cloud container: launch Chromium with `proxy: { server: process.env.HTTPS_PROXY }` (CA already trusted in NSS; never disable TLS checks).
 - Analytics is deliberately not loaded.
+- Spike finding: the first `onSnapshot` event and cache reads can show pre-transaction values (local cache first, server update after). UI must render from listeners (and may show "syncing" when `metadata.fromCache`/`hasPendingWrites`); never assume a cache read right after a transaction is current.
+- Offline transactions do not reject quickly; they hang until the server is reachable. Services must check `navigator.onLine` (and the offline banner state) before starting a write and use a timeout.
 - The offline smoke test forbids network requests; once screens load data at startup, it must allow (and expect failures from) Firestore/Auth hosts while offline.
 
 ## Patterns and gotchas

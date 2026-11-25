@@ -7,3 +7,4 @@
 - Design approved (D-017). Added release rule (D-018).
 - Phase 1 foundation: build pipeline, vendored React/Firebase/Inter, Mock + Firestore adapters, foundation screen, tests.
 - Connected Firebase project `rj-bugasan` (web config); spike part 1 passed.
+- Firebase spike passed (D-019 GO).
