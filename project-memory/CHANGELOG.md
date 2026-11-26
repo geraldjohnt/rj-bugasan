@@ -30,4 +30,5 @@
 - **Release 0.6.0** (Phases 11–12, 2-payment default, green Online) via https://github.com/geraldjohnt/rj-bugasan/pull/7 (merged; minified `/dist`, all release checks passed).
 
 ## 2026-11-26
-- Sidebar brand (`.brand-name`) shows the business name from Settings → General (falls back to "RJ Inventory & Sales"; long names are cut with "…"). Not yet released to `/dist`.
+- Sidebar brand (`.brand-name`) shows the business name from Settings → General (falls back to "RJ Inventory & Sales"; long names are cut with "…").
+- **Release 0.6.1** (sidebar business name): `/dist` rebuilt and verified (unit 104/104, rules 43/43, smoke, all 8 E2E suites).
