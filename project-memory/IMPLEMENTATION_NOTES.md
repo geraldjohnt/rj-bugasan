@@ -109,3 +109,4 @@ See root CLAUDE.md "Release procedure".
 - User guide: `src/guide.html` copied by `tools/build.cjs` (minified in release); link in the user menu (`href="guide.html"`, new tab).
 - E2E `tests/e2e/system.e2e.js` (uses Playwright downloads and `setInputFiles('#backup-file')`). Sales E2E: Carmen's outstanding/statement include the sample OB (₱5,200).
 - Header "Online" indicator uses `--success` (green) — user request 2026-11-25.
+- Sidebar brand: `Shell` takes `businessName` (from `general` in App.jsx, refreshed on Settings save); shell E2E asserts it (2026-11-26).

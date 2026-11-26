@@ -120,6 +120,7 @@ await step('General settings: validation and save', async () => {
   await page.click('button:has-text("Save changes")');
   await page.waitForSelector('.toast:has-text("Settings saved.")');
   expect((await page.title()).endsWith('RJ Bugasan Store'), 'title did not use business name: ' + await page.title());
+  expect((await page.locator('.brand-name').innerText()).trim() === 'RJ Bugasan Store', 'sidebar brand did not use business name: ' + await page.locator('.brand-name').innerText());
   await shot(page, '04-settings-general');
 });
 
