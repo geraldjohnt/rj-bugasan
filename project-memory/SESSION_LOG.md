@@ -85,3 +85,8 @@
 - **Done:** D-048 (brand files, build copy, favicon links in app and guide, sidebar + sign-in logo, logo in the shared print header). Fixed the Reschedule dialog race found while testing.
 - **Tests:** unit/service 110/110, smoke on `/build`, E2E on `/build`: all 8 suites pass (shell now 17 steps with a logo check; sales passed 4 runs in a row after the fix). Not released (D-018).
 - **Release 0.7.1:** version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.
+
+## 2026-11-26 — Session 8 (cont.): remove print URL footer
+- **Request:** remove the URL footer (`https://geraldjohnt.github.io/rj-bugasan/#/sales/RJ-2026-00003`) from printed/exported receipts, then create PR and merge.
+- **Done:** print CSS zero page margin + padding with `box-decoration-break: clone`; KNOWN_ISSUES note on the print-dialog fallback.
+- **Tests:** release verification on `/dist` (see TESTING_STATUS). The browser print dialog itself cannot be automated; layout checked via a PDF render.

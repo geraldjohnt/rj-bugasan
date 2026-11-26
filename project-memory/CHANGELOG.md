@@ -39,3 +39,5 @@
 - Official R&J Bugasan logo (D-048): favicon, sidebar and sign-in brand, and the header of printed receipts and statements.
 - Fixed: Reschedule dialog could lose a row's amount when the rows loaded after the dialog opened (React "controlled to uncontrolled" warning; caused an intermittent sales E2E failure).
 - **Release 0.7.1** (official logo, reschedule fix): `/dist` rebuilt and verified (unit 110/110, rules 43/43, smoke, all 8 E2E suites).
+- Printing: browser header/footer (page URL, date) no longer printed on receipts, statements and reports (`@page` margin 0, spacing moved inside the document).
+- **Release 0.7.2**: `/dist` rebuilt and verified (unit 110/110, rules 43/43, smoke, all 8 E2E suites).

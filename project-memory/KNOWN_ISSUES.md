@@ -23,3 +23,7 @@
 | KI-019 | Test coverage gap | CSV download from `file://` verified in Chromium only (Playwright). | Open | Owner exports one report on the store PC (Edge/Chrome/Firefox). |
 | KI-020 | Security note | While a restore runs (`settings/restore.active == true`) the owner may write business collections without the per-document lifecycle rules (D-044). | Accepted (owner-only, same trust as KI-003) | The app closes the window at the end; an interrupted restore leaves it open until restored again — the Backup screen warns. |
 | KI-021 | Test coverage gap | Backup download and restore verified in demo mode (E2E) and against the emulator (rules + real services); not yet on the real Firebase project or on Windows browsers. | Open | Owner downloads one backup on the store PC after go-live (restore only on a test project). |
+
+## 2026-11-26 — Browser print header/footer (URL, date) on receipts
+- **Fixed in 0.7.2:** print CSS uses `@page { margin: 0 }` with the 12 mm spacing as padding inside `.print-root` (repeated on every page), so Chrome/Edge have no margin to print their header/footer.
+- **Limit:** the real print dialog cannot be automated in tests. If a browser still prints the URL (e.g. some Firefox setups), untick "Headers and footers" (Chrome/Edge: More settings) or "Print headers and footers" (Firefox) once; the browser remembers it.
