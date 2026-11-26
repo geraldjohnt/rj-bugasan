@@ -3,6 +3,7 @@
 .shell.is-collapsed { --sidebar-w: 64px; }
 .sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--border); overflow: hidden; }
 .sidebar-brand { display: flex; align-items: center; gap: var(--sp-3); height: 56px; padding: 0 var(--sp-4); border-bottom: 1px solid var(--border); flex: none; }
+.brand-logo { flex: none; width: 36px; height: 36px; border-radius: 50%; object-fit: contain; }
 .brand-mark { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--radius-control); background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 13px; letter-spacing: .02em; }
 .brand-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .sidebar-nav { flex: 1; overflow-y: auto; padding: var(--sp-3) var(--sp-2); }
@@ -56,6 +57,7 @@ a.menu-item { text-decoration: none; }
 /* ---------- Auth screens ---------- */
 .auth-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--sp-6) var(--sp-4); gap: var(--sp-4); }
 .auth-card { width: 100%; max-width: 400px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-dialog); padding: var(--sp-8); display: grid; gap: var(--sp-4); }
+.auth-brand .brand-logo { width: 44px; height: 44px; }
 .auth-brand { display: flex; align-items: center; gap: var(--sp-3); font-weight: 600; margin-bottom: var(--sp-2); }
 .auth-title { font-size: var(--fs-display); line-height: var(--lh-display); }
 .auth-subtitle { color: var(--text-muted); margin-top: calc(-1 * var(--sp-3)); }

@@ -38,10 +38,13 @@ export function usePrint() {
 function Header({ general, title, number, date }) {
   return (
     <header className="doc-header">
-      <div>
+      <div className="doc-brand">
+        <img className="doc-logo" src="assets/brand/logo.png" alt="" width="72" height="72" />
+        <div>
         <div className="doc-business">{general.businessName}</div>
         {general.address && <div>{general.address}</div>}
         {(general.contactNumber || general.email) && <div>{[general.contactNumber, general.email].filter(Boolean).join(' · ')}</div>}
+        </div>
       </div>
       <div className="doc-title-block">
         <div className="doc-title">{title}</div>

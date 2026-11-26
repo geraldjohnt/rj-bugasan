@@ -36,3 +36,5 @@
 - Items page → **Price poster** (D-047): downloadable Facebook "Price update" PNG with Cash price and Payday option panels; no-stock items crossed out (or left out). Inter 800/900 weights vendored.
 - Two E2E timing races fixed (inventory focus check, system opening-balance preselect) — both also failed on the unchanged code.
 - **Release 0.7.0** (payday price, price poster): `/dist` rebuilt and verified (unit 110/110, rules 43/43, smoke, all 8 E2E suites).
+- Official R&J Bugasan logo (D-048): favicon, sidebar and sign-in brand, and the header of printed receipts and statements.
+- Fixed: Reschedule dialog could lose a row's amount when the rows loaded after the dialog opened (React "controlled to uncontrolled" warning; caused an intermittent sales E2E failure).

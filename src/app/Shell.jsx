@@ -75,7 +75,7 @@ export function Shell({ path, demo, businessName, children }) {
     <div className={`shell ${collapsed ? 'is-collapsed' : ''} ${drawer ? 'drawer-open' : ''}`}>
       <aside className="sidebar">
         <div className="sidebar-brand">
-          <span className="brand-mark" aria-hidden="true">RJ</span>
+          <img className="brand-logo" src="assets/brand/logo.png" alt="" width="36" height="36" />
           <span className="brand-name" title={brand}>{brand}</span>
         </div>
         <Sidebar path={path} collapsed={collapsed} onNavigate={() => setDrawer(false)} />

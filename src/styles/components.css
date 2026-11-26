@@ -256,6 +256,8 @@
 .doc { max-width: 720px; font-size: 12px; line-height: 1.45; color: #000; font-variant-numeric: tabular-nums; }
 .doc-header { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 10px; border-bottom: 2px solid #000; margin-bottom: 12px; }
 .doc-business { font-size: 16px; font-weight: 700; }
+.doc-brand { display: flex; align-items: center; gap: 12px; }
+.doc-logo { flex: none; width: 72px; height: 72px; object-fit: contain; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 .doc-title-block { text-align: right; }
 .doc-title { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
 .doc-number { font-weight: 600; }
