@@ -78,3 +78,4 @@
 - **Request:** a button on Items that downloads a Facebook poster like the owner's reference ("R&J Bugasan Price update": Cash price and Payday option columns, no-stock items crossed out), with separate cash and installment prices. Mid-session: "Remove the rice image. It looks bad." → bowl/sack/wheat illustrations removed.
 - **Done:** D-046 (`installmentPriceC`, terms-based list price in New sale and `planSale`), D-047 (`src/domain/poster.js`, `src/features/inventory/pricePoster.js`, `PricePosterDialog.jsx`), sample payday prices, rules, docs.
 - **Tests:** unit/service 110/110, rules 43/43 (emulator), smoke on `/build`, E2E on `/build`: shell, inventory (16 steps incl. poster PNG download), customers, sales (incl. price-follows-terms step), restocks, calendar, reports, system — all pass. Not released (D-018).
+- **Release 0.7.0:** merged origin/main, version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.

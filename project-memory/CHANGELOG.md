@@ -35,3 +35,4 @@
 - Items have a **Payday price** beside the cash price (D-046); new sales use it for Open balance and Installment terms. Items list/detail show both; changes are activity-logged; Firestore rules accept the field.
 - Items page → **Price poster** (D-047): downloadable Facebook "Price update" PNG with Cash price and Payday option panels; no-stock items crossed out (or left out). Inter 800/900 weights vendored.
 - Two E2E timing races fixed (inventory focus check, system opening-balance preselect) — both also failed on the unchanged code.
+- **Release 0.7.0** (payday price, price poster): `/dist` rebuilt and verified (unit 110/110, rules 43/43, smoke, all 8 E2E suites).
