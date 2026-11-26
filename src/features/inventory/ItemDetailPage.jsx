@@ -10,7 +10,7 @@ import { useDoc, useQuery, actorOf, errorMessage } from '../../data/useData.js';
 import { setItemStatus } from '../../data/inventoryService.js';
 import { formatQty, UNITS } from '../../domain/quantity.js';
 import { formatMoney } from '../../domain/money.js';
-import { stockValueC } from '../../domain/inventory.js';
+import { stockValueC, installmentPriceOf } from '../../domain/inventory.js';
 import { useItems } from './ItemsPage.jsx';
 import { MovementsTable } from './MovementsPage.jsx';
 import { ItemFormDialog, AdjustStockDialog, OpenSackDialog, ConfirmDialog, StockBadge } from './InventoryDialogs.jsx';
@@ -58,7 +58,8 @@ export function ItemDetailPage({ adapter, id }) {
       {!active && <Banner tone="info">This item is archived. It cannot be sold or restocked, and its history is kept.</Banner>}
       <div className="stat-strip">
         <div className="stat"><div className="stat-label">In stock</div><div className="stat-value">{formatQty(item.qtyH, item.unit)}</div></div>
-        <div className="stat"><div className="stat-label">Selling price</div><div className="stat-value">{formatMoney(item.priceC)}</div></div>
+        <div className="stat"><div className="stat-label">Cash price</div><div className="stat-value">{formatMoney(item.priceC)}</div></div>
+        <div className="stat"><div className="stat-label">Payday price</div><div className="stat-value">{formatMoney(installmentPriceOf(item))}</div></div>
         <div className="stat"><div className="stat-label">Cost</div><div className="stat-value">{formatMoney(item.costC)}</div></div>
         <div className="stat"><div className="stat-label">Stock value</div><div className="stat-value">{formatMoney(stockValueC(item))}</div></div>
       </div>

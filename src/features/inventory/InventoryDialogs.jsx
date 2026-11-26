@@ -31,13 +31,14 @@ function focusFirstError(formEl) {
 
 function initialForm(item) {
   if (!item) {
-    return { name: '', unit: UNITS.SACK, sackWeightKg: '50', variety: '', category: '', sku: '', description: '', priceC: '', costC: '',
+    return { name: '', unit: UNITS.SACK, sackWeightKg: '50', variety: '', category: '', sku: '', description: '', priceC: '', installmentPriceC: '', costC: '',
       minStock: '', linkedSackItemId: '', openingQty: '', openingDate: today() };
   }
   return {
     name: item.name, unit: item.unit, sackWeightKg: item.sackWeightKg ? String(item.sackWeightKg) : '', variety: item.variety || '',
     category: item.category || '', sku: item.sku || '', description: item.description || '',
-    priceC: centavosToPlain(item.priceC), costC: centavosToPlain(item.costC), minStock: qtyToPlain(item.minStockH || 0),
+    priceC: centavosToPlain(item.priceC),
+    installmentPriceC: Number.isInteger(item.installmentPriceC) ? centavosToPlain(item.installmentPriceC) : '', costC: centavosToPlain(item.costC), minStock: qtyToPlain(item.minStockH || 0),
     linkedSackItemId: item.linkedSackItemId || '',
   };
 }
@@ -101,7 +102,10 @@ export function ItemFormDialog({ open, onClose, adapter, item, items, onSaved })
                 help="Lets you open sacks of that item into this one."
                 options={[{ value: '', label: 'Not linked' }, ...sackOptions.map((s) => ({ value: s.id, label: `${s.name} (${s.sackWeightKg} kg)` }))]} />}
           <TextField label="SKU / code" value={form.sku} onChange={set('sku')} />
-          <TextField label={`Selling price per ${form.unit === UNITS.SACK ? 'sack' : 'kg'}`} required value={form.priceC} onChange={set('priceC')} error={errors.priceC} inputMode="decimal" prefix="₱" inputClassName="num" />
+          <TextField label={`Cash price per ${form.unit === UNITS.SACK ? 'sack' : 'kg'}`} required value={form.priceC} onChange={set('priceC')} error={errors.priceC} inputMode="decimal" prefix="₱" inputClassName="num"
+            help="Used when the customer pays in full now." />
+          <TextField label={`Payday price per ${form.unit === UNITS.SACK ? 'sack' : 'kg'}`} value={form.installmentPriceC} onChange={set('installmentPriceC')} error={errors.installmentPriceC} inputMode="decimal" prefix="₱" inputClassName="num"
+            help="Used for open-balance and installment sales. Leave empty to use the cash price." />
           <TextField label={`Cost per ${form.unit === UNITS.SACK ? 'sack' : 'kg'}`} required value={form.costC} onChange={set('costC')} error={errors.costC} inputMode="decimal" prefix="₱" inputClassName="num"
             help="Used for profit. Changes apply to future sales only." />
           <TextField label="Low-stock level" value={form.minStock} onChange={set('minStock')} error={errors.minStock} inputMode="decimal" suffix={unitWord} inputClassName="num"
@@ -111,7 +115,9 @@ export function ItemFormDialog({ open, onClose, adapter, item, items, onSaved })
           {isNew && Number(form.openingQty) > 0 && <TextField label="Opening stock date" type="date" required value={form.openingDate} onChange={set('openingDate')} error={errors.openingDate} />}
           <TextAreaField label="Description" value={form.description} onChange={set('description')} className="span-2" rows={2} />
         </div>
-        {priceBelowCost(preview) && <Banner tone="warning">The selling price is below the cost. Every sale of this item would lose money.</Banner>}
+        {priceBelowCost(preview) && <Banner tone="warning">The cash price is below the cost. Every cash sale of this item would lose money.</Banner>}
+        {Number.isInteger(preview.installmentPriceC) && Number.isInteger(preview.priceC) && preview.installmentPriceC < preview.priceC
+          && <Banner tone="warning">The payday price is lower than the cash price. Customers who pay later would pay less.</Banner>}
       </form>
     </Dialog>
   );

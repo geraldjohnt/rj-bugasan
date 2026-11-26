@@ -115,7 +115,8 @@ await step('Customer page: Opening balance button preselects the customer', asyn
   await page.click('tbody a:has-text("Carmen Dela Cruz")');
   await page.click('.page-header button:has-text("Opening balance")');
   await page.waitForSelector('.dialog:has-text("Add opening balance")');
-  expect((await page.locator('.dialog input[role="combobox"]').inputValue()).includes('Carmen'), 'customer preselected');
+  await page.waitForFunction(() => (document.querySelector('.dialog input[role="combobox"]') || {}).value?.includes('Carmen'), null, { timeout: 5000 })
+    .catch(() => { throw new Error('customer preselected'); });
   await page.click('.dialog-footer button:has-text("Cancel")');
 });
 

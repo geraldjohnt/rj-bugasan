@@ -20,7 +20,7 @@ async function step(name, fn) {
 const expect = (cond, msg) => { if (!cond) throw new Error(msg); };
 
 const browser = await chromium.launch();
-const context = await browser.newContext({ viewport: { width: 1366, height: 860 } });
+const context = await browser.newContext({ viewport: { width: 1366, height: 860 }, acceptDownloads: true });
 await context.addInitScript(() => {
   Object.defineProperty(window, 'RJ_FIREBASE_CONFIG', { configurable: false, get: () => null, set: () => {} });
 });
@@ -49,13 +49,14 @@ await step('Add item: required fields are validated', async () => {
   await page.waitForSelector('.dialog');
   await page.click('.dialog-footer button:has-text("Add item")');
   await page.waitForSelector('.dialog .field-error:has-text("Required.")');
-  expect(await page.evaluate(() => document.activeElement.getAttribute('aria-invalid')) === 'true', 'focus not moved to first error');
+  await page.waitForFunction(() => document.activeElement && document.activeElement.getAttribute('aria-invalid') === 'true', null, { timeout: 5000 })
+    .catch(() => { throw new Error('focus not moved to first error'); });
 });
 
 await step('Add sack item with opening stock → item page shows stock and history', async () => {
   await field('Item name').fill('Test Dinorado 50kg Sack');
   await field('Variety').fill('Dinorado');
-  await field('Selling price').fill('2,500');
+  await field('Cash price').fill('2,500');
   await field('Cost per').fill('2200');
   await field('Low-stock level').fill('2');
   await field('Opening stock').fill('3');
@@ -73,10 +74,10 @@ await step('Add per-kg item linked to the sack (no opening stock → Out of stoc
   await page.click('.dialog .segmented-option:has-text("Kilo")');
   await field('Item name').fill('Test Dinorado per KG');
   await field('Linked sack item').selectOption({ label: 'Test Dinorado 50kg Sack (50 kg)' });
-  await field('Selling price').fill('50');
+  await field('Cash price').fill('50');
   await field('Cost per').fill('60');
   await page.waitForSelector('.dialog .banner:has-text("below the cost")');
-  await field('Selling price').fill('55');
+  await field('Cash price').fill('55');
   await page.click('.dialog-footer button:has-text("Add item")');
   await page.waitForSelector('h1:has-text("Test Dinorado per KG")');
   expect(await page.isVisible('h1 .badge:has-text("Out of stock")'), 'out of stock badge missing');
@@ -86,7 +87,7 @@ await step('Duplicate active item name is rejected', async () => {
   await page.goto(url + '#/items');
   await page.click('.page-header button:has-text("Add item")');
   await field('Item name').fill('test dinorado per kg');
-  await field('Selling price').fill('1');
+  await field('Cash price').fill('1');
   await field('Cost per').fill('1');
   await page.click('.dialog-footer button:has-text("Add item")');
   await page.waitForSelector('.dialog .field-error:has-text("already has this name")');
@@ -137,10 +138,10 @@ await step('Adjust stock: cannot remove more than available; reason recorded in 
 await step('Edit price: saved and shown; unit cannot change', async () => {
   await page.click('.page-header button:has-text("Edit")');
   expect(await page.isVisible('.dialog >> text=The unit cannot be changed'), 'unit lock note missing');
-  await field('Selling price').fill('58');
+  await field('Cash price').fill('58');
   await page.click('.dialog-footer button:has-text("Save changes")');
   await toast('Changes saved.');
-  expect(await stat('Selling price') === '₱58.00', 'price: ' + await stat('Selling price'));
+  expect(await stat('Cash price') === '₱58.00', 'price: ' + await stat('Cash price'));
 });
 
 await step('Movements page lists all changes and filters by type', async () => {
@@ -208,6 +209,24 @@ await step('Load sample data from Settings → System; second load adds nothing'
   await page.waitForSelector('.toolbar-end:has-text("11 of 11")');
   await page.waitForSelector('.table a:has-text("Dinorado per KG")');
   await shot('16-items-sample');
+});
+
+await step('Price poster: preview of sack items, no-stock items crossed out, PNG download', async () => {
+  await page.click('.page-header button:has-text("Price poster")');
+  await page.waitForSelector('.poster-preview img');
+  expect(await page.locator('.poster-items input:checked').count() === 6, 'default selection should be the 6 sack items');
+  await page.locator('.dialog button', { hasText: /^All$/ }).click();
+  await page.waitForSelector('.poster-preview:has-text("11 item(s) on the poster")');
+  await page.waitForSelector('.poster-preview:has-text("crossed out")');
+  await page.locator('.dialog .segmented-option:has-text("Leave out")').click();
+  await page.waitForFunction(() => !document.querySelector('.poster-preview p').textContent.includes('crossed out'));
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('.dialog-footer button:has-text("Download image")')]);
+  expect(/^price-update-\d{4}-\d{2}-\d{2}\.png$/.test(dl.suggestedFilename()), 'file name ' + dl.suggestedFilename());
+  const png = fs.readFileSync(await dl.path());
+  expect(png.subarray(0, 8).toString('hex') === '89504e470d0a1a0a', 'not a PNG');
+  expect(png.readUInt32BE(16) === 1800, 'width ' + png.readUInt32BE(16));
+  await shot('18-price-poster');
+  await page.click('.dialog-footer button:has-text("Close")');
 });
 
 await step('Low-stock filter shows only low or out-of-stock items', async () => {

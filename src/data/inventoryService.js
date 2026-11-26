@@ -76,7 +76,7 @@ export async function createItem(adapter, actor, data) {
       linkedSackItemId: data.unit === UNITS.KG ? (data.linkedSackItemId || null) : null,
       linkedKgItemId: null,
       sku: data.sku, description: data.description,
-      qtyH: 0, priceC: data.priceC, costC: data.costC, minStockH: data.minStockH,
+      qtyH: 0, priceC: data.priceC, installmentPriceC: Number.isInteger(data.installmentPriceC) ? data.installmentPriceC : null, costC: data.costC, minStockH: data.minStockH,
       supplierId: null, status: 'ACTIVE',
       createdAt: adapter.serverTime(), createdBy: actor.uid, ...stamp(adapter, actor),
     };
@@ -94,7 +94,7 @@ export async function createItem(adapter, actor, data) {
   });
 }
 
-const EDITABLE = ['name', 'nameLower', 'variety', 'category', 'sku', 'description', 'priceC', 'costC', 'minStockH', 'sackWeightKg', 'linkedSackItemId'];
+const EDITABLE = ['name', 'nameLower', 'variety', 'category', 'sku', 'description', 'priceC', 'installmentPriceC', 'costC', 'minStockH', 'sackWeightKg', 'linkedSackItemId'];
 
 /** data: output of validateItemForm (isNew: false). Unit and quantity cannot change here. */
 export async function updateItem(adapter, actor, id, data) {
@@ -115,6 +115,7 @@ export async function updateItem(adapter, actor, id, data) {
       if (k === 'sackWeightKg' && item.unit !== UNITS.SACK) v = null;
       if (k === 'linkedSackItemId') v = newLink;
       if (v === undefined) continue;
+      if (k === 'installmentPriceC' && v === (item[k] ?? null)) continue;
       if (v !== item[k]) { patch[k] = v; if (k !== 'nameLower') changes[k] = { from: item[k] ?? null, to: v }; }
     }
     if (!Object.keys(patch).length) return { changed: false };
@@ -122,9 +123,11 @@ export async function updateItem(adapter, actor, id, data) {
     if (oldSack) tx.update('items', oldSack.id, { linkedKgItemId: null, ...stamp(adapter, actor) });
     if (newSack) tx.update('items', newSack.id, { linkedKgItemId: id, ...stamp(adapter, actor) });
 
-    const priceChanged = 'priceC' in changes || 'costC' in changes;
+    const priceChanged = 'priceC' in changes || 'costC' in changes || 'installmentPriceC' in changes;
     const parts = [];
+    const money = (c) => (c === null ? 'same as cash' : formatMoney(c));
     if ('priceC' in changes) parts.push(`price ${formatMoney(changes.priceC.from)} → ${formatMoney(changes.priceC.to)}`);
+    if ('installmentPriceC' in changes) parts.push(`payday price ${money(changes.installmentPriceC.from)} → ${money(changes.installmentPriceC.to)}`);
     if ('costC' in changes) parts.push(`cost ${formatMoney(changes.costC.from)} → ${formatMoney(changes.costC.to)}`);
     logWrite(tx, adapter, actor, {
       action: priceChanged ? 'ITEM_PRICE_CHANGE' : 'ITEM_UPDATE', entityType: 'item', entityId: id,

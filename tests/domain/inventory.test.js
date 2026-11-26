@@ -88,3 +88,52 @@ test('low stock, out of stock and valuation (BR-015)', () => {
   ]);
   assert.deepEqual(s, { activeCount: 2, valueC: 200, lowCount: 1, outCount: 1 });
 });
+
+/* ------------------------------------------------------------------ D-046 payday price, D-047 poster */
+import { installmentPriceOf, listPriceFor } from '../../src/domain/inventory.js';
+import { posterRows, posterName, posterPrice, posterDate, brandLines, defaultPosterSelection } from '../../src/domain/poster.js';
+
+test('item form: payday price is optional; parsed when given; negative rejected', () => {
+  assert.equal(validateItemForm(form()).data.installmentPriceC, null);
+  assert.equal(validateItemForm(form({ installmentPriceC: '3,500' })).data.installmentPriceC, 350000);
+  assert.ok(validateItemForm(form({ installmentPriceC: '-1' })).errors.installmentPriceC);
+  assert.ok(validateItemForm(form({ installmentPriceC: 'abc' })).errors.installmentPriceC);
+});
+
+test('list price follows the terms: cash for FULL, payday for pay-later; payday falls back to cash', () => {
+  const item = { priceC: 296000, installmentPriceC: 320000 };
+  assert.equal(listPriceFor(item, 'FULL'), 296000);
+  assert.equal(listPriceFor(item, 'INSTALLMENT'), 320000);
+  assert.equal(listPriceFor(item, 'OPEN_BALANCE'), 320000);
+  assert.equal(installmentPriceOf({ priceC: 100, installmentPriceC: null }), 100);
+  assert.equal(listPriceFor({ priceC: 100 }, 'INSTALLMENT'), 100);
+});
+
+test('poster rows: active selected items, grouped by variety, big sacks first, no-stock flagged or hidden', () => {
+  const items = [
+    { id: 'g5', name: 'Ganador 5kg Sack', variety: 'Ganador', unit: 'SACK', sackWeightKg: 5, qtyH: 300, priceC: 30500, installmentPriceC: 33000, status: 'ACTIVE' },
+    { id: 'g50', name: 'Ganador 50kg Sack', variety: 'Ganador', unit: 'SACK', sackWeightKg: 50, qtyH: 0, priceC: 296000, installmentPriceC: null, status: 'ACTIVE' },
+    { id: 'akg', name: 'Ivory per KG', variety: 'Ivory', unit: 'KG', qtyH: 1000, priceC: 6000, status: 'ACTIVE' },
+    { id: 'a25', name: 'Ivory 25kg', variety: 'Ivory', unit: 'SACK', sackWeightKg: 25, qtyH: 100, priceC: 143500, status: 'ACTIVE' },
+    { id: 'old', name: 'Old 50kg Sack', unit: 'SACK', sackWeightKg: 50, qtyH: 100, priceC: 1, status: 'ARCHIVED' },
+  ];
+  assert.deepEqual(defaultPosterSelection(items), ['g5', 'g50', 'a25']);
+  let rows = posterRows(items);
+  assert.deepEqual(rows.map((r) => r.id), ['g50', 'g5', 'a25']);
+  assert.deepEqual(rows[0], { id: 'g50', name: 'Ganador 50kg', cashC: 296000, paydayC: 296000, perKg: false, soldOut: true });
+  assert.equal(rows[1].paydayC, 33000);
+  rows = posterRows(items, { selectedIds: ['g50', 'g5', 'akg', 'a25', 'old'], hideOutOfStock: true });
+  assert.deepEqual(rows.map((r) => r.id), ['g5', 'a25', 'akg']);
+  assert.equal(rows[2].perKg, true);
+});
+
+test('poster text helpers', () => {
+  assert.equal(posterName({ name: 'Dinorado 50kg Sack' }), 'Dinorado 50kg');
+  assert.equal(posterName({ name: 'Malagkit per KG' }), 'Malagkit per KG');
+  assert.equal(posterPrice(296000), '₱2,960');
+  assert.equal(posterPrice(6850), '₱68.50');
+  assert.equal(posterDate('2026-11-13'), 'NOVEMBER 13, 2026');
+  assert.deepEqual(brandLines('R&J Bugasan'), ['R&J', 'BUGASAN']);
+  assert.deepEqual(brandLines('Bugasan'), ['BUGASAN']);
+  assert.deepEqual(brandLines(''), ['PRICE LIST']);
+});

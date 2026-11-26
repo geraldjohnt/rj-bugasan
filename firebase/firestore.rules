@@ -76,11 +76,12 @@ service cloud.firestore {
     function validItem(d) {
       return d.keys().hasAll(['name', 'nameLower', 'unit', 'qtyH', 'priceC', 'costC', 'minStockH', 'status'])
         && d.keys().hasOnly(['name', 'nameLower', 'variety', 'category', 'unit', 'sackWeightKg', 'linkedSackItemId', 'linkedKgItemId',
-             'sku', 'description', 'qtyH', 'priceC', 'costC', 'minStockH', 'supplierId', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+             'sku', 'description', 'qtyH', 'priceC', 'installmentPriceC', 'costC', 'minStockH', 'supplierId', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
         && d.nameLower == d.name.lower()
         && d.unit in ['SACK', 'KG']
         && nonNegInt(d.qtyH) && nonNegInt(d.priceC) && nonNegInt(d.costC) && nonNegInt(d.minStockH)
+        && (!('installmentPriceC' in d) || d.installmentPriceC == null || nonNegInt(d.installmentPriceC))
         && (d.unit == 'KG' || (d.qtyH % 100 == 0 && d.sackWeightKg is number && d.sackWeightKg > 0))
         && d.status in ['ACTIVE', 'ARCHIVED'];
     }

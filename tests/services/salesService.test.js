@@ -237,7 +237,7 @@ test('sample data (phases 4–7) loads consistently and is idempotent', async ()
 
 test('cancelled sales are final: no delivery change, no payment, no reschedule', async () => {
   const { db, sackId, custId } = await setup();
-  const r = await run(db, sale({ customerId: custId, lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 250000 }], terms: 'OPEN_BALANCE', paidNowC: 0 }));
+  const r = await run(db, sale({ customerId: custId, lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 250000 }], terms: 'OPEN_BALANCE', paidNowC: 0, creditOverride: true }));
   await cancelSale(db, actor, r.saleId, 'Duplicate');
   await assert.rejects(updateFulfillment(db, actor, r.saleId, { fulfillment: 'DELIVERED' }), (e) => e.code === 'SALE_CANCELLED');
   await assert.rejects(reviseSchedule(db, actor, r.saleId, [{ no: 1, dueDate: '2026-12-31', amountC: 250000 }], 'x'), (e) => e.code === 'SALE_CANCELLED');
@@ -246,7 +246,7 @@ test('cancelled sales are final: no delivery change, no payment, no reschedule',
 
 test('open balance without a due date; archived customers cannot buy', async () => {
   const { db, sackId, custId } = await setup();
-  const r = await run(db, sale({ customerId: custId, lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 250000 }], terms: 'OPEN_BALANCE', paidNowC: 0 }));
+  const r = await run(db, sale({ customerId: custId, lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 250000 }], terms: 'OPEN_BALANCE', paidNowC: 0, creditOverride: true }));
   const [row] = await db.query('installments', { where: [['saleId', '==', r.saleId]] });
   assert.equal(row.dueDate, null);
   assert.equal(row.kind, 'OPEN_BALANCE');
@@ -268,4 +268,23 @@ test('sales settings validation', async () => {
   assert.equal(ok.data.firstDueGapDays, 10);
   const bad = validateSalesSettings({ saleIdPrefix: 'R J', firstDueGapDays: '-1', defaultInstallmentCount: '7', defaultFrequency: 'WEEKLY', reminderTemplate: '' });
   assert.deepEqual(Object.keys(bad.errors).sort(), ['defaultFrequency', 'defaultInstallmentCount', 'firstDueGapDays', 'reminderTemplate', 'saleIdPrefix']);
+});
+
+test('pay-later sales snapshot the payday price as list price; cash sales the cash price (D-046)', async () => {
+  const { db, sackId, custId } = await setup();
+  await db.update('items', sackId, { installmentPriceC: 270000 });
+  const inst = await run(db, sale({ customerId: custId, lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 270000 }], terms: 'INSTALLMENT',
+    plan: { count: 2, frequency: 'MONTHLY_15', downPaymentC: 0 } }));
+  let s = await db.get('sales', inst.saleId);
+  assert.equal(s.lines[0].listPriceC, 270000);
+  assert.equal(s.lines[0].priceOverridden, false);
+  const open = await run(db, sale({ customerId: custId, lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 250000 }], terms: 'OPEN_BALANCE', paidNowC: 0, creditOverride: true }));
+  s = await db.get('sales', open.saleId);
+  assert.equal(s.lines[0].listPriceC, 270000);
+  assert.equal(s.lines[0].priceOverridden, true);
+  const cash = await run(db, sale({ lines: [{ itemId: sackId, qtyH: 100, unitPriceC: 250000 }] }));
+  s = await db.get('sales', cash.saleId);
+  assert.equal(s.lines[0].listPriceC, 250000);
+  assert.equal(s.lines[0].priceOverridden, false);
+  await assertInvariants(db);
 });

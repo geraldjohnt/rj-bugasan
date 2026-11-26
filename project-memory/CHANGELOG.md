@@ -32,3 +32,6 @@
 ## 2026-11-26
 - Sidebar brand (`.brand-name`) shows the business name from Settings → General (falls back to "RJ Inventory & Sales"; long names are cut with "…").
 - **Release 0.6.1** (sidebar business name): `/dist` rebuilt and verified (unit 104/104, rules 43/43, smoke, all 8 E2E suites).
+- Items have a **Payday price** beside the cash price (D-046); new sales use it for Open balance and Installment terms. Items list/detail show both; changes are activity-logged; Firestore rules accept the field.
+- Items page → **Price poster** (D-047): downloadable Facebook "Price update" PNG with Cash price and Payday option panels; no-stock items crossed out (or left out). Inter 800/900 weights vendored.
+- Two E2E timing races fixed (inventory focus check, system opening-balance preselect) — both also failed on the unchanged code.

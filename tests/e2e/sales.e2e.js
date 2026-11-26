@@ -106,6 +106,17 @@ await step('Stock guard: more than available is flagged and cannot be saved', as
   expect(await page.locator('button:has-text("Save sale")').isDisabled(), 'save should be disabled');
 });
 
+await step('Line price follows the terms: cash price for Full, payday price for Installment (D-046)', async () => {
+  await page.goto(url + '#/sales/new');
+  await pick(customerBox(), 'Carmen Dela Cruz');
+  await pick(page.locator('.sale-line').first().locator('input[role="combobox"]'), 'Brown Rice 25kg Sack');
+  expect((await linePrice(1).inputValue()).startsWith('1900'), 'cash price ' + await linePrice(1).inputValue());
+  await page.locator('.sale-summary select').first().selectOption('INSTALLMENT');
+  await page.waitForFunction(() => document.querySelector('.sale-line-price input').value.startsWith('2050'));
+  await page.locator('.sale-summary select').first().selectOption('FULL');
+  await page.waitForFunction(() => document.querySelector('.sale-line-price input').value.startsWith('1900'));
+});
+
 let instSale;
 await step('Installment sale for a registered customer: default 2 payments, then 3-row preview with editable dates', async () => {
   await page.goto(url + '#/sales/new');
@@ -113,7 +124,7 @@ await step('Installment sale for a registered customer: default 2 payments, then
   await pick(page.locator('.sale-line').first().locator('input[role="combobox"]'), 'Brown Rice 25kg Sack');
   await lineQty(1).fill('1');
   await linePrice(1).fill('1,800');
-  await page.waitForSelector('.sale-line .field-help:has-text("List price")');
+  await page.waitForSelector('.sale-line .field-help:has-text("Cash price")');
   await page.locator('.sale-summary select').first().selectOption('INSTALLMENT');
   await field('Down payment', '.sale-summary').fill('300');
   // Default plan is 2 payments (user request 2026-11-25); then switch to 3.

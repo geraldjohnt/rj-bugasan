@@ -33,6 +33,7 @@
 - BR-030 Sale ID = `{prefix}{YYYY}-{NNNNN}` (default prefix `RJ-`), YYYY = year of sale date, sequence resets yearly. Generated inside the sale transaction from a counter document and used as the Firestore document ID, so a duplicate is impossible.
 - BR-031 Quantity > 0; sacks whole; KG in 0.01 steps. The total requested quantity of an item across all lines must not exceed available stock — checked live in the form and re-checked inside the transaction.
 - BR-032 Each line snapshots item name, unit, sack weight, list price, unit price (may be overridden), and **unit cost** (RQ-012). Price below cost shows a warning.
+- BR-032a (D-046) List price depends on the terms: **Full** → item cash price (`priceC`); **Open balance** / **Installment** → item payday price (`installmentPriceC`, falls back to the cash price). The owner may still override a line price.
 - BR-033 Discount is on the whole sale only: percentage (0–100, up to 2 decimals) or fixed (≤ subtotal). Total = subtotal − discount ≥ 0.
 - BR-034 Payment terms: **Full** (Cash/Bank/E-Wallet, paid = total), **Open balance** (Cash/Bank/E-Wallet, paid < total, optional due date), **Installment**.
 - BR-035 Saved sales are locked. Allowed later changes: delivery status, notes, payments, schedule revisions, cancellation.
@@ -47,7 +48,7 @@
 - BR-043 Amount financed = total − down payment. Each installment = floor(financed ÷ count) to whole pesos; the last installment takes the remainder (including centavos). The sum always equals the amount financed exactly. Example: ₱2,500 / 3 → 833, 833, 834. A plan whose regular installment would be below ₱1 is rejected.
 - BR-044 Installment status stored: PENDING, PARTIAL, PAID, CANCELLED. **Overdue is derived** (due date < today and not PAID), so it is always current without a background job.
 - BR-045 Owner may change due dates of unpaid installments and redistribute unpaid amounts. A partially paid installment cannot go below what is already paid. The total must remain equal. Each revision stores old values, new values, reason, who and when.
-- BR-046 No interest, markup or late fees.
+- BR-046 No interest or late fees. *(Superseded in part by D-046: an item may have a higher payday price for pay-later sales.)*
 
 ## 5. Payments
 - BR-050 Each payment has its own number `PAY-{YYYY}-{NNNNN}`, date, amount, method (Cash/Bank/E-Wallet), optional reference no.
