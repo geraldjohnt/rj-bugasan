@@ -84,3 +84,4 @@
 - **Request:** cut the supplied logo to a circle (shown first, confirmed transparent outside), then use it as the official logo: favicon, top-left logo, and on each receipt.
 - **Done:** D-048 (brand files, build copy, favicon links in app and guide, sidebar + sign-in logo, logo in the shared print header). Fixed the Reschedule dialog race found while testing.
 - **Tests:** unit/service 110/110, smoke on `/build`, E2E on `/build`: all 8 suites pass (shell now 17 steps with a logo check; sales passed 4 runs in a row after the fix). Not released (D-018).
+- **Release 0.7.1:** version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.
