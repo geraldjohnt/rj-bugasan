@@ -38,7 +38,7 @@
 | RQ-032 | Supplier management; restock records with supplier, items, quantity, unit cost, expected date; status Ordered / Partially Received / Received / Cancelled; stock-in movements only on receipt. | R5-Q1 |
 | RQ-033 | On receiving stock at a different cost, prompt to update item cost price (pre-checked). | R5-Q2 |
 | RQ-034 | Collections screen: due today, due this week, overdue; shows contact and alternate contacts; one-click copy of a reminder message (template in Settings). | R5-Q3 |
-| RQ-035 | Calendar: Month and Agenda views; filters (Sales, Payment due, Overdue, Restocking, Deliveries, Other); custom events; click-through to source record. | R5-Q4 |
+| RQ-035 | Calendar: Month and Agenda views; filters (Sales, Payment due, Overdue, Restocking, Deliveries, Other); custom events; clicking an entry shows its details in a modal, with an optional button to open the source record (D-049). | R5-Q4 |
 | RQ-036 | Reports distinguish Revenue (sales at sale date), Cash collected (payments by payment date), Receivables (outstanding), Gross profit (revenue - snapshot cost, at sale date). Cancelled sales excluded. | R6-Q1 |
 | RQ-037 | Expenses module: category, amount, date, note; Net profit = Gross profit - expenses for the period. | R6-Q2 |
 | RQ-038 | Reports: Sales; Receivables aging (Current/1-30/31-60/60+); Profit by item and period; Customer statement (printable); Inventory valuation, movements, losses and restocks by supplier. All filterable by date range. | R6-Q3 |
