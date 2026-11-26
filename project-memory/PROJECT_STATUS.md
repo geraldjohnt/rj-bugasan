@@ -21,6 +21,7 @@
 - 0.7.0 — 2026-11-26 — Payday price per item (D-046) and Facebook price poster (D-047). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, E2E shell + inventory + customers + sales + restocks + calendar + reports + system (all pass).
 - 0.7.1 — 2026-11-26 — Official logo (favicon, sidebar/sign-in, printed receipts; D-048) and Reschedule dialog fix. Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (shell 17 steps incl. logo check).
 - 0.7.2 — 2026-11-26 — Printed receipts, statements and reports no longer get the browser's URL/date header and footer (zero page margin). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites.
+- 0.7.3 — 2026-11-26 — Calendar entries open a details modal instead of navigating (D-049). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (calendar 11 steps).
 - GitHub Pages deploy — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/2 (merged). `.github/workflows/static.yml` publishes `/dist` on every push to main (D-023). Same checks passed; `/dist` unchanged.
 
 ## Completed 2026-11-25 (later)
@@ -77,6 +78,6 @@
 4h. ✅ Phases 11–12 built and tested; release 0.6.0 (see Releases).
 4i. Owner: go-live checklist in FIREBASE_SETUP "Phases 11–12" (publish rules + `activityLogs` index, owner account, close sign-up, enter opening balances, first backup, store-PC checks).
 4k. Owner: re-publish `firebase/firestore.rules` (adds optional `installmentPriceC` on items) once this is released; then set each item's Payday price.
-4l. ✅ Calendar entries open a details modal instead of navigating (D-049); tested on `/build`, not yet released.
+4l. ✅ Calendar entries open a details modal instead of navigating (D-049); released as 0.7.3.
 4j. Next development: only what the owner reports after go-live (KI-009/015/018/019/021).
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).

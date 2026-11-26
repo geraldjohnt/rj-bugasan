@@ -95,3 +95,4 @@
 - **Request:** "In calendar, when clicking on an event, just pop it up as a modal. Don't redirect it to another page. Just display important details about that event."
 - **Done:** D-049 — `buildEvents` attaches the source record; `CalendarPage` shows an `EventDetails` modal for every entry (month chips, agenda rows, day dialog) with optional Open sale/restock (custom: Edit); user guide updated; calendar E2E updated (11 steps).
 - **Tests:** unit/service 110/110 and E2E calendar 11/11 on `/build`. Not released (D-018: only on "create PR and merge to main").
+- **Release 0.7.3:** merged origin/main, version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.
