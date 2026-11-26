@@ -28,3 +28,6 @@
 - **Phase 12:** in-app User guide (`guide.html`), `npm run deploy:rules`, `npm run verify:release`, go-live checklist.
 - Header "Online" indicator is green.
 - **Release 0.6.0** (Phases 11–12, 2-payment default, green Online) via https://github.com/geraldjohnt/rj-bugasan/pull/7 (merged; minified `/dist`, all release checks passed).
+
+## 2026-11-26
+- Sidebar brand (`.brand-name`) shows the business name from Settings → General (falls back to "RJ Inventory & Sales"; long names are cut with "…"). Not yet released to `/dist`.

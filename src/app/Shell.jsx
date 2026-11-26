@@ -64,7 +64,8 @@ function UserMenu() {
   );
 }
 
-export function Shell({ path, demo, children }) {
+export function Shell({ path, demo, businessName, children }) {
+  const brand = String(businessName || '').trim() || 'RJ Inventory & Sales';
   const { prefs, update } = usePrefs();
   const online = useOnline();
   const [drawer, setDrawer] = React.useState(false);
@@ -75,7 +76,7 @@ export function Shell({ path, demo, children }) {
       <aside className="sidebar">
         <div className="sidebar-brand">
           <span className="brand-mark" aria-hidden="true">RJ</span>
-          <span className="brand-name">RJ Inventory &amp; Sales</span>
+          <span className="brand-name" title={brand}>{brand}</span>
         </div>
         <Sidebar path={path} collapsed={collapsed} onNavigate={() => setDrawer(false)} />
       </aside>

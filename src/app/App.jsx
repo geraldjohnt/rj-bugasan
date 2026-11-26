@@ -111,7 +111,7 @@ function Routes({ adapter, general, setGeneral }) {
   else if (nav && (nav.path === path)) page = <PlannedPage item={nav} />;
   else page = <NotFoundPage />;
 
-  return <Shell path={path} demo={adapter.kind === 'mock'}>{page}</Shell>;
+  return <Shell path={path} demo={adapter.kind === 'mock'} businessName={general.businessName}>{page}</Shell>;
 }
 
 export function App({ adapter, authService }) {

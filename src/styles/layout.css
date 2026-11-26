@@ -4,7 +4,7 @@
 .sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--surface); border-right: 1px solid var(--border); overflow: hidden; }
 .sidebar-brand { display: flex; align-items: center; gap: var(--sp-3); height: 56px; padding: 0 var(--sp-4); border-bottom: 1px solid var(--border); flex: none; }
 .brand-mark { flex: none; width: 30px; height: 30px; display: grid; place-items: center; border-radius: var(--radius-control); background: var(--primary); color: var(--on-primary); font-weight: 700; font-size: 13px; letter-spacing: .02em; }
-.brand-name { font-weight: 600; white-space: nowrap; }
+.brand-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .sidebar-nav { flex: 1; overflow-y: auto; padding: var(--sp-3) var(--sp-2); }
 .nav-group + .nav-group { margin-top: var(--sp-2); }
 .nav-group-label { padding: 6px var(--sp-3) 2px; font-size: var(--fs-caption); font-weight: 600; color: var(--text-subtle); white-space: nowrap; }
