@@ -47,3 +47,6 @@ Planned tests: see TESTING_STRATEGY.md.
 | Security rules incl. Phase 11 (4 tests: OB through real services, forged OB shapes, restore round-trip with paid rows + timestamps, staff refused) | PASS 43/43 | 2026-11-25 | `npm run test:rules`. Mutation check: removing the `settings/restore.active` condition made the restore test fail as expected |
 | E2E system (Phase 11–12), demo mode, file:// on /build — 11 steps (backup reminder, OB list/totals not in Sales, add OB with validation + split, payment + Collections, customer-page button, activity log filter/search/link, backup download content, restore with wrong file / typed RESTORE / data back, phone width, user guide, no JS errors) | PASS 11/11 | 2026-11-25 | `node tests/e2e/system.e2e.js build` |
 | E2E all suites on /build after Phases 11–12 | PASS shell 16, inventory 15, customers 12, sales 16, restocks 12, calendar 10, reports 12, system 11; smoke PASS | 2026-11-25 | sales E2E now checks the default 2-payment preview before switching to 3 |
+
+## 2026-11-26 — Release 0.7.0 (payday price, price poster)
+- `npm run verify:release` on minified `/dist`: unit/service 110/110, rules 43/43, dist smoke, E2E shell, inventory (incl. poster PNG download), customers, sales (incl. price follows terms), restocks, calendar, reports, system — all pass.

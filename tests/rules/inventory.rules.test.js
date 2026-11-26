@@ -65,6 +65,11 @@ test('items: negative stock, half sacks, bad units and deletes are rejected', as
   await assertFails(db.doc('items/b').set({ ...ok, unit: 'BOX' }));
   await assertFails(db.doc('items/b').set({ ...ok, unit: 'SACK', sackWeightKg: 50, qtyH: 150 }));
   await assertFails(db.doc('items/b').set({ ...ok, priceC: 1.5 }));
+  await assertSucceeds(db.doc('items/p1').set({ ...ok, name: 'P1', nameLower: 'p1', installmentPriceC: 120 }));
+  await assertSucceeds(db.doc('items/p2').set({ ...ok, name: 'P2', nameLower: 'p2', installmentPriceC: null }));
+  await assertFails(db.doc('items/b').set({ ...ok, installmentPriceC: -1 }));
+  await assertFails(db.doc('items/b').set({ ...ok, installmentPriceC: 1.5 }));
+  await assertFails(db.doc('items/b').set({ ...ok, installmentPriceC: '100' }));
   await assertFails(db.doc('items/b').set({ ...ok, nameLower: 'other' }));
   await assertFails(db.doc('items/b').set({ ...ok, hacked: true }));
   await assertFails(db.doc('items/a').update({ unit: 'SACK', sackWeightKg: 50 }));

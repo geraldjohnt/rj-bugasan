@@ -31,7 +31,7 @@ const LICENSES = [
   ['@fontsource/inter/LICENSE', 'inter-font.LICENSE.txt'],
   ['lucide/LICENSE', 'lucide-icons.LICENSE.txt'],
 ];
-const FONTS = [400, 500, 600, 700].map((w) => `inter-latin-${w}-normal.woff2`);
+const FONTS = [400, 500, 600, 700, 800, 900].map((w) => `inter-latin-${w}-normal.woff2`);
 
 function rmrf(p) { fs.rmSync(p, { recursive: true, force: true }); }
 function mkdirp(p) { fs.mkdirSync(p, { recursive: true }); }

@@ -7,6 +7,7 @@ import { UNITS, formatQty } from './quantity.js';
 import { isValidDate, compareDates } from './dates.js';
 import { computeTotals, stockShortages, validateTerms, creditLimitWarning, TERMS, DISCOUNT, WALK_IN_ID } from './saleTotals.js';
 import { buildSchedule, FREQUENCIES, ALLOWED_COUNTS } from './schedule.js';
+import { listPriceFor } from './inventory.js';
 
 export const METHODS = { CASH: 'CASH', BANK: 'BANK', EWALLET: 'EWALLET' };
 export const METHOD_LABELS = { CASH: 'Cash', BANK: 'Bank transfer', EWALLET: 'E-wallet', INSTALLMENT: 'Installment' };
@@ -83,9 +84,10 @@ export function planSale(input, { itemsById, customer, settings = DEFAULT_SALES_
   const totals = computeTotals(enriched, input.discount || { type: DISCOUNT.NONE });
   const saleLines = totals.lines.map((l) => {
     const item = itemsById[l.itemId];
+    const listPriceC = listPriceFor(item, input.terms);
     return {
       itemId: item.id, itemName: item.name, unit: item.unit, sackWeightKg: item.unit === UNITS.SACK ? item.sackWeightKg : null,
-      qtyH: l.qtyH, listPriceC: item.priceC, unitPriceC: l.unitPriceC, priceOverridden: l.unitPriceC !== item.priceC,
+      qtyH: l.qtyH, listPriceC, unitPriceC: l.unitPriceC, priceOverridden: l.unitPriceC !== listPriceC,
       unitCostC: item.costC, lineTotalC: l.lineTotalC,
     };
   });

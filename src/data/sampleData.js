@@ -4,6 +4,7 @@
  * Each phase adds its own set here.
  */
 import { UNITS } from '../domain/quantity.js';
+import { listPriceFor } from '../domain/inventory.js';
 import { today, addDays } from '../domain/dates.js';
 import { createItem, adjustStock, openSack } from './inventoryService.js';
 import { validateCustomerForm, validateContactForm } from '../domain/customers.js';
@@ -19,17 +20,17 @@ import { createOpeningBalance } from './openingBalanceService.js';
 
 const P = (pesos) => Math.round(pesos * 100);
 
-// Phase 4 — items. linkTo = name of the sack item a per-kg item is linked to.
+// Phase 4 — items (payday = installment / pay-later price, D-046). linkTo = name of the sack item a per-kg item is linked to.
 const ITEMS = [
-  { name: 'Dinorado 50kg Sack', variety: 'Dinorado', category: 'Premium', unit: UNITS.SACK, sackWeightKg: 50, price: 3250, cost: 2900, min: 5, opening: 20 },
-  { name: 'Dinorado per KG', variety: 'Dinorado', category: 'Premium', unit: UNITS.KG, linkTo: 'Dinorado 50kg Sack', price: 68, cost: 58, min: 25, opening: 40.5 },
-  { name: 'Jasmine 25kg Sack', variety: 'Jasmine', category: 'Premium', unit: UNITS.SACK, sackWeightKg: 25, price: 1650, cost: 1450, min: 4, opening: 3 },
-  { name: 'Jasmine per KG', variety: 'Jasmine', category: 'Premium', unit: UNITS.KG, linkTo: 'Jasmine 25kg Sack', price: 70, cost: 58, min: 10, opening: 0 },
-  { name: 'Sinandomeng 50kg Sack', variety: 'Sinandomeng', category: 'Regular', unit: UNITS.SACK, sackWeightKg: 50, price: 2600, cost: 2300, min: 5, opening: 12 },
-  { name: 'Sinandomeng per KG', variety: 'Sinandomeng', category: 'Regular', unit: UNITS.KG, linkTo: 'Sinandomeng 50kg Sack', price: 54, cost: 46, min: 25, opening: 55 },
-  { name: 'Malagkit per KG', variety: 'Malagkit', category: 'Glutinous', unit: UNITS.KG, price: 80, cost: 65, min: 10, opening: 8 },
-  { name: 'Brown Rice 25kg Sack', variety: 'Brown', category: 'Brown', unit: UNITS.SACK, sackWeightKg: 25, price: 1900, cost: 1650, min: 2, opening: 6 },
-  { name: 'NFA Well-milled 50kg Sack', variety: 'NFA', category: 'Well-milled', unit: UNITS.SACK, sackWeightKg: 50, price: 2150, cost: 1900, min: 3, opening: 0 },
+  { name: 'Dinorado 50kg Sack', variety: 'Dinorado', category: 'Premium', unit: UNITS.SACK, sackWeightKg: 50, price: 3250, payday: 3500, cost: 2900, min: 5, opening: 20 },
+  { name: 'Dinorado per KG', variety: 'Dinorado', category: 'Premium', unit: UNITS.KG, linkTo: 'Dinorado 50kg Sack', price: 68, payday: 72, cost: 58, min: 25, opening: 40.5 },
+  { name: 'Jasmine 25kg Sack', variety: 'Jasmine', category: 'Premium', unit: UNITS.SACK, sackWeightKg: 25, price: 1650, payday: 1800, cost: 1450, min: 4, opening: 3 },
+  { name: 'Jasmine per KG', variety: 'Jasmine', category: 'Premium', unit: UNITS.KG, linkTo: 'Jasmine 25kg Sack', price: 70, payday: 75, cost: 58, min: 10, opening: 0 },
+  { name: 'Sinandomeng 50kg Sack', variety: 'Sinandomeng', category: 'Regular', unit: UNITS.SACK, sackWeightKg: 50, price: 2600, payday: 2800, cost: 2300, min: 5, opening: 12 },
+  { name: 'Sinandomeng per KG', variety: 'Sinandomeng', category: 'Regular', unit: UNITS.KG, linkTo: 'Sinandomeng 50kg Sack', price: 54, payday: 58, cost: 46, min: 25, opening: 55 },
+  { name: 'Malagkit per KG', variety: 'Malagkit', category: 'Glutinous', unit: UNITS.KG, price: 80, payday: 85, cost: 65, min: 10, opening: 8 },
+  { name: 'Brown Rice 25kg Sack', variety: 'Brown', category: 'Brown', unit: UNITS.SACK, sackWeightKg: 25, price: 1900, payday: 2050, cost: 1650, min: 2, opening: 6 },
+  { name: 'NFA Well-milled 50kg Sack', variety: 'NFA', category: 'Well-milled', unit: UNITS.SACK, sackWeightKg: 50, price: 2150, payday: 2320, cost: 1900, min: 3, opening: 0 },
 ];
 
 /** Returns { created, skipped, customers, sales, suppliers, restocks, expenses, events } counts. `asOf` = today's business date (tests pass a fixed one). */
@@ -46,7 +47,7 @@ export async function loadSampleData(adapter, actor, asOf = today()) {
     ids[s.name] = await createItem(adapter, actor, {
       name: s.name, nameLower: key, variety: s.variety, category: s.category, unit: s.unit,
       sackWeightKg: s.sackWeightKg || null, linkedSackItemId: s.linkTo ? ids[s.linkTo] : null,
-      sku: '', description: '', priceC: P(s.price), costC: P(s.cost), minStockH: s.min * 100,
+      sku: '', description: '', priceC: P(s.price), installmentPriceC: s.payday ? P(s.payday) : null, costC: P(s.cost), minStockH: s.min * 100,
       openingQtyH: Math.round(s.opening * 100), openingDate: start,
     });
     created++;
@@ -92,14 +93,14 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
   // Sales only on a fresh load (all sample customers and items were just created), so a second run adds nothing.
   if (customers !== CUSTOMERS.length || Object.keys(itemIds).length !== ITEMS.length) return { customers, sales: 0, openingBalances: 0 };
   const it = async (name) => adapter.get('items', itemIds[name]);
-  const line = async (name, qty) => { const i = await it(name); return { itemId: i.id, qtyH: Math.round(qty * 100), unitPriceC: i.priceC }; };
+  const line = async (name, qty, terms = 'FULL') => { const i = await it(name); return { itemId: i.id, qtyH: Math.round(qty * 100), unitPriceC: listPriceFor(i, terms) }; };
   const sell = (input) => createSale(adapter, actor, { discount: { type: 'NONE' }, method: 'CASH', fulfillment: 'PICKED_UP', ...input }, DEFAULT_SALES_SETTINGS, asOf);
   const rowsOf = async (saleId) => (await adapter.query('installments', { where: [['saleId', '==', saleId]] })).sort((a, b) => a.no - b.no);
   let sales = 0;
 
   // 1. Installment sale 75 days ago: first installment paid on time; a mistaken payment voided; later rows overdue.
   const d1 = addDays(asOf, -75);
-  const s1 = await sell({ saleDate: d1, customerId: cid[CUSTOMERS[0].name], lines: [await line('Sinandomeng 50kg Sack', 3)], terms: 'INSTALLMENT',
+  const s1 = await sell({ saleDate: d1, customerId: cid[CUSTOMERS[0].name], lines: [await line('Sinandomeng 50kg Sack', 3, 'INSTALLMENT')], terms: 'INSTALLMENT',
     plan: { count: 3, frequency: 'MONTHLY_15', downPaymentC: P(1000) }, fulfillment: 'DELIVERED', deliveryDate: addDays(d1, 1), notes: 'Deliver to the store.' });
   const r1 = await rowsOf(s1.saleId);
   await recordPayment(adapter, actor, { saleId: s1.saleId, date: r1[0].dueDate, amountC: r1[0].amountC, method: 'CASH' }, asOf);
@@ -109,12 +110,12 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
 
   // 2. Open balance, partly paid, overdue.
   const d2 = addDays(asOf, -40);
-  await sell({ saleDate: d2, customerId: cid[CUSTOMERS[1].name], lines: [await line('Dinorado 50kg Sack', 2)], terms: 'OPEN_BALANCE', paidNowC: P(2000), dueDate: addDays(asOf, -10) });
+  await sell({ saleDate: d2, customerId: cid[CUSTOMERS[1].name], lines: [await line('Dinorado 50kg Sack', 2, 'OPEN_BALANCE')], terms: 'OPEN_BALANCE', paidNowC: P(2000), dueDate: addDays(asOf, -10) });
   sales++;
 
   // 3. Installment, twice a month, with an e-wallet payment.
   const d3 = addDays(asOf, -20);
-  const s3 = await sell({ saleDate: d3, customerId: cid[CUSTOMERS[2].name], lines: [await line('Jasmine 25kg Sack', 1), await line('Malagkit per KG', 2)],
+  const s3 = await sell({ saleDate: d3, customerId: cid[CUSTOMERS[2].name], lines: [await line('Jasmine 25kg Sack', 1, 'INSTALLMENT'), await line('Malagkit per KG', 2, 'INSTALLMENT')],
     terms: 'INSTALLMENT', plan: { count: 4, frequency: 'SEMI_MONTHLY', downPaymentC: 0 } });
   await recordPayment(adapter, actor, { saleId: s3.saleId, date: addDays(asOf, -2), amountC: P(300), method: 'EWALLET', reference: 'GCash 1029384756' }, asOf);
   sales++;
@@ -130,7 +131,7 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
   sales += 2;
 
   // 6. A cancelled sale (stock returned, payment refunded).
-  const s6 = await sell({ saleDate: addDays(asOf, -1), customerId: cid[CUSTOMERS[4].name], lines: [await line('Sinandomeng per KG', 10)], terms: 'OPEN_BALANCE', paidNowC: P(200) });
+  const s6 = await sell({ saleDate: addDays(asOf, -1), customerId: cid[CUSTOMERS[4].name], lines: [await line('Sinandomeng per KG', 10, 'OPEN_BALANCE')], terms: 'OPEN_BALANCE', paidNowC: P(200) });
   await cancelSale(adapter, actor, s6.saleId, 'Customer changed the order');
   sales++;
   await updateFulfillment(adapter, actor, s1.saleId, { fulfillment: 'DELIVERED', deliveryDate: addDays(d1, 1), notes: 'Deliver to the store.' });

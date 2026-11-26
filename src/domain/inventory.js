@@ -100,6 +100,12 @@ export function validateItemForm(form, { isNew = true, existingNames = new Set()
   };
   money('priceC', 'Price');
   money('costC', 'Cost');
+  // Payday / installment price (D-046): optional; empty = same as the cash price.
+  try {
+    const c = parseMoney(form.installmentPriceC);
+    if (c !== null && c < 0) errors.installmentPriceC = 'Price cannot be negative.';
+    else data.installmentPriceC = c;
+  } catch (e) { errors.installmentPriceC = e.message; }
 
   if (unit) {
     try { data.minStockH = parseQty(form.minStock, unit) ?? 0; } catch (e) { errors.minStock = e.message; }
@@ -114,6 +120,17 @@ export function validateItemForm(form, { isNew = true, existingNames = new Set()
 
 /** Warn when the selling price is below cost (BR-032 is for sales; the same hint helps on the item form). */
 export const priceBelowCost = (data) => Number.isInteger(data.priceC) && Number.isInteger(data.costC) && data.priceC < data.costC;
+
+/* ------------------------------------------------------------------ cash vs payday price (D-046) */
+
+/** Payday / installment price per unit: its own price when set, otherwise the cash price. */
+export const installmentPriceOf = (item) => (Number.isInteger(item.installmentPriceC) ? item.installmentPriceC : item.priceC);
+
+/**
+ * List price for a sale on the given terms (BR-032a): FULL (paid now) → cash price;
+ * OPEN_BALANCE or INSTALLMENT (pay later) → payday price.
+ */
+export const listPriceFor = (item, terms) => (terms && terms !== 'FULL' ? installmentPriceOf(item) : item.priceC);
 
 /* ------------------------------------------------------------------ stock arithmetic */
 

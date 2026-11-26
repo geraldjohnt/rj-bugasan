@@ -17,7 +17,7 @@ import { loadSalesSettings, DEFAULT_SALES_SETTINGS } from '../../data/settingsRe
 import { formatMoney, parseMoney, centavosToPlain } from '../../domain/money.js';
 import { UNITS, parseQty, formatQty } from '../../domain/quantity.js';
 import { formatDate, today } from '../../domain/dates.js';
-import { unitLabel } from '../../domain/inventory.js';
+import { unitLabel, listPriceFor, installmentPriceOf } from '../../domain/inventory.js';
 import { planSale, TERMS_LABELS, FULFILLMENT_LABELS } from '../../domain/sales.js';
 import { TERMS, DISCOUNT, WALK_IN_ID, requestedByItem } from '../../domain/saleTotals.js';
 import { FREQUENCY_LABELS, ALLOWED_COUNTS } from '../../domain/schedule.js';
@@ -27,7 +27,7 @@ import { CustomerFormDialog } from '../customers/CustomerDialogs.jsx';
 import { METHOD_OPTIONS } from './PaymentDialogs.jsx';
 
 let lineSeq = 0;
-const newLine = () => ({ key: ++lineSeq, itemId: '', qty: '', price: '' });
+const newLine = () => ({ key: ++lineSeq, itemId: '', qty: '', price: '', auto: true });
 
 function parseLine(l, item) {
   const out = { qtyH: null, priceC: null, qtyErr: null, priceErr: null };
@@ -104,8 +104,12 @@ export function NewSalePage({ adapter }) {
   const setLine = (key, patch) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   function pickItem(key, itemId) {
     const it = itemsById[itemId];
-    setLine(key, { itemId, price: it ? centavosToPlain(it.priceC) : '', qty: it && it.unit === UNITS.SACK ? '1' : '' });
+    setLine(key, { itemId, price: it ? centavosToPlain(listPriceFor(it, terms)) : '', auto: true, qty: it && it.unit === UNITS.SACK ? '1' : '' });
   }
+  // D-046: lines whose price was not typed follow the terms (cash price vs payday price).
+  React.useEffect(() => {
+    setLines((ls) => ls.map((l) => { const it = itemsById[l.itemId]; return it && l.auto ? { ...l, price: centavosToPlain(listPriceFor(it, terms)) } : l; }));
+  }, [terms]);
 
   async function save() {
     setTried(true);
@@ -120,7 +124,7 @@ export function NewSalePage({ adapter }) {
 
   const itemOptions = (items || []).filter((i) => i.status === 'ACTIVE').map((i) => ({
     value: i.id, label: i.name, disabled: i.qtyH <= 0,
-    detail: `${formatQty(i.qtyH, i.unit)} in stock · ${formatMoney(i.priceC)}/${i.unit === UNITS.SACK ? 'sack' : 'kg'}`,
+    detail: `${formatQty(i.qtyH, i.unit)} in stock · cash ${formatMoney(i.priceC)} · payday ${formatMoney(installmentPriceOf(i))} /${i.unit === UNITS.SACK ? 'sack' : 'kg'}`,
   }));
   const customerOptions = [
     { value: WALK_IN_ID, label: 'Walk-in', detail: 'Paid in full at the counter' },
@@ -159,9 +163,9 @@ export function NewSalePage({ adapter }) {
                     <Combobox label={idx === 0 ? 'Item' : undefined} inputLabel={`Item ${idx + 1}`} className="sale-line-item" options={itemOptions} value={l.itemId} onChange={(v) => pickItem(l.key, v)} placeholder="Search rice item" />
                     <TextField label={idx === 0 ? 'Quantity' : undefined} aria-label={`Quantity ${idx + 1}`} className="sale-line-qty" value={l.qty} onChange={(e) => setLine(l.key, { qty: e.target.value })}
                       inputMode="decimal" suffix={it ? unitLabel(it.unit) : ''} inputClassName="num" error={tried || l.qty ? l.qtyErr || (over ? `Only ${formatQty(it.qtyH, it.unit)} in stock` : null) : null} disabled={!it} />
-                    <TextField label={idx === 0 ? 'Unit price' : undefined} aria-label={`Unit price ${idx + 1}`} className="sale-line-price" value={l.price} onChange={(e) => setLine(l.key, { price: e.target.value })}
+                    <TextField label={idx === 0 ? 'Unit price' : undefined} aria-label={`Unit price ${idx + 1}`} className="sale-line-price" value={l.price} onChange={(e) => setLine(l.key, { price: e.target.value, auto: false })}
                       inputMode="decimal" prefix="₱" inputClassName="num" error={l.priceErr} disabled={!it}
-                      help={it && l.priceC !== null ? (l.priceC < it.costC ? <span className="delta-out">Below cost ({formatMoney(it.costC)})</span> : l.priceC !== it.priceC ? `List price ${formatMoney(it.priceC)}` : null) : null} />
+                      help={it && l.priceC !== null ? (l.priceC < it.costC ? <span className="delta-out">Below cost ({formatMoney(it.costC)})</span> : l.priceC !== listPriceFor(it, terms) ? `${terms === TERMS.FULL ? 'Cash' : 'Payday'} price ${formatMoney(listPriceFor(it, terms))}` : null) : null} />
                     <div className="sale-line-total">{idx === 0 && <div className="field-label">Amount</div>}<strong className="num">{it && l.qtyH && l.priceC !== null ? formatMoney(Math.round(l.qtyH * l.priceC / 100)) : '—'}</strong></div>
                     <IconButton icon="trash" label={`Remove line ${idx + 1}`} size="sm" className="sale-line-remove" onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== l.key) : [newLine()]))} />
                   </div>

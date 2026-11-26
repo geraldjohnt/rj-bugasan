@@ -38,7 +38,8 @@ backup: lastBackupAt, reminderDays (7).
 | linkedSackItemId / linkedKgItemId | string? | pair link |
 | sku | string? | optional |
 | qtyH | int ≥ 0 | current stock |
-| priceC | int ≥ 0 | selling price per unit |
+| priceC | int ≥ 0 | cash selling price per unit |
+| installmentPriceC | int ≥ 0 or null | payday / installment price per unit (D-046); null = same as cash |
 | costC | int ≥ 0 | current cost per unit |
 | minStockH | int ≥ 0 | low-stock threshold |
 | supplierId | string? | preferred supplier |

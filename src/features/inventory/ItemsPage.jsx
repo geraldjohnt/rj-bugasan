@@ -10,6 +10,7 @@ import { formatMoney } from '../../domain/money.js';
 import { stockStatus, stockValueC, inventorySummary } from '../../domain/inventory.js';
 import { ItemFormDialog, StockBadge } from './InventoryDialogs.jsx';
 import { SampleDataButton } from '../system/SampleData.jsx';
+import { PricePosterDialog } from './PricePosterDialog.jsx';
 
 /** All items, live, sorted by name. Shared by inventory screens. */
 export function useItems(adapter) {
@@ -25,6 +26,7 @@ export function ItemsPage({ adapter }) {
   const [unit, setUnit] = React.useState('');
   const [stock, setStock] = React.useState('');
   const [adding, setAdding] = React.useState(false);
+  const [poster, setPoster] = React.useState(false);
 
   const all = items || [];
   const q = search.trim().toLowerCase();
@@ -41,16 +43,20 @@ export function ItemsPage({ adapter }) {
     { key: 'qty', header: 'In stock', align: 'right', render: (i) => formatQty(i.qtyH, i.unit) },
     { key: 'status', header: 'Status', render: (i) => <StockBadge item={i} /> },
     { key: 'min', header: 'Low-stock level', align: 'right', render: (i) => (i.minStockH ? formatQty(i.minStockH, i.unit) : '—') },
-    { key: 'price', header: 'Price', align: 'right', render: (i) => formatMoney(i.priceC) },
+    { key: 'price', header: 'Cash price', align: 'right', render: (i) => formatMoney(i.priceC) },
+    { key: 'payday', header: 'Payday price', align: 'right', render: (i) => (Number.isInteger(i.installmentPriceC) ? formatMoney(i.installmentPriceC) : <span className="muted">Same</span>) },
     { key: 'cost', header: 'Cost', align: 'right', render: (i) => formatMoney(i.costC) },
     { key: 'value', header: 'Stock value', align: 'right', render: (i) => formatMoney(stockValueC(i)) },
   ];
-  const footer = ['Total', '', '', '', '', '', '', formatMoney(rows.reduce((s, i) => s + stockValueC(i), 0))];
+  const footer = ['Total', '', '', '', '', '', '', '', formatMoney(rows.reduce((s, i) => s + stockValueC(i), 0))];
 
   return (
     <div className="page stack">
       <PageHeader title="Items" description="Rice products, stock on hand and value at cost."
-        actions={<Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add item</Button>} />
+        actions={<div className="button-row">
+          <Button icon="image" onClick={() => setPoster(true)} disabled={!items || !all.some((i) => i.status === 'ACTIVE')}>Price poster</Button>
+          <Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add item</Button>
+        </div>} />
       {error && <Banner tone="danger">{errorMessage(error)}</Banner>}
       <div className="stat-strip">
         <div className="stat"><div className="stat-label">Active items</div><div className="stat-value">{items ? summary.activeCount : '—'}</div></div>
@@ -76,6 +82,7 @@ export function ItemsPage({ adapter }) {
                 </EmptyState>} />
         )}
       </Panel>
+      <PricePosterDialog open={poster} onClose={() => setPoster(false)} adapter={adapter} items={all} />
       <ItemFormDialog open={adding} onClose={() => setAdding(false)} adapter={adapter} item={null} items={all} onSaved={(id) => navigate(`/items/${id}`)} />
     </div>
   );

@@ -163,3 +163,20 @@ test('sample data loads consistently and is not duplicated on a second run', asy
   assert.equal((await db.query('items', {})).length, first.created);
   await assertLedger(db);
 });
+
+test('payday price is stored, can be cleared, and its changes are logged (D-046)', async () => {
+  const db = createMockAdapter();
+  const id = await createItem(db, actor, itemData({ installmentPriceC: '3500' }));
+  assert.equal((await db.get('items', id)).installmentPriceC, 350000);
+  await updateItem(db, actor, id, itemData({ installmentPriceC: '3600', openingQty: '' }));
+  let [log] = await db.query('activityLogs', { where: [['action', '==', 'ITEM_PRICE_CHANGE']] });
+  assert.deepEqual(log.changes.installmentPriceC, { from: 350000, to: 360000 });
+  assert.match(log.summary, /payday price/);
+  await updateItem(db, actor, id, itemData({ installmentPriceC: '', openingQty: '' }));
+  assert.equal((await db.get('items', id)).installmentPriceC, null);
+  // Old items without the field: saving with no payday price is not a change.
+  const legacy = await createItem(db, actor, itemData({ name: 'Legacy 25kg Sack', openingQty: '' }));
+  await db.update('items', legacy, { installmentPriceC: undefined });
+  const r = await updateItem(db, actor, legacy, itemData({ name: 'Legacy 25kg Sack', openingQty: '' }));
+  assert.equal(r.changed, false);
+});

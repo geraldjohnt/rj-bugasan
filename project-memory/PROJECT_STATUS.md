@@ -1,6 +1,6 @@
 # Project Status
 
-**Last updated:** 2026-11-25
+**Last updated:** 2026-11-26
 **Overall status:** Design approved (D-017). Implementation started.
 **Current phase:** Phases 11 (Activity log, backup/restore, opening balances) and 12 (go-live & release prep) — implemented, tested, released as 0.6.0; all development phases built. Remaining: owner go-live steps (FIREBASE_SETUP "Phases 11–12 — go-live checklist").
 **Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales), Restocks/Suppliers/Expenses, Calendar, Dashboard and Reports exist and are tested. Phase 11 (Activity log, Backup/restore, Opening balances) and Phase 12 (user guide, deploy/verify scripts, go-live checklist) exist and are tested. Installment plans: 2–5 payments, default 2 (D-043).
@@ -18,6 +18,7 @@
 - 0.3.0 — 2026-11-25 — Phase 5 Customers — https://github.com/geraldjohnt/rj-bugasan/pull/4. Verified on minified `/dist`: unit 62/62, rules 28/28, dist smoke, E2E shell 16/16 + inventory 15/15 + customers 12/12.
 - 0.6.0 — 2026-11-25 — Phases 11–12 (activity log, backup/restore, opening balances, user guide), 2-payment installments (default), green Online indicator. Verified on minified `/dist` with `npm run verify:release`: unit 104/104, rules 43/43, dist smoke, E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 + system 11 (all pass). https://github.com/geraldjohnt/rj-bugasan/pull/7 (merged).
 - 0.6.1 — 2026-11-26 — Sidebar shows the business name from Settings. Verified on minified `/dist` (`npm run verify:release`): unit 104/104, rules 43/43, dist smoke, E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 + system 11.
+- 0.7.0 — 2026-11-26 — Payday price per item (D-046) and Facebook price poster (D-047). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, E2E shell + inventory + customers + sales + restocks + calendar + reports + system (all pass).
 - GitHub Pages deploy — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/2 (merged). `.github/workflows/static.yml` publishes `/dist` on every push to main (D-023). Same checks passed; `/dist` unchanged.
 
 ## Completed 2026-11-25 (later)
@@ -40,6 +41,9 @@
 
 ## Completed 2026-11-25 (Phases 11–12, session 6)
 - Activity log screen, backup/restore (D-044), opening balances (D-045), 2-payment plans default 2 (D-043), user guide, `deploy:rules`/`verify:release`, green Online indicator. Tests: unit/service 104/104, rules 43/43, E2E 16+15+12+16+12+10+12+11.
+
+## Completed 2026-11-26 (session 7)
+- Payday (installment) price per item and terms-based sale prices (D-046); Items → Price poster PNG for Facebook (D-047). Tests: unit/service 110/110, rules 43/43, all 8 E2E suites on `/build`. Released as 0.7.0.
 
 ## Not started
 - None (all phases built; Phase 12 "Verified" needs the owner's go-live steps).
@@ -70,5 +74,6 @@
 4g. Owner (after release): re-publish `firebase/firestore.rules` (FIREBASE_SETUP "Phases 8–10"); try Reports → Export CSV and Print on the store PC (KI-015, KI-019).
 4h. ✅ Phases 11–12 built and tested; release 0.6.0 (see Releases).
 4i. Owner: go-live checklist in FIREBASE_SETUP "Phases 11–12" (publish rules + `activityLogs` index, owner account, close sign-up, enter opening balances, first backup, store-PC checks).
+4k. Owner: re-publish `firebase/firestore.rules` (adds optional `installmentPriceC` on items) once this is released; then set each item's Payday price.
 4j. Next development: only what the owner reports after go-live (KI-009/015/018/019/021).
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).
