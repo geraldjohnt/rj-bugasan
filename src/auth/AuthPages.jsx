@@ -12,7 +12,7 @@ function AuthCard({ title, subtitle, children, footer }) {
   return (
     <div className="auth-screen">
       <div className="auth-card">
-        <div className="auth-brand"><span className="brand-mark" aria-hidden="true">RJ</span><span>RJ Inventory &amp; Sales</span></div>
+        <div className="auth-brand"><img className="brand-logo" src="assets/brand/logo.png" alt="" width="44" height="44" /><span>RJ Inventory &amp; Sales</span></div>
         <h1 className="auth-title">{title}</h1>
         {subtitle && <p className="auth-subtitle">{subtitle}</p>}
         {children}

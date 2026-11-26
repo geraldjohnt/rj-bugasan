@@ -79,3 +79,9 @@
 - **Done:** D-046 (`installmentPriceC`, terms-based list price in New sale and `planSale`), D-047 (`src/domain/poster.js`, `src/features/inventory/pricePoster.js`, `PricePosterDialog.jsx`), sample payday prices, rules, docs.
 - **Tests:** unit/service 110/110, rules 43/43 (emulator), smoke on `/build`, E2E on `/build`: shell, inventory (16 steps incl. poster PNG download), customers, sales (incl. price-follows-terms step), restocks, calendar, reports, system — all pass. Not released (D-018).
 - **Release 0.7.0:** merged origin/main, version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.
+
+## 2026-11-26 — Session 8: official logo
+- **Request:** cut the supplied logo to a circle (shown first, confirmed transparent outside), then use it as the official logo: favicon, top-left logo, and on each receipt.
+- **Done:** D-048 (brand files, build copy, favicon links in app and guide, sidebar + sign-in logo, logo in the shared print header). Fixed the Reschedule dialog race found while testing.
+- **Tests:** unit/service 110/110, smoke on `/build`, E2E on `/build`: all 8 suites pass (shell now 17 steps with a logo check; sales passed 4 runs in a row after the fix). Not released (D-018).
+- **Release 0.7.1:** version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.

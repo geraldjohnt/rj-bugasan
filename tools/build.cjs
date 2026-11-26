@@ -114,6 +114,11 @@ async function main() {
   // Fonts
   for (const f of FONTS) copy(path.join(NM, '@fontsource/inter/files', f), path.join(OUT, 'assets/fonts', f));
 
+  // Brand logo + favicons (D-048). The master file stays in src only.
+  for (const f of ['logo.png', 'favicon-32.png', 'favicon-192.png', 'apple-touch-icon.png']) {
+    copy(path.join(ROOT, 'src/assets/brand', f), path.join(OUT, 'assets/brand', f));
+  }
+
   // Config (not a secret)
   copy(path.join(ROOT, 'config/firebase-config.js'), path.join(OUT, 'config/firebase-config.js'));
 

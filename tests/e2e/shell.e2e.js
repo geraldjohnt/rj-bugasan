@@ -153,6 +153,13 @@ await step('Lock screen: wrong password rejected, correct password unlocks', asy
   await page.waitForSelector('h1:has-text("Settings")');
 });
 
+await step('Official logo: favicon links and sidebar logo load from local files (D-048)', async () => {
+  const icons = await page.evaluate(() => [...document.querySelectorAll('link[rel*="icon"]')].map((l) => l.getAttribute('href')));
+  expect(icons.includes('assets/brand/favicon-32.png'), 'favicon link missing: ' + icons.join(','));
+  await page.waitForFunction(() => { const i = document.querySelector('.sidebar-brand .brand-logo'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 })
+    .catch(() => { throw new Error('sidebar logo did not load'); });
+});
+
 await step('Sign out returns to sign-in and protects pages again', async () => {
   await page.click('.user-button');
   await page.click('.menu-item:has-text("Sign out")');

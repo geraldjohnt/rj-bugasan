@@ -19,6 +19,7 @@
 - 0.6.0 — 2026-11-25 — Phases 11–12 (activity log, backup/restore, opening balances, user guide), 2-payment installments (default), green Online indicator. Verified on minified `/dist` with `npm run verify:release`: unit 104/104, rules 43/43, dist smoke, E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 + system 11 (all pass). https://github.com/geraldjohnt/rj-bugasan/pull/7 (merged).
 - 0.6.1 — 2026-11-26 — Sidebar shows the business name from Settings. Verified on minified `/dist` (`npm run verify:release`): unit 104/104, rules 43/43, dist smoke, E2E shell 16 + inventory 15 + customers 12 + sales 16 + restocks 12 + calendar 10 + reports 12 + system 11.
 - 0.7.0 — 2026-11-26 — Payday price per item (D-046) and Facebook price poster (D-047). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, E2E shell + inventory + customers + sales + restocks + calendar + reports + system (all pass).
+- 0.7.1 — 2026-11-26 — Official logo (favicon, sidebar/sign-in, printed receipts; D-048) and Reschedule dialog fix. Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (shell 17 steps incl. logo check).
 - GitHub Pages deploy — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/2 (merged). `.github/workflows/static.yml` publishes `/dist` on every push to main (D-023). Same checks passed; `/dist` unchanged.
 
 ## Completed 2026-11-25 (later)

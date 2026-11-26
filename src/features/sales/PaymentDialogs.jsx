@@ -150,7 +150,12 @@ export function RescheduleDialog({ open, onClose, adapter, sale, rows }) {
   });
   const before = sum(editable.map((r) => r.amountC));
   const after = sum(parsed.map((p) => p.amountC || 0));
-  const setRow = (no, k) => (e) => { setValues((x) => ({ ...x, [no]: { ...x[no], [k]: e.target.value } })); setErr(null); };
+  // Start from the row's current values: rows can arrive after the dialog opened, so values[no] may be missing.
+  const setRow = (no, k) => (e) => {
+    const v = e.target.value;
+    const base = (parsed.find((p) => p.row.no === no) || {}).raw || {};
+    setValues((x) => ({ ...x, [no]: { ...base, ...x[no], [k]: v } })); setErr(null);
+  };
 
   async function submit(e) {
     e.preventDefault();
