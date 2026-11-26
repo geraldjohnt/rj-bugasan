@@ -77,5 +77,6 @@
 4h. ✅ Phases 11–12 built and tested; release 0.6.0 (see Releases).
 4i. Owner: go-live checklist in FIREBASE_SETUP "Phases 11–12" (publish rules + `activityLogs` index, owner account, close sign-up, enter opening balances, first backup, store-PC checks).
 4k. Owner: re-publish `firebase/firestore.rules` (adds optional `installmentPriceC` on items) once this is released; then set each item's Payday price.
+4l. ✅ Calendar entries open a details modal instead of navigating (D-049); tested on `/build`, not yet released.
 4j. Next development: only what the owner reports after go-live (KI-009/015/018/019/021).
 5. (old) Start Phase 2 (design system components, app shell, hash router, login/idle-lock UI on Mock) and Phase 3 (domain core + tests).

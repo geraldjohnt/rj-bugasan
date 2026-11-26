@@ -1,6 +1,6 @@
 /*
- * Calendar (Phase 9, RQ-035): Month and Agenda views, category filters, custom events, click-through to the source
- * record. Entries are derived live from sales (sale dates, deliveries), open installments (due / overdue) and
+ * Calendar (Phase 9, RQ-035): Month and Agenda views, category filters, custom events. Clicking an entry opens a
+ * details modal (no navigation); it offers an optional "Open sale/restock" button. Entries are derived live from sales (sale dates, deliveries), open installments (due / overdue) and
  * restocks (expected and received); only custom events are stored. URL: #/calendar/{month|agenda}?m=YYYY-MM
  */
 import { PageHeader, Panel, Banner, EmptyState, LoadingRows, Badge } from '../../components/Feedback.jsx';
@@ -13,7 +13,12 @@ import { useOnline } from '../../app/useOnline.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { useQuery, actorOf, errorMessage } from '../../data/useData.js';
 import { createEvent, updateEvent, deleteEvent } from '../../data/calendarService.js';
-import { today, parseDate, toDateString, daysInMonth, formatDate } from '../../domain/dates.js';
+import { today, parseDate, toDateString, daysInMonth, formatDate, daysBetween } from '../../domain/dates.js';
+import { formatMoney } from '../../domain/money.js';
+import { formatQty } from '../../domain/quantity.js';
+import { remainingOf } from '../../domain/allocation.js';
+import { TERMS_LABELS, METHOD_LABELS, FULFILLMENT_LABELS, PAYMENT_STATUS_LABELS } from '../../domain/sales.js';
+import { RESTOCK_STATUS_LABELS } from '../../domain/purchasing.js';
 import {
   CAL, CAL_LABELS, CAL_ORDER, monthGrid, gridRange, buildEvents, eventsByDate, monthTitle, monthKey, parseMonthKey, shiftMonth, validateEventForm, eventDateLabel,
 } from '../../domain/calendar.js';
@@ -64,12 +69,70 @@ function EventDialog({ open, onClose, adapter, event, date }) {
   );
 }
 
+const lineList = (lines, key = 'qtyH') => (lines || []).map((l) => `${formatQty(l[key], l.unit)} ${l.itemName}`).join(', ');
+const Item = ({ label, wide, children }) => (children === null || children === undefined || children === '' ? null
+  : <div className={wide ? 'span-2' : undefined}><dt>{label}</dt><dd>{children}</dd></div>);
+
+/** The important facts of one calendar entry, from its source record (attached by buildEvents). */
+function EventDetails({ e, now }) {
+  const s = e.sale, r = e.row, rs = e.restock;
+  const late = (d) => { const n = daysBetween(d, now); return n > 0 ? ` · ${n} day${n === 1 ? '' : 's'} late` : ''; };
+  let items;
+  if (e.custom) {
+    items = <>
+      <Item label="Date">{formatDate(e.custom.date)}</Item>
+      <Item label="Time">{e.custom.time || 'Any time'}</Item>
+      <Item label="Note" wide>{e.custom.note}</Item>
+    </>;
+  } else if (r) {
+    items = <>
+      <Item label="Customer">{r.customerName}</Item>
+      <Item label="Sale">{r.saleId}</Item>
+      <Item label={r.kind === 'OPEN_BALANCE' ? 'Balance' : 'Installment'}>{r.kind === 'OPEN_BALANCE' ? 'Pay-later balance' : `${r.no} of ${r.count}`}</Item>
+      <Item label="Due date">{formatDate(r.dueDate)}{e.category === CAL.OVERDUE ? late(r.dueDate) : ''}</Item>
+      <Item label="Amount due">{formatMoney(r.amountC)}</Item>
+      <Item label="Paid so far">{formatMoney(r.paidC || 0)}</Item>
+      <Item label="Still to pay"><strong>{formatMoney(remainingOf(r))}</strong></Item>
+    </>;
+  } else if (s) {
+    items = <>
+      <Item label="Customer">{s.customerName}{s.customerContact ? ` · ${s.customerContact}` : ''}</Item>
+      <Item label="Sale">{s.id}{s.saleDate ? ` · ${formatDate(s.saleDate)}` : ''}</Item>
+      {e.category === CAL.DELIVERY && <Item label="Delivery">{FULFILLMENT_LABELS[s.fulfillment]}{s.deliveryDate ? ` · ${formatDate(s.deliveryDate)}` : ''}{e.late ? late(s.deliveryDate) : ''}</Item>}
+      <Item label="Items" wide>{lineList(s.lines)}</Item>
+      <Item label="Total">{formatMoney(s.totalC)}</Item>
+      <Item label="Payment">{TERMS_LABELS[s.terms]}{s.terms !== 'INSTALLMENT' && METHOD_LABELS[s.paymentMethod] ? ` · ${METHOD_LABELS[s.paymentMethod]}` : ''}</Item>
+      <Item label="Paid">{formatMoney(s.paidC || 0)}{PAYMENT_STATUS_LABELS[s.paymentStatus] ? ` · ${PAYMENT_STATUS_LABELS[s.paymentStatus]}` : ''}</Item>
+      <Item label="Balance"><strong>{formatMoney(s.balanceC || 0)}</strong></Item>
+      <Item label="Notes" wide>{s.notes}</Item>
+    </>;
+  } else if (rs) {
+    const rc = e.receipt;
+    items = <>
+      <Item label="Supplier">{rs.supplierName}</Item>
+      <Item label="Order">{rs.id} · {RESTOCK_STATUS_LABELS[rs.status] || rs.status}</Item>
+      <Item label="Ordered on">{rs.orderDate ? formatDate(rs.orderDate) : null}</Item>
+      {rc ? <Item label="Received on">{formatDate(rc.date)}</Item>
+        : <Item label="Expected">{rs.expectedDate ? `${formatDate(rs.expectedDate)}${e.late ? late(rs.expectedDate) : ''}` : null}</Item>}
+      <Item label={rc ? 'Received items' : 'Ordered items'} wide>{rc ? lineList(rc.lines) : lineList(rs.lines, 'qtyOrderedH')}</Item>
+      {!rc && <Item label="Order total">{rs.totalCostC !== undefined ? formatMoney(rs.totalCostC) : null}</Item>}
+      <Item label="Notes" wide>{rs.notes}</Item>
+    </>;
+  } else {
+    items = <Item label="Details" wide>{e.detail}</Item>;
+  }
+  return (
+    <div className="form-stack">
+      <div><Badge tone={TONE[e.category]}>{CAL_LABELS[e.category]}{e.late ? ' · late' : ''}{e.done && e.category === CAL.DELIVERY ? ' · done' : ''}</Badge></div>
+      <dl className="detail-list cal-detail">{items}</dl>
+    </div>
+  );
+}
+
 function EventChip({ e, onOpen }) {
   const label = `${CAL_LABELS[e.category]}: ${e.title}`;
-  const body = <><span className="cal-chip-title">{e.time ? `${e.time} ` : ''}{e.title}</span></>;
   const cls = `cal-chip cal-${e.category.toLowerCase()} ${e.done ? 'is-done' : ''} ${e.late ? 'is-late' : ''}`;
-  if (e.custom) return <button type="button" className={cls} title={label} onClick={() => onOpen(e)}>{body}</button>;
-  return <Link to={e.to} className={cls} title={`${label} — ${e.detail}`}>{body}</Link>;
+  return <button type="button" className={cls} title={e.detail ? `${label} — ${e.detail}` : label} onClick={() => onOpen(e)}><span className="cal-chip-title">{e.time ? `${e.time} ` : ''}{e.title}</span></button>;
 }
 
 function EventRow({ e, onOpen }) {
@@ -77,7 +140,7 @@ function EventRow({ e, onOpen }) {
     <div className="agenda-row">
       <Badge tone={TONE[e.category]}>{CAL_LABELS[e.category]}{e.late ? ' · late' : ''}</Badge>
       <div className="agenda-main">
-        {e.custom ? <button type="button" className="link-button" onClick={() => onOpen(e)}>{e.time ? `${e.time} · ` : ''}{e.title}</button> : <Link to={e.to}>{e.title}</Link>}
+        <button type="button" className="link-button" onClick={() => onOpen(e)}>{e.time ? `${e.time} · ` : ''}{e.title}</button>
         {e.detail && <span className="muted small">{e.detail}</span>}
       </div>
     </div>
@@ -101,6 +164,7 @@ export function CalendarPage({ adapter, view: viewParam, monthParam }) {
   const [filters, setFilters] = React.useState(loadFilters);
   const [dialog, setDialog] = React.useState(null); // { event } | { date }
   const [dayOpen, setDayOpen] = React.useState(null);
+  const [shown, setShown] = React.useState(null); // event in the details modal
   const online = useOnline();
   const loading = [sales, deliveries, rows, restocks, custom].some((q) => !q.rows);
   const error = [sales, deliveries, rows, restocks, custom].map((q) => q.error).find(Boolean);
@@ -114,14 +178,14 @@ export function CalendarPage({ adapter, view: viewParam, monthParam }) {
 
   const go = (v, m) => navigate(`/calendar/${v}?m=${monthKey(m.y, m.m)}`, { replace: true });
   const toggle = (c) => { const f = { ...filters, [c]: !filters[c] }; setFilters(f); saveFilters(f); };
-  const openEvent = (e) => setDialog({ event: e.custom });
+  const openEvent = (e) => setShown(e);
   const thisMonth = parseDate(now);
 
   const agendaDays = Object.keys(byDate).filter((d) => d >= monthFrom && d <= monthTo).sort();
 
   return (
     <div className="page stack">
-      <PageHeader title="Calendar" description="Sales, payments due, deliveries, restocks and your own reminders. Click an entry to open it."
+      <PageHeader title="Calendar" description="Sales, payments due, deliveries, restocks and your own reminders. Click an entry to see its details."
         actions={<Button variant="primary" icon="addEvent" onClick={() => setDialog({ date: now >= monthFrom && now <= monthTo ? now : monthFrom })} disabled={!online}>Add event</Button>} />
       {error && <Banner tone="danger">{errorMessage(error)}</Banner>}
       {overdueCount > 0 && <Banner tone="warning" action={<Link to="/collections/overdue">Open collections</Link>}>{overdueCount} installment(s) or balance(s) are overdue.</Banner>}
@@ -180,6 +244,14 @@ export function CalendarPage({ adapter, view: viewParam, monthParam }) {
         footer={<><Button icon="addEvent" onClick={() => { const d = dayOpen; setDayOpen(null); setDialog({ date: d }); }} disabled={!online}>Add event on this day</Button><Button variant="primary" onClick={() => setDayOpen(null)}>Close</Button></>}>
         {dayOpen && ((byDate[dayOpen] || []).length ? <div className="agenda">{byDate[dayOpen].map((e) => <EventRow key={e.id} e={e} onOpen={(x) => { setDayOpen(null); openEvent(x); }} />)}</div>
           : <p className="muted">Nothing on this day{Object.values(filters).some((v) => !v) ? ' (some categories are hidden)' : ''}.</p>)}
+      </Dialog>
+      <Dialog open={!!shown} onClose={() => setShown(null)} size="md" title={shown ? shown.title : ''}
+        footer={shown && <>
+          {shown.custom ? <Button icon="edit" onClick={() => { const c = shown.custom; setShown(null); setDialog({ event: c }); }} disabled={!online}>Edit</Button>
+            : shown.to && <Button onClick={() => { const to = shown.to; setShown(null); navigate(to); }}>{shown.restock ? 'Open restock' : 'Open sale'}</Button>}
+          <Button variant="primary" onClick={() => setShown(null)}>Close</Button>
+        </>}>
+        {shown && <EventDetails e={shown} now={now} />}
       </Dialog>
       <EventDialog open={!!dialog} onClose={() => setDialog(null)} adapter={adapter} event={dialog && dialog.event} date={dialog && dialog.date} />
     </div>

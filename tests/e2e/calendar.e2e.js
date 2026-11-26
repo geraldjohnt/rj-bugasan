@@ -1,5 +1,5 @@
 /*
- * E2E: Phase 9 (calendar: month + agenda views, filters, custom events, click-through) in demo mode (Firebase config forced to null),
+ * E2E: Phase 9 (calendar: month + agenda views, filters, custom events, event details modal) in demo mode (Firebase config forced to null),
  * opened via file://.  Usage: node tests/e2e/calendar.e2e.js [build|dist] [screenshotDir]
  */
 import path from 'node:path';
@@ -92,9 +92,12 @@ await step('Add a custom event on today; it shows in the month grid', async () =
   await shot('51-month');
 });
 
-await step('Edit the event by clicking it; move it to another date', async () => {
+await step('Clicking the event shows its details in a modal; Edit moves it to another date', async () => {
   const day = TODAY.slice(0, 8) + (Number(TODAY.slice(8)) === 1 ? '02' : '01');
   await cell(TODAY).locator('.cal-chip:has-text("Supplier visit")').first().click();
+  await page.waitForSelector('.dialog-title:text-is("Supplier visit")');
+  expect(await page.isVisible('.dialog .cal-detail dd:text-is("10:30")'), 'time not shown in details');
+  await page.click('.dialog-footer button:has-text("Edit")');
   await page.waitForSelector('.dialog-title:text-is("Edit event")');
   await field('Title').fill('Supplier visit (moved)');
   await field('Date').fill(day);
@@ -126,17 +129,36 @@ await step('Month navigation: next, previous and Today update the title and the 
   await page.waitForSelector(`.cal-title:text-is("${title(Y, M)}")`);
 });
 
-await step('Day dialog lists the day\'s entries; clicking a derived entry opens its record', async () => {
+await step('Clicking a derived entry pops up its details without leaving the calendar', async () => {
+  const before = page.url();
+  await page.locator('.cal-chip.cal-sale').first().click();
+  await page.waitForSelector('.dialog .cal-detail dt:text-is("Customer")');
+  for (const t of ['Sale', 'Items', 'Total', 'Balance']) expect(await page.isVisible(`.dialog .cal-detail dt:text-is("${t}")`), 'missing ' + t);
+  expect(page.url() === before, 'navigated away: ' + page.url());
+  await shot('53-event-details');
+  await page.click('.dialog-footer button:has-text("Close")');
+  const due = page.locator('.cal-chip.cal-overdue, .cal-chip.cal-payment_due').first();
+  if (await due.count()) {
+    await due.click();
+    await page.waitForSelector('.dialog .cal-detail dt:text-is("Still to pay")');
+    await page.click('.dialog-footer button:has-text("Close")');
+  }
+});
+
+await step('Day dialog lists the day\'s entries; an entry opens its details, and "Open sale" opens the record', async () => {
   const d = await page.locator('.cal-cell:has(.cal-chip.cal-overdue), .cal-cell:has(.cal-chip.cal-payment_due), .cal-cell:has(.cal-chip.cal-sale)').first().getAttribute('data-date');
   await cell(d).locator('.cal-daynum').click();
   await page.waitForSelector('.dialog .agenda-row');
-  await page.locator('.dialog .agenda-row a').first().click();
+  await page.locator('.dialog .agenda-row button').first().click();
+  await page.waitForSelector('.dialog .cal-detail');
+  await page.click('.dialog-footer button:has-text("Open sale")');
   await page.waitForSelector('h1:has-text("RJ-")');
 });
 
 await step('Delete the custom event', async () => {
   await page.goto(url + '#/calendar/agenda?m=' + TODAY.slice(0, 7));
   await page.click('.agenda-row button:has-text("Supplier visit (moved)")');
+  await page.click('.dialog-footer button:has-text("Edit")');
   await page.click('.dialog-footer button:has-text("Delete")');
   await toast('Event deleted');
   expect(!(await page.isVisible('text=Supplier visit (moved)')), 'event still shown');

@@ -69,7 +69,7 @@ Never mark a phase complete until its acceptance criteria are verified.
 - **Decisions:** D-038, D-039.
 
 ## Phase 9 — Calendar
-- **Scope:** Month and Agenda views, filters (Sales, Payment due, Overdue, Restocking, Deliveries, Other), custom events, click-through to source records (RQ-035).
+- **Scope:** Month and Agenda views, filters (Sales, Payment due, Overdue, Restocking, Deliveries, Other), custom events, details modal per entry with optional open-record button (RQ-035, D-049).
 - **Acceptance:** entries derived live from sales/installments/restocks ✅ (domain tests); overdue shown as its own category ✅; paid rows, cancelled sales/restocks and opening balances hidden ✅; custom events add/edit/delete, logged ✅; filters remembered ✅; month navigation incl. leap February ✅.
 - **Status:** Implemented and tested (2026-11-25): domain 3 tests, service 1, rules 1, E2E 10/10. Released as 0.5.0.
 - **Built:** `#/calendar/{month|agenda}?m=YYYY-MM`; month grid (Sunday first, today highlighted, 3 chips per day + "+n more", day dialog with "Add event on this day"); agenda list per day; category filter chips with counts (remembered in this browser); overdue banner linking to Collections; Add/Edit/Delete event dialog (title, date, optional time, note); sample events.
