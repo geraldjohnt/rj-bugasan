@@ -248,9 +248,12 @@
 /* ---------- Printable documents (RQ-023): only .print-root is printed ---------- */
 .print-root { display: none; }
 @media print {
-  @page { margin: 12mm; }
+  /* Zero page margin: browsers then have no room for their own header/footer (URL, date, page title), so it
+     is not printed. The 12 mm margin is put back as padding, repeated on every page (box-decoration-break). */
+  @page { margin: 0; }
   body > *:not(.print-root) { display: none !important; }
-  .print-root { display: block; color: #000; background: #fff; }
+  .print-root { display: block; color: #000; background: #fff; padding: 12mm;
+    -webkit-box-decoration-break: clone; box-decoration-break: clone; }
   html, body { background: #fff !important; }
 }
 .doc { max-width: 720px; font-size: 12px; line-height: 1.45; color: #000; font-variant-numeric: tabular-nums; }

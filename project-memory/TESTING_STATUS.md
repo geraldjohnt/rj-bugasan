@@ -53,3 +53,6 @@ Planned tests: see TESTING_STRATEGY.md.
 
 ## 2026-11-26 — Release 0.7.1 (official logo)
 - `npm run verify:release` on minified `/dist`: unit/service 110/110, rules 43/43, dist smoke, E2E shell (17, incl. logo), inventory, customers, sales, restocks, calendar, reports, system — all pass.
+
+## 2026-11-26 — Release 0.7.2 (print footer)
+- `npm run verify:release` on minified `/dist`: see release line in PROJECT_STATUS. Not automatable: whether the real print dialog omits its header/footer (Chrome/Edge do with a zero page margin).
