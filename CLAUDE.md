@@ -59,7 +59,9 @@ Whenever the user asks to **create a PR and merge to main**:
 
 Day-to-day development builds go to `/build` (git-ignored), never to `/dist`.
 
-## Android APK (user instruction 2026-11-27, D-058)
-Build the APK **only when the user asks** — never as part of the release build. Run `npm run apk` (packs the current `/dist`
-into `apk/rj-ims-<version>.apk`), then `npm run test:apk`. Never delete earlier files in `apk/`. Needs a local Android SDK
+## Android APK (user instructions 2026-11-27, D-058, D-059)
+Build the APK **only when the user asks** — never as part of the release build. Build `/dist` first (`npm run release`), then
+run `npm run apk` (packs the current `/dist` into `dist/apk/rj-ims-<version>.apk` and updates `dist/apk/apk-info.js`, which
+Settings → System uses for the download link), then `npm run test:apk`. Never delete earlier files in `dist/apk/`
+(the release build keeps that folder). Needs a local Android SDK
 (platform 35+, build-tools; see `tools/build-apk.cjs`). Keep signing with `android/keystore/rj-ims-release.jks`.

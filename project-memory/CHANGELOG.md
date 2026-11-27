@@ -53,3 +53,8 @@
 ## 2026-11-27 — Android APK (D-058)
 - New `android/` wrapper (WebView activity, print/download/file-picker bridge), `tools/build-apk.cjs`, `npm run apk`, `npm run test:apk` (`tests/smoke/apk-check.js`).
 - Built `apk/rj-ims-0.8.1.apk` from the current `/dist` for owner testing. APK builds run only when the owner asks (not part of `npm run release`). `/dist` and the app version unchanged.
+
+## 2026-11-27 — 0.9.0: Android app download in Settings (D-059)
+- APKs now live in `dist/apk/` (0.8.1 moved there); the release build keeps that folder.
+- Settings → System → **Android app**: "Download Android app" (newest APK) and "Earlier versions".
+- Built `dist/apk/rj-ims-0.9.0.apk`. Version 0.9.0 (not yet merged to main).
