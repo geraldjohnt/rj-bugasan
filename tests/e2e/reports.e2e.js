@@ -34,6 +34,14 @@ const shot = async (name) => { if (shots) { fs.mkdirSync(shots, { recursive: tru
 
 const field = (label, scope = '.dialog') => page.locator(`${scope} .field`).filter({ has: page.locator('.field-label', { hasText: new RegExp('^' + label) }) }).locator('input, select, textarea').first();
 const toast = (text) => page.waitForSelector(`.toast:has-text("${text}")`);
+
+/** D-057: sample data loads only from Settings → System, after re-entering the password. */
+async function loadSample() {
+  if (!page.url().includes('#/settings/system')) await page.goto(url + '#/settings/system');
+  await page.click('.panel button:has-text("Load sample data")');
+  await page.fill('.dialog input[autocomplete="current-password"]', 'demo1234');
+  await page.click('.dialog-footer button:has-text("Load sample data")');
+}
 const stat = async (label) => (await page.locator('.stat').filter({ has: page.locator('.stat-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.stat-value').textContent()).trim();
 const money = (s) => Number(String(s).replace(/[^\d.−-]/g, '').replace('−', '-'));
 async function pick(input, text) {
@@ -58,9 +66,10 @@ await step('Sign in to the dashboard; empty database offers sample data', async 
   await page.click('button[type="submit"]');
   await page.waitForSelector('h1:has-text("Dashboard")');
   await page.waitForSelector('text=Nothing to show yet');
-  await page.click('.empty-state button:has-text("Load sample data")');
-  await page.click('.dialog-footer button:has-text("Load sample data")');
+  expect(!(await page.isVisible('button:has-text("Load sample data")')), 'dashboard must not offer sample data (D-057)');
+  await loadSample();
   await toast('Sample data loaded');
+  await page.goto(url + '#/');
   await page.waitForSelector('text=Needs attention');
 });
 

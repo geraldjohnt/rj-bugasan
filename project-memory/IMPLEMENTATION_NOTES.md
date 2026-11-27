@@ -117,3 +117,4 @@ See root CLAUDE.md "Release procedure".
 - Services: `coverItemsIn(tx, itemsById, date)` must run in the READ phase of any stock transaction; it returns normalized items and a `commit()` for the counter write. `writeItemMovement(..., { batches, batchParts, itemPatch })` writes the item's new batch list in the same update.
 - `ensureBatches` (Items list hook) and `ensureSupplierCodes` (Suppliers page) are one-off fixes for old data, like `ensureWalkIn`.
 - E2E: `tests/e2e/batches.e2e.js`; the shared sample data now adds a newer NFA batch (`RJ-RS-SUP002-…`) and a walk-in sale with a Delivery fee, so sales lists show 7 active sample sales and restocks 6.
+- D-057: `SampleDataButton` is private to `src/features/system/SampleData.jsx` (only `SampleDataPanel` is exported, used by Settings → System). It verifies the password with `auth.service.unlock(password)` before calling `loadSampleData`. E2E files use a `loadSample()` helper (Settings → System, password `demo1234`).

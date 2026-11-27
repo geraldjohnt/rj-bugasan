@@ -16,7 +16,6 @@ import { unitLabel } from '../../domain/inventory.js';
 import { lineCost } from '../../domain/saleTotals.js';
 import { RESTOCK_STATUS_LABELS, validateRestockForm, isOpenRestock } from '../../domain/purchasing.js';
 import { RestocksTable, SupplierFormDialog } from './PurchasingParts.jsx';
-import { SampleDataButton } from '../system/SampleData.jsx';
 
 export function RestocksPage({ adapter }) {
   const [limit, setLimit] = React.useState(300);
@@ -59,7 +58,7 @@ export function RestocksPage({ adapter }) {
           <RestocksTable rows={shown} today={now}
             empty={all.length
               ? <EmptyState icon="search" title="No matching restocks">Change the search or filters.</EmptyState>
-              : <EmptyState icon="restocks" title="No restocks yet" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => navigate('/restocks/new')} disabled={!online}>New restock</Button><SampleDataButton adapter={adapter} /></div>}>
+              : <EmptyState icon="restocks" title="No restocks yet" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => navigate('/restocks/new')} disabled={!online}>New restock</Button></div>}>
                   Record what you order from suppliers, then receive it when it arrives.</EmptyState>} />
         )}
         {rows && rows.length >= limit && <div className="list-more"><Button size="sm" onClick={() => setLimit(limit + 300)}>Show more</Button></div>}

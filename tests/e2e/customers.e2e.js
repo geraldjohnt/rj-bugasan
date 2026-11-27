@@ -32,6 +32,14 @@ const shot = async (name) => { if (shots) { fs.mkdirSync(shots, { recursive: tru
 
 const field = (label, scope = '.dialog') => page.locator(`${scope} .field`).filter({ has: page.locator('.field-label', { hasText: new RegExp('^' + label) }) }).locator('input, select, textarea').first();
 const toast = (text) => page.waitForSelector(`.toast:has-text("${text}")`);
+
+/** D-057: sample data loads only from Settings → System, after re-entering the password. */
+async function loadSample() {
+  if (!page.url().includes('#/settings/system')) await page.goto(url + '#/settings/system');
+  await page.click('.panel button:has-text("Load sample data")');
+  await page.fill('.dialog input[autocomplete="current-password"]', 'demo1234');
+  await page.click('.dialog-footer button:has-text("Load sample data")');
+}
 const stat = async (label) => (await page.locator('.stat').filter({ has: page.locator('.stat-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.stat-value').textContent()).trim();
 const tab = (name) => page.click(`.tab:has-text("${name}")`);
 
@@ -41,7 +49,7 @@ await step('Sign in and open Customers: empty state offers Add customer and samp
   await page.fill('input[autocomplete="current-password"]', 'demo1234');
   await page.click('button[type="submit"]');
   await page.waitForSelector('text=No customers yet');
-  expect(await page.isVisible('.empty-state button:has-text("Load sample data")'), 'sample data button missing');
+  expect(!(await page.isVisible('button:has-text("Load sample data")')), 'sample data button must only be in Settings → System (D-057)');
 });
 
 await step('Add customer: name and contact number are required', async () => {
@@ -165,11 +173,9 @@ await step('Walk-in is built in: listed, no Edit or Archive', async () => {
 
 await step('Load sample data: 5 customers added; second load adds nothing', async () => {
   await page.goto(url + '#/settings/system');
-  await page.click('button:has-text("Load sample data")');
-  await page.click('.dialog-footer button:has-text("Load sample data")');
+  await loadSample();
   await toast('5 customer(s)');
-  await page.click('button:has-text("Load sample data")');
-  await page.click('.dialog-footer button:has-text("Load sample data")');
+  await loadSample();
   await toast('Sample data is already loaded.');
   await page.goto(url + '#/customers');
   await page.waitForSelector('.toolbar-end:has-text("7 shown")');

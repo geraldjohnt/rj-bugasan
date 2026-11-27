@@ -33,6 +33,14 @@ const shot = async (name) => { if (shots) { fs.mkdirSync(shots, { recursive: tru
 /** Input/select inside a field whose label starts with `label` (within the open dialog unless scope given). */
 const field = (label, scope = '.dialog') => page.locator(`${scope} .field`).filter({ has: page.locator('.field-label', { hasText: new RegExp('^' + label) }) }).locator('input, select').first();
 const toast = (text) => page.waitForSelector(`.toast:has-text("${text}")`);
+
+/** D-057: sample data loads only from Settings → System, after re-entering the password. */
+async function loadSample() {
+  if (!page.url().includes('#/settings/system')) await page.goto(url + '#/settings/system');
+  await page.click('.panel button:has-text("Load sample data")');
+  await page.fill('.dialog input[autocomplete="current-password"]', 'demo1234');
+  await page.click('.dialog-footer button:has-text("Load sample data")');
+}
 const stat = async (label) => (await page.locator('.stat').filter({ has: page.locator('.stat-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.stat-value').textContent()).trim();
 
 await step('Sign in and open Items: empty state offers Add item and sample data', async () => {
@@ -41,7 +49,7 @@ await step('Sign in and open Items: empty state offers Add item and sample data'
   await page.fill('input[autocomplete="current-password"]', 'demo1234');
   await page.click('button[type="submit"]');
   await page.waitForSelector('text=No items yet');
-  expect(await page.isVisible('.empty-state button:has-text("Load sample data")'), 'sample data button missing');
+  expect(!(await page.isVisible('button:has-text("Load sample data")')), 'sample data button must only be in Settings → System (D-057)');
 });
 
 await step('Add item: required fields are validated', async () => {
@@ -201,11 +209,17 @@ await step('Archive: item hidden from active list, shown under Archived, restora
 
 await step('Load sample data from Settings → System; second load adds nothing', async () => {
   await page.goto(url + '#/settings/system');
-  await page.click('button:has-text("Load sample data")');
+  // D-057: password required; a wrong one is refused and nothing is loaded.
+  await page.click('.panel button:has-text("Load sample data")');
   await page.click('.dialog-footer button:has-text("Load sample data")');
+  await page.waitForSelector('.dialog .banner:has-text("Enter your password")');
+  await page.fill('.dialog input[autocomplete="current-password"]', 'wrong-pass');
+  await page.click('.dialog-footer button:has-text("Load sample data")');
+  await page.waitForSelector('.dialog .banner:has-text("Incorrect password")');
+  await page.click('.dialog-footer button:has-text("Cancel")');
+  await loadSample();
   await toast('Sample data loaded: 9 item(s)');
-  await page.click('button:has-text("Load sample data")');
-  await page.click('.dialog-footer button:has-text("Load sample data")');
+  await loadSample();
   await toast('Sample data is already loaded.');
   await page.goto(url + '#/items');
   await page.waitForSelector('.toolbar-end:has-text("11 of 11")');

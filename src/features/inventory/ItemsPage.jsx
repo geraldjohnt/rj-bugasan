@@ -13,7 +13,6 @@ import { formatQty } from '../../domain/quantity.js';
 import { formatMoney } from '../../domain/money.js';
 import { stockStatus, stockValueC, inventorySummary } from '../../domain/inventory.js';
 import { ItemFormDialog, StockBadge } from './InventoryDialogs.jsx';
-import { SampleDataButton } from '../system/SampleData.jsx';
 import { PricePosterDialog } from './PricePosterDialog.jsx';
 
 /**
@@ -98,8 +97,8 @@ export function ItemsPage({ adapter }) {
             rowClassName={(i) => (i.status === 'ARCHIVED' ? 'is-muted' : '')}
             empty={all.length
               ? <EmptyState icon="search" title="No matching items">Change the search or filters.</EmptyState>
-              : <EmptyState icon="items" title="No items yet" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add item</Button><SampleDataButton adapter={adapter} /></div>}>
-                  Add your first rice product, or load sample data to try the system.
+              : <EmptyState icon="items" title="No items yet" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add item</Button></div>}>
+                  Add your first rice product (or load sample data under Settings → System).
                 </EmptyState>} />
         )}
       </Panel>
