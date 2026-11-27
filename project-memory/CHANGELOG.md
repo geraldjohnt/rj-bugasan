@@ -57,4 +57,4 @@
 ## 2026-11-27 — 0.9.0: Android app download in Settings (D-059)
 - APKs now live in `dist/apk/` (0.8.1 moved there); the release build keeps that folder.
 - Settings → System → **Android app**: "Download Android app" (newest APK) and "Earlier versions".
-- Built `dist/apk/rj-ims-0.9.0.apk`. Version 0.9.0 (not yet merged to main).
+- Built `dist/apk/rj-ims-0.9.0.apk`. **Release 0.9.0** merged to main.

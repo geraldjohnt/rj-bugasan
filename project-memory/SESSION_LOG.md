@@ -123,4 +123,4 @@
 - **Request:** build the APK for the new version; put APKs in `dist/apk/`; add a download link in Settings.
 - **Done (D-059):** `tools/apk-info.cjs` (APK list script), release build keeps `dist/apk/`, `build-apk.cjs` writes to `dist/apk/` and excludes `.apk` files from the packed app, `AndroidAppPanel` in Settings → System, E2E step in `system.e2e.js`, version 0.9.0, 0.8.1 APK moved to `dist/apk/`.
 - **Tests:** `npm run release` → `npm run apk` → `npm run verify:release` PASS (unit 132/132, rules 46/46, dist smoke, 9 E2E suites incl. the new Android-panel step) and `npm run test:apk` PASS on `dist/apk/rj-ims-0.9.0.apk`. System E2E also passed on `/build` (no-APK case).
-- **Not done:** PR/merge (not requested). Phone test still open (KI-026).
+- **Release 0.9.0:** `npm run release` + `npm run verify:release` + `npm run test:apk` passed again; PR created and merged to main. Phone test still open (KI-026).

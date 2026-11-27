@@ -21,6 +21,7 @@
 - 0.7.0 — 2026-11-26 — Payday price per item (D-046) and Facebook price poster (D-047). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, E2E shell + inventory + customers + sales + restocks + calendar + reports + system (all pass).
 - 0.7.1 — 2026-11-26 — Official logo (favicon, sidebar/sign-in, printed receipts; D-048) and Reschedule dialog fix. Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (shell 17 steps incl. logo check).
 - 0.7.2 — 2026-11-26 — Printed receipts, statements and reports no longer get the browser's URL/date header and footer (zero page margin). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites.
+- 0.9.0 — 2026-11-27 — Android APK (D-058) in `dist/apk/` with download link in Settings → System (D-059). Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites; `npm run test:apk` PASS.
 - 0.8.1 — 2026-11-27 — "Load sample data" only in Settings → System, password protected (D-057). Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites.
 - 0.8.0 — 2026-11-27 — Phase 13: restock batches oldest first, weighted price, old stock as first batch, other charges on sales (D-050 … D-056). Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites (incl. batches 11 steps).
 - 0.7.3 — 2026-11-26 — Calendar entries open a details modal instead of navigating (D-049). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (calendar 11 steps).
@@ -68,7 +69,7 @@
 - Keep the readable source (`/src`) committed; `/dist` is only the minified copy (user asked 2026-11-25; already the case).
 
 ## Immediate next actions
--3. Version 0.9.0 built on the branch (Settings → System → Android app download link, APKs in `dist/apk/`, D-059); not yet merged — waits for "create PR and merge to main".
+-3. ✅ 0.9.0 released (APKs in `dist/apk/`, Settings download link, D-059); GitHub Pages republishes `/dist` on merge.
 -2. Owner: install `dist/apk/rj-ims-0.9.0.apk` (or download it from Settings → System) on an Android phone and test it (KI-026). Build a new APK only when the owner asks: `npm run apk` (D-058; needs the Android SDK — reinstall in a new cloud session).
 -1. ✅ Phase 13 released as 0.8.0. Owner: re-publish `firebase/firestore.rules` (`npm run deploy:rules`), then open Items and Suppliers once online so old stock becomes first batches and suppliers get codes (FIREBASE_SETUP "Phase 13").
 0. Firebase project `rj-bugasan` connected; Email/Password enabled; spike passed → GO (D-019).
