@@ -119,3 +119,21 @@ Installment count 3/4/5 (max 5) is taken from the original brief (confirmed requ
 | R8-Q5 | Locale | PHP, Asia/Manila, format "Nov 25, 2026". (Confirms A-001..A-003.) | RQ-047 |
 | R8-Q6 | Interface language | English. | RQ-047 |
 | R8-Q7 | Firebase project | User creates it following a written guide (FIREBASE_SETUP.md). | D-013 |
+
+## Round 9 — Restock batches, oldest stock first (asked & answered 2026-11-27)
+
+User request: "Restocking should have ID also. Since restocking might have different prices from time to time. But oldest stock comes first when someone buys."
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R9-Q1 | Which price varies per restock? | On receiving, the user enters both the **cost price** and the **selling price** per batch. | D-050 |
+| R9-Q2 | Oldest-first always automatic? | Automatic, **owner can override** the batch on a sale line. | D-050 |
+| R9-Q3 | Batch ID format | `RJ-RS-<supplier_id>-0001`. | D-051 |
+| R9-Q4 | Supplier code inside the ID | Auto number `SUP001`, `SUP002`… (existing suppliers too). | D-051 |
+| R9-Q5 | Numbering scope | Counter per supplier, never resets; **one batch ID per delivery** (all items of one receipt share the ID; each item line inside keeps its own cost and price). | D-051 |
+| R9-Q6 | Sale line spanning batches with different prices | Use the **weighted average** price (e.g. 2 × ₱1,500 + 3 × ₱1,550 = ₱7,650 ÷ 5 = ₱1,530/sack). User: "please note it so that we can just change it later on." | D-052 |
+| R9-Q7 | Selling prices held by a batch | **Cash only.** The Payday price is set during the sale (trusted customers may get the cash price); it stays editable on the sale line. | D-052 |
+| R9-Q8 | Stock already on hand at go-live | Owner enters old batches **by hand**. | D-053 |
+| R9-Q9 | Stock not covered by any batch | **Block** selling that stock until batches cover it. | D-053 |
+| R9-Q10 | Must hand-entered batches equal current stock? | They **can't exceed** current stock (may be entered a few at a time); they don't change the stock count. | D-053 |
+| R9-Q11 | Price shown on Items / poster / new sale | **Oldest open batch's** cash price, with a hint when the next batch differs. | D-052 |

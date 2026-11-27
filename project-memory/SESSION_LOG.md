@@ -96,3 +96,7 @@
 - **Done:** D-049 — `buildEvents` attaches the source record; `CalendarPage` shows an `EventDetails` modal for every entry (month chips, agenda rows, day dialog) with optional Open sale/restock (custom: Edit); user guide updated; calendar E2E updated (11 steps).
 - **Tests:** unit/service 110/110 and E2E calendar 11/11 on `/build`. Not released (D-018: only on "create PR and merge to main").
 - **Release 0.7.3:** merged origin/main, version bumped, `npm run release` + `npm run verify:release` passed on `/dist`, PR created and merged to main.
+
+## 2026-11-27 — Session 10: restock batches (planning only)
+- **Request:** restocks get IDs and their own prices; oldest stock sold first. User asked for a feasibility answer and questions first.
+- **Done:** feasibility confirmed; interview Round 9 (R9-Q1…Q11) recorded; proposed decisions D-050 … D-053; approval item BQ-1. No code changed.
