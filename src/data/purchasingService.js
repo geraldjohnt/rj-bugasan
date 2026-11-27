@@ -15,7 +15,8 @@ import {
   RESTOCK_STATUS as RS, RESTOCK_PREFIX, RESTOCK_STATUS_LABELS, isOpenRestock, planReceipt, statusFromLines, restockTotalC, remainingH,
 } from '../domain/purchasing.js';
 import { logWrite } from './activityLog.js';
-import { assertOnline } from './inventoryService.js';
+import { assertOnline, coverItemsIn, supplierCodeIn } from './inventoryService.js';
+import { BATCH_SOURCE, addBatch, batchIdFor, batchCounterId, supplierCode } from '../domain/batches.js';
 import { writeItemMovement } from './salesService.js';
 
 const stamp = (adapter, actor) => ({ updatedAt: adapter.serverTime(), updatedBy: actor.uid });
@@ -36,10 +37,14 @@ export async function createSupplier(adapter, actor, data) {
   assertOnline();
   const id = adapter.newId();
   return adapter.runTransaction(async (tx) => {
-    const doc = { status: 'ACTIVE', ...created(adapter, actor) };
+    // D-051: every supplier gets a code SUP001, SUP002 … used in its batch ids.
+    const c = await tx.get('counters', 'supplier');
+    const seq = c.exists && Number.isInteger(c.data.next) ? c.data.next : 1;
+    tx.set('counters', 'supplier', { next: seq + 1 });
+    const doc = { status: 'ACTIVE', code: supplierCode(seq), ...created(adapter, actor) };
     for (const k of SUPPLIER_FIELDS) doc[k] = data[k] || '';
     tx.set('suppliers', id, doc);
-    logWrite(tx, adapter, actor, { action: 'SUPPLIER_CREATE', entityType: 'supplier', entityId: id, summary: `Added supplier ${doc.name}` });
+    logWrite(tx, adapter, actor, { action: 'SUPPLIER_CREATE', entityType: 'supplier', entityId: id, summary: `Added supplier ${doc.name} (${doc.code})` });
     return id;
   });
 }
@@ -140,41 +145,81 @@ export async function updateRestock(adapter, actor, id, data) {
 }
 
 /**
- * Receive goods (BR-061, BR-062). input: { date, lines: [{ itemId, qtyH, unitCostC, updateCost }] }.
- * Returns { status, valueC }.
+ * Receive goods (BR-061, BR-062, D-050, D-051). input: { date, lines: [{ itemId, qtyH, unitCostC, priceC, updateCost }] }.
+ * The delivery becomes ONE batch id RJ-RS-<supplier code>-NNNN shared by its item lines; each line keeps its own cost
+ * and cash price. updateCost: also make this cost and price the item's defaults for new stock.
+ * Returns { status, valueC, batchId }.
  */
 export async function receiveRestock(adapter, actor, id, input) {
   assertOnline();
   return adapter.runTransaction(async (tx) => {
     const r = await readDoc(tx, 'restocks', id, 'This restock no longer exists.');
     const plan = planReceipt(r, input);
-    const items = {};
+    const raw = {};
     for (const l of plan.receiptLines) {
       const it = await readDoc(tx, 'items', l.itemId, `${l.itemName} no longer exists.`);
       if (it.status !== 'ACTIVE') throw new DomainError('ARCHIVED', `Restore ${it.name} before receiving it.`);
-      items[l.itemId] = it;
+      raw[l.itemId] = it;
     }
+    const supplier = await readDoc(tx, 'suppliers', r.supplierId, 'The supplier of this order no longer exists.');
+    const code = await supplierCodeIn(tx, supplier);
+    const counter = batchCounterId(code.code);
+    const cs = await tx.get('counters', counter);
+    const seq = cs.exists && Number.isInteger(cs.data.next) ? cs.data.next : 1;
+    const batchId = batchIdFor(code.code, seq);
+    // D-055: older stock not in a batch becomes the first batch before this delivery is added.
+    const cover = await coverItemsIn(tx, raw, input.date);
+    const items = cover.items;
+
+    // ---- writes
+    code.commit(); cover.commit();
+    tx.set('counters', counter, { next: seq + 1 });
     const wanted = new Map((input.lines || []).map((l) => [l.itemId, l]));
     const costChanges = {};
+    const receiptLines = [];
     for (const l of plan.receiptLines) {
       const item = items[l.itemId];
-      writeItemMovement(tx, adapter, actor, item, {
-        type: MT.RESTOCK_RECEIPT, deltaH: l.qtyH, unitCostC: l.unitCostC, refType: 'RESTOCK', refId: id, businessDate: input.date, note: `From ${r.supplierName}`,
-      });
-      if (wanted.get(l.itemId).updateCost && item.costC !== l.unitCostC) {
-        tx.update('items', item.id, { costC: l.unitCostC, ...stamp(adapter, actor) });
-        costChanges[item.id] = { name: item.name, from: item.costC, to: l.unitCostC };
+      const priceC = Number.isInteger(l.priceC) ? l.priceC : item.priceC;
+      const added = addBatch(item, { id: batchId, date: input.date, qtyH: l.qtyH, unitCostC: l.unitCostC, priceC, source: BATCH_SOURCE.RESTOCK, supplierId: r.supplierId, supplierName: r.supplierName, restockId: id });
+      const patch = {};
+      if (wanted.get(l.itemId).updateCost && (item.costC !== l.unitCostC || item.priceC !== priceC)) {
+        patch.costC = l.unitCostC; patch.priceC = priceC;
+        costChanges[item.id] = { name: item.name, from: item.costC, to: l.unitCostC, priceFrom: item.priceC, priceTo: priceC };
       }
+      writeItemMovement(tx, adapter, actor, item, {
+        type: MT.RESTOCK_RECEIPT, deltaH: l.qtyH, unitCostC: l.unitCostC, refType: 'RESTOCK', refId: id, businessDate: input.date, note: `From ${r.supplierName} (batch ${added.id})`,
+        batches: added.batches, batchParts: [{ batchId: added.id, qtyH: l.qtyH, unitCostC: l.unitCostC }], itemPatch: patch,
+      });
+      receiptLines.push({ ...l, priceC, batchId: added.id });
     }
-    const receipts = [...(r.receipts || []), { date: input.date, lines: plan.receiptLines, by: actor.uid, byName: actor.displayName || '', at: new Date().toISOString() }];
+    const receipts = [...(r.receipts || []), { date: input.date, batchId, lines: receiptLines, by: actor.uid, byName: actor.displayName || '', at: new Date().toISOString() }];
     tx.update('restocks', id, { lines: plan.lines, receipts, status: plan.status, ...stamp(adapter, actor) });
-    const costText = Object.values(costChanges).map((c) => `${c.name} cost ${formatMoney(c.from)} → ${formatMoney(c.to)}`);
+    const costText = Object.values(costChanges).map((c) => `${c.name} cost ${formatMoney(c.from)} → ${formatMoney(c.to)}` + (c.priceFrom !== c.priceTo ? `, price ${formatMoney(c.priceFrom)} → ${formatMoney(c.priceTo)}` : ''));
     logWrite(tx, adapter, actor, {
       action: 'RESTOCK_RECEIVE', entityType: 'restock', entityId: id,
-      summary: `Received on ${id} from ${r.supplierName}: ${linesSummary(plan.receiptLines, 'qtyH')}` + (costText.length ? `; ${costText.join(', ')}` : ''),
-      changes: { status: { from: r.status, to: plan.status }, costChanges },
+      summary: `Received batch ${batchId} on ${id} from ${r.supplierName}: ${linesSummary(receiptLines, 'qtyH')}` + (costText.length ? `; ${costText.join(', ')}` : ''),
+      changes: { status: { from: r.status, to: plan.status }, batchId, costChanges },
     });
-    return { status: plan.status, valueC: plan.valueC };
+    return { status: plan.status, valueC: plan.valueC, batchId };
+  });
+}
+
+/** D-051: give a code to every supplier made before codes existed (oldest first). Run when the supplier list loads online. */
+export async function ensureSupplierCodes(adapter, actor) {
+  assertOnline();
+  const all = await adapter.query('suppliers', {});
+  const todo = all.filter((s) => !s.code).sort((a, b) => String(a.createdAt?.seconds ?? a.createdAt ?? '').localeCompare(String(b.createdAt?.seconds ?? b.createdAt ?? '')) || a.id.localeCompare(b.id));
+  if (!todo.length) return { changed: 0 };
+  return adapter.runTransaction(async (tx) => {
+    const c = await tx.get('counters', 'supplier');
+    const fresh = [];
+    for (const s of todo) { const d = await tx.get('suppliers', s.id); if (d.exists && !d.data.code) fresh.push({ id: s.id, ...d.data }); }
+    let seq = c.exists && Number.isInteger(c.data.next) ? c.data.next : 1;
+    if (!fresh.length) return { changed: 0 };
+    for (const s of fresh) tx.update('suppliers', s.id, { code: supplierCode(seq++) });
+    tx.set('counters', 'supplier', { next: seq });
+    logWrite(tx, adapter, actor, { action: 'SUPPLIER_CODES', entityType: 'supplier', entityId: fresh[0].id, summary: `Gave supplier codes to ${fresh.length} supplier(s)` });
+    return { changed: fresh.length };
   });
 }
 

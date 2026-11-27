@@ -32,8 +32,32 @@ export function discountAmount(subtotalC, discount) {
   throw new DomainError('INVALID_DISCOUNT', 'Unknown discount type.');
 }
 
-/** lines: [{ itemId, unit, qtyH, unitPriceC, unitCostC }] */
-export function computeTotals(lines, discount) {
+/** Max charge lines per sale (D-054). */
+export const MAX_CHARGES = 10;
+
+/**
+ * Other charges on a sale (D-054): free-text name + amount, no stock, zero cost. charges: [{ name, amountC }].
+ * Returns the cleaned list (empty rows dropped).
+ */
+export function validateCharges(charges = []) {
+  const out = [];
+  for (const c of charges || []) {
+    const name = String(c.name ?? '').trim().replace(/\s+/g, ' ');
+    if (!name && (c.amountC === null || c.amountC === undefined || c.amountC === 0)) continue;
+    if (!name) throw new DomainError('INVALID_CHARGE', 'Enter a name for every charge (for example Delivery fee).');
+    if (name.length > 60) throw new DomainError('INVALID_CHARGE', 'Charge names can have at most 60 characters.');
+    if (!Number.isInteger(c.amountC) || c.amountC <= 0) throw new DomainError('INVALID_CHARGE', `Enter an amount for ${name}.`);
+    out.push({ name, amountC: c.amountC });
+  }
+  if (out.length > MAX_CHARGES) throw new DomainError('INVALID_CHARGE', `A sale can have at most ${MAX_CHARGES} charges.`);
+  return out;
+}
+
+/**
+ * lines: [{ itemId, unit, qtyH, unitPriceC, unitCostC, costC? }] (costC = exact batch cost of the line, D-050).
+ * charges: [{ name, amountC }] — added after the discount; the discount applies to items only (D-054).
+ */
+export function computeTotals(lines, discount, charges = []) {
   if (!lines.length) throw new DomainError('NO_LINES', 'Add at least one item.');
   const computed = lines.map((l) => {
     validateQty(l.qtyH, l.unit);
@@ -42,8 +66,14 @@ export function computeTotals(lines, discount) {
   });
   const subtotalC = sum(computed.map((l) => l.lineTotalC));
   const discountC = discountAmount(subtotalC, discount);
-  const costC = sum(computed.map((l) => lineCost(l.qtyH, l.unitCostC || 0)));
-  return { lines: computed, subtotalC, discountC, totalC: subtotalC - discountC, costC, grossProfitC: subtotalC - discountC - costC };
+  const costC = sum(computed.map((l) => (Number.isInteger(l.costC) ? l.costC : lineCost(l.qtyH, l.unitCostC || 0))));
+  const cleanCharges = validateCharges(charges);
+  const chargesC = sum(cleanCharges.map((c) => c.amountC));
+  return {
+    lines: computed, subtotalC, discountC, charges: cleanCharges, chargesC, totalC: subtotalC - discountC + chargesC, costC,
+    // Item profit only: charges have no cost and are reported on their own line (D-054).
+    grossProfitC: subtotalC - discountC - costC,
+  };
 }
 
 /** Total requested quantity per item across lines (BR-031). */

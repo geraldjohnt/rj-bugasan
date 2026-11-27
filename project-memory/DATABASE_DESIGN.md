@@ -99,3 +99,9 @@ Restore makes the database equal to the file (writes every document, deletes doc
 - Index `activityLogs`: entityType ASC, at DESC — now actually in `firebase/firestore.indexes.json` (Activity log area filter).
 - Rules: counters accept `ob-YYYY`; `sales` create branch for `OB-YYYY-NNNNN` (kind OPENING_BALANCE, no lines, nothing paid, not Walk-in, description required);
   restore window `match /{col}/{id}` allowing owner create/update/delete on business collections while `settings/restore.active == true`, and deleting settings other than bootstrap/restore.
+
+## Phase 13 additions (2026-11-27) — batches and charges
+- Open batches are **embedded in the item document** (`items.batches`), not a collection: Firestore client transactions cannot query, and every stock write already reads and writes the item (D-050).
+- Every stock transaction first runs `coverItemsIn` (D-055), which may read `counters/batch-OLD` and give stock not in a batch to the first batch.
+- `receiveRestock` reads the supplier (code, or assigns one from `counters/supplier`) and `counters/batch-<code>`, writes one batch id for the delivery.
+- Rules: items may carry `batches` (list ≤ 150); suppliers may carry `code` (`^SUP[0-9]{3,}$`); counters `supplier` and `batch-(SUPnnn|OLD)` may advance by more than one (never backwards); sales money rule is `totalC == subtotalC − discountC + chargesC` (chargesC defaults to 0), `charges` list ≤ 10. Tests: `tests/rules/batches.rules.test.js`.

@@ -51,6 +51,10 @@
 | RQ-045 | Light and dark themes; predefined palettes; default palette Navy. | R8-Q3 |
 | RQ-046 | Data model and security rules allow adding restricted staff users later. | R8-Q4 |
 | RQ-047 | Currency PHP (₱), time zone Asia/Manila, date format "MMM D, YYYY" (configurable), English UI. | R8-Q5, R8-Q6 |
+| RQ-048 | Each restock delivery is a batch with its own ID, cost price and cash selling price; the oldest stock is sold first; the owner can override the batch on a sale line. | R9-Q1…Q5, D-050, D-051 |
+| RQ-049 | A sale line spanning batches with different prices uses the weighted average price (rule kept easy to change). Payday price is set on the sale and stays editable. | R9-Q6, R9-Q7, D-052 |
+| RQ-050 | Existing stock is registered automatically as each item's first batch. | R11-Q2, D-055 |
+| RQ-051 | A sale can have free-text charges (name + amount, e.g. delivery fee): not discounted, part of the balance, reported separately, previous names suggested. | R10, D-054 |
 
 ## Deferred
 | ID | Requirement | Reason |

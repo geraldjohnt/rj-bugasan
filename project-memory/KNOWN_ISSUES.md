@@ -27,3 +27,7 @@
 ## 2026-11-26 — Browser print header/footer (URL, date) on receipts
 - **Fixed in 0.7.2:** print CSS uses `@page { margin: 0 }` with the 12 mm spacing as padding inside `.print-root` (repeated on every page), so Chrome/Edge have no margin to print their header/footer.
 - **Limit:** the real print dialog cannot be automated in tests. If a browser still prints the URL (e.g. some Firefox setups), untick "Headers and footers" (Chrome/Edge: More settings) or "Print headers and footers" (Firefox) once; the browser remembers it.
+
+| KI-022 | Phase 13 limitation | Open batches live on the item document (max 150 per item). An item that never sells out could in theory reach the limit; receiving then fails with a clear message. | Open (unlikely at this volume) | Sell or adjust old batches; raise MAX_BATCHES if ever needed. |
+| KI-023 | Phase 13 data | Stock from before batches was given the item's current cost and cash price (D-055); its real purchase cost may differ, so profit on that stock is approximate. | Accepted (user choice) | Edit the first batch's cost under Items → item → Batches. |
+| KI-024 | Phase 13 test gap | Batches and charges verified in demo mode (E2E), Mock adapter and Firestore emulator; not yet on the real project. | Open | Owner checks after re-publishing rules (FIREBASE_SETUP "Phase 13"). |

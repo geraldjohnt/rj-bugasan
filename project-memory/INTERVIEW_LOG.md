@@ -148,3 +148,10 @@ User request: "In sale, the user can add items like delivery fee, other fees, an
 | R10-Q2 | Discount | Applies to items only, not charges. | D-054 |
 | R10-Q3 | Open balance / installment | Charges are part of the balance and split like the rest. | D-054 |
 | R10-Q4 | Quick entry | Type freely; previously used names suggested with their last price. | D-054 |
+
+## Round 11 — During the Phase 13 build (2026-11-27)
+
+| ID | Question / instruction | Answer | Resulting decision |
+|---|---|---|---|
+| R11-Q1 | Approve the batch + charges design? | "Approved, start building Phase 13." | BQ-1, BQ-2 answered |
+| R11-Q2 | (User, unprompted) Existing stock | "Just register the old stock to batches. Just assume that they belong to the first batch." Replaces R9-Q8/Q9/Q10. | D-055 |

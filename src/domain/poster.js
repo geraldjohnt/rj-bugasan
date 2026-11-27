@@ -2,6 +2,7 @@
  * Price poster (D-047): which items go on the Facebook price-update image and how they read.
  * Pure functions; the drawing lives in features/inventory/pricePoster.js.
  */
+import { displayPriceC } from './batches.js';
 import { UNITS } from './quantity.js';
 import { installmentPriceOf } from './inventory.js';
 
@@ -28,7 +29,7 @@ export function posterRows(items, { selectedIds, hideOutOfStock = false } = {}) 
     .filter((i) => !(hideOutOfStock && i.qtyH <= 0))
     .sort((a, b) => groupOf(a).localeCompare(groupOf(b)) || weight(b) - weight(a) || a.name.localeCompare(b.name))
     .map((i) => ({
-      id: i.id, name: posterName(i), cashC: i.priceC, paydayC: installmentPriceOf(i), perKg: i.unit === UNITS.KG, soldOut: i.qtyH <= 0,
+      id: i.id, name: posterName(i), cashC: displayPriceC(i), paydayC: Number.isInteger(i.installmentPriceC) ? i.installmentPriceC : displayPriceC(i), perKg: i.unit === UNITS.KG, soldOut: i.qtyH <= 0,
     }));
 }
 

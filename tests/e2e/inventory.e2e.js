@@ -99,7 +99,9 @@ await step('Open sack: 1 sack → +50 kg, kg cost set; sack now low stock', asyn
   await page.waitForSelector('h1:has-text("Test Dinorado 50kg Sack")');
   await page.click('.page-header button:has-text("Open sack")');
   await page.waitForSelector('.dialog:has-text("Open sack")');
-  expect(await field('Cost per kg').inputValue() === '44.00', 'default kg cost: ' + await field('Cost per kg').inputValue());
+  // Phase 13: empty = each sack batch's cost ÷ weight (opening batch ₱2,200 ÷ 50 = ₱44.00/kg).
+  expect(await field('Cost per kg').inputValue() === '', 'kg cost should default to automatic');
+  expect(await page.isVisible('.dialog .field-help:has-text("₱44.00/kg")'), 'suggested kg cost missing');
   await field('Sacks to open').fill('5');
   await page.click('.dialog-footer button:has-text("Open sack")');
   await page.waitForSelector('.dialog .field-error:has-text("Only 3 sacks in stock")');
@@ -112,7 +114,7 @@ await step('Open sack: 1 sack → +50 kg, kg cost set; sack now low stock', asyn
   await page.click('a:has-text("Test Dinorado per KG")');
   await page.waitForSelector('h1:has-text("Test Dinorado per KG")');
   expect(await stat('In stock') === '50 kg', 'kg stock: ' + await stat('In stock'));
-  expect(await stat('Cost') === '₱44.00', 'kg cost: ' + await stat('Cost'));
+  expect(await stat('Default cost') === '₱44.00', 'kg cost: ' + await stat('Default cost'));
 });
 
 await step('Adjust stock: cannot remove more than available; reason recorded in history', async () => {

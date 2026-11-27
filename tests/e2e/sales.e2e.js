@@ -68,7 +68,7 @@ await step('Load sample data: sales, stats and a cancelled sale appear', async (
   await toast('Sample data loaded');
   await page.waitForSelector('.table a:has-text("RJ-2026-")');
   const shown = await page.locator('.table tbody tr').count();
-  expect(shown === 6, 'active sales shown: ' + shown);
+  expect(shown === 7, 'active sales shown: ' + shown); // incl. the Phase 13 sample sale with a delivery fee
   expect(money(await stat('Still to collect')) > 0, 'nothing to collect');
   await field('Status', '.toolbar').selectOption('CANCELLED');
   await page.waitForSelector('.toolbar-end:has-text("1 shown")');

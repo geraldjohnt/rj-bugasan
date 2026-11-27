@@ -100,7 +100,8 @@ export function statusFromLines(lines) {
 }
 
 /**
- * Plan a receipt (BR-061). input: { date, lines: [{ itemId, qtyH, unitCostC }] }. Lines with qtyH 0 are skipped.
+ * Plan a receipt (BR-061). input: { date, lines: [{ itemId, qtyH, unitCostC, priceC }] }. Lines with qtyH 0 are skipped.
+ * priceC: the cash selling price of this batch (D-050); when missing the caller uses the item's default price.
  * Returns { receiptLines, lines (updated order lines), status, valueC }.
  */
 export function planReceipt(restock, input) {
@@ -120,7 +121,8 @@ export function planReceipt(restock, input) {
     }
     if (!Number.isInteger(r.unitCostC) || r.unitCostC < 0) throw new DomainError('INVALID_AMOUNT', `Invalid unit cost for ${line.itemName}.`);
     if (receiptLines.some((x) => x.itemId === r.itemId)) throw new DomainError('DUPLICATE_LINE', `${line.itemName} appears twice.`);
-    receiptLines.push({ itemId: r.itemId, itemName: line.itemName, unit: line.unit, qtyH: r.qtyH, unitCostC: r.unitCostC });
+    if (r.priceC !== undefined && r.priceC !== null && (!Number.isInteger(r.priceC) || r.priceC < 0)) throw new DomainError('INVALID_AMOUNT', `Invalid selling price for ${line.itemName}.`);
+    receiptLines.push({ itemId: r.itemId, itemName: line.itemName, unit: line.unit, qtyH: r.qtyH, unitCostC: r.unitCostC, priceC: Number.isInteger(r.priceC) ? r.priceC : null });
   }
   if (!receiptLines.length) throw new DomainError('NOTHING_RECEIVED', 'Enter at least one received quantity.');
   const got = new Map(receiptLines.map((l) => [l.itemId, l]));

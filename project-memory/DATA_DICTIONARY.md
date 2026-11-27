@@ -132,3 +132,12 @@ at, by, byName, action (e.g. `SALE_CREATE`, `SALE_CANCEL`, `PAYMENT_VOID`, `ITEM
 - `settings/backup`: `lastBackupAt` (ISO string), `lastBackupBy`, `lastBackupByName`, `lastBackupRecords`.
 - `settings/restore`: `active` (bool — opens the restore window in the rules), `startedAt`, `finishedAt`, `by`, `byName`, `backupExportedAt`, `written`, `deleted`.
 - activityLogs actions added: `OPENING_BALANCE_CREATE`, `BACKUP_EXPORT`, `BACKUP_RESTORE` (entityType `backup`).
+
+## Phase 13 additions (2026-11-27)
+- **items/{id}.batches** — list (≤ 150), oldest first, of open batches: `{ id, date, qtyH, receivedQtyH, unitCostC, priceC, source (RESTOCK|OLD|OPENING|SACK_OPEN), supplierId?, supplierName?, restockId? }`. Σ qtyH ≤ item.qtyH (kept by transactions). `priceC`/`costC` on the item are now the defaults for new batches.
+- **suppliers/{id}.code** — `SUP001`… (D-051).
+- **counters/supplier** `{ next }`; **counters/batch-<code>** `{ next }` for `SUPnnn` and `OLD`.
+- **restocks/{id}.receipts[].batchId**; receipt lines gain `priceC` and `batchId`.
+- **sales/{id}.lines[].batches** — `[{ batchId, qtyH, date, unitCostC, priceC, source, supplierId, supplierName, restockId, receivedQtyH }]`; `lines[].costC` (exact cost), `lines[].batchPicked` (batch id chosen by the owner or null). `unitCostC` = weighted average.
+- **sales/{id}.charges** — `[{ name, amountC }]`; **sales/{id}.chargesC** — Σ amounts. `totalC = subtotalC − discountC + chargesC`.
+- **inventoryMovements/{id}.batches** — `[{ batchId, qtyH, unitCostC }]` the batch quantities moved (optional).

@@ -6,6 +6,7 @@ import { DomainError } from './errors.js';
 import { UNITS, parseQty, validateQty, formatQty } from './quantity.js';
 import { parseMoney, mulDivRound } from './money.js';
 import { isValidDate } from './dates.js';
+import { batchStockValueC } from './batches.js';
 
 export const MOVEMENT_TYPES = {
   OPENING: 'OPENING',
@@ -204,7 +205,8 @@ export function stockStatus(item) {
   return 'OK';
 }
 
-export const stockValueC = (item) => mulDivRound(item.qtyH, item.costC, 100);
+/** Stock value at cost: each batch at its own cost, stock not in a batch at the item's default cost (D-050). */
+export const stockValueC = (item) => batchStockValueC(item);
 
 /** Summary over ACTIVE items. */
 export function inventorySummary(items) {

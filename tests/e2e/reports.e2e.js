@@ -104,8 +104,10 @@ await step('Period presets and custom range drive the URL; From after To warns',
 await step('Profit by item adds up to revenue; profit & loss: net = gross − expenses and matches the dashboard', async () => {
   await report('profit');
   const itemRev = money(await stat('Revenue'));
-  expect(near(itemRev, kpi['Revenue this month']), `item revenue ${itemRev}`);
-  expect(near(money(await stat('Gross profit')), kpi['Gross profit this month']), 'gross profit differs');
+  const charges = money(await stat('Other charges'));
+  // Phase 13 (D-054): other charges (delivery fee …) are not item revenue.
+  expect(near(itemRev + charges, kpi['Revenue this month']), `item revenue ${itemRev} + charges ${charges}`);
+  expect(near(money(await stat('Gross profit')) + charges, kpi['Gross profit this month']), 'gross profit differs');
   await report('pnl');
   const g = money(await stat('Gross profit')), e = money(await stat('Expenses')), n = money(await stat('Net profit'));
   expect(near(n, g - e), `net ${n} vs ${g} − ${e}`);
@@ -138,7 +140,7 @@ await step('Export CSV downloads the report with a header row and plain numbers'
   expect(dl.suggestedFilename() === `sales_${FROM}_to_${TODAY}.csv`, dl.suggestedFilename());
   const text = fs.readFileSync(await dl.path(), 'utf8').replace(/^\ufeff/, '');
   const lines = text.trim().split(/\r\n/);
-  expect(lines[0] === 'Date,Sale,Customer,Terms,Payment,Revenue,Cost,Gross profit,Balance', 'header: ' + lines[0]);
+  expect(lines[0] === 'Date,Sale,Customer,Terms,Payment,Other charges,Revenue,Cost,Gross profit,Balance', 'header: ' + lines[0]);
   expect(lines.length === 1 + Number(await stat('Sales')), 'row count');
   expect(/,\d+\.\d{2},/.test(lines[1]), 'money not plain: ' + lines[1]);
 });

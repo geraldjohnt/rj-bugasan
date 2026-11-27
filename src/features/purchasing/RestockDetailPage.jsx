@@ -26,7 +26,7 @@ function ReceiveDialog({ open, onClose, adapter, restock, itemsById }) {
   const toast = useToast();
   const online = useOnline();
   const open_ = restock.lines.filter((l) => remainingH(l) > 0);
-  const init = () => Object.fromEntries(open_.map((l) => [l.itemId, { qty: qtyToPlain(remainingH(l)), cost: centavosToPlain(l.unitCostC), update: true }]));
+  const init = () => Object.fromEntries(open_.map((l) => [l.itemId, { qty: qtyToPlain(remainingH(l)), cost: centavosToPlain(l.unitCostC), price: itemsById[l.itemId] ? centavosToPlain(itemsById[l.itemId].priceC) : '', update: true }]));
   const [date, setDate] = React.useState(today());
   const [vals, setVals] = React.useState(init);
   const [err, setErr] = React.useState(null);
@@ -35,25 +35,26 @@ function ReceiveDialog({ open, onClose, adapter, restock, itemsById }) {
   const set = (id, patch) => { setVals((v) => ({ ...v, [id]: { ...v[id], ...patch } })); setErr(null); };
 
   const parsed = open_.map((l) => {
-    const v = vals[l.itemId] || { qty: '', cost: '', update: true };
-    let qtyH = null, costC = null, qErr = null, cErr = null;
+    const v = vals[l.itemId] || { qty: '', cost: '', price: '', update: true };
+    let qtyH = null, costC = null, priceC = null, qErr = null, cErr = null, pErr = null;
     try { qtyH = parseQty(v.qty, l.unit) ?? 0; } catch (x) { qErr = x.message; }
     try { costC = parseMoney(v.cost); if (costC === null) cErr = 'Required.'; } catch (x) { cErr = x.message; }
+    try { priceC = parseMoney(v.price); if (priceC === null) pErr = 'Enter the selling price.'; else if (priceC < 0) pErr = 'Cannot be negative.'; } catch (x) { pErr = x.message; }
     if (!qErr && qtyH > remainingH(l)) qErr = `Only ${formatQty(remainingH(l), l.unit)} left on the order.`;
-    return { l, v, qtyH, costC, qErr, cErr, item: itemsById[l.itemId] };
+    return { l, v, qtyH, costC, priceC, qErr, cErr, pErr, item: itemsById[l.itemId] };
   });
   const totalC = parsed.reduce((s, p) => s + (p.qtyH && p.costC !== null ? lineCost(p.qtyH, p.costC) : 0), 0);
 
   async function submit(e) {
     e.preventDefault();
-    const bad = parsed.find((p) => p.qErr || (p.qtyH > 0 && p.cErr));
-    if (bad) { setErr(`${bad.l.itemName}: ${bad.qErr || bad.cErr}`); return; }
-    const input = { date, lines: parsed.map((p) => ({ itemId: p.l.itemId, qtyH: p.qtyH || 0, unitCostC: p.costC ?? 0, updateCost: !!p.v.update })) };
+    const bad = parsed.find((p) => p.qErr || (p.qtyH > 0 && (p.cErr || p.pErr)));
+    if (bad) { setErr(`${bad.l.itemName}: ${bad.qErr || bad.cErr || bad.pErr}`); return; }
+    const input = { date, lines: parsed.map((p) => ({ itemId: p.l.itemId, qtyH: p.qtyH || 0, unitCostC: p.costC ?? 0, priceC: p.priceC ?? null, updateCost: !!p.v.update })) };
     try { planReceipt(restock, input); } catch (x) { setErr(x.message); return; }
     setBusy(true); setErr(null);
     try {
       const r = await receiveRestock(adapter, actorOf(auth.user), restock.id, input);
-      toast({ message: r.status === 'RECEIVED' ? `Received. ${restock.id} is complete.` : `Received ${formatMoney(r.valueC)}. The rest is still to come.` });
+      toast({ message: r.status === 'RECEIVED' ? `Received as batch ${r.batchId}. ${restock.id} is complete.` : `Received ${formatMoney(r.valueC)} as batch ${r.batchId}. The rest is still to come.` });
       onClose();
     } catch (x) { setErr(errorMessage(x)); }
     setBusy(false);
@@ -63,7 +64,7 @@ function ReceiveDialog({ open, onClose, adapter, restock, itemsById }) {
       footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" type="submit" form="receive-form" icon="receive" loading={busy} disabled={!online}>Receive and add to stock</Button></>}>
       <form id="receive-form" onSubmit={submit} noValidate className="form-stack">
         {err && <Banner tone="danger">{err}</Banner>}
-        <p className="muted">Enter what actually arrived. Leave 0 for items that did not come yet. Each received line adds stock and a movement.</p>
+        <p className="muted">Enter what actually arrived, its cost and its cash selling price. Leave 0 for items that did not come yet. This delivery becomes one batch (number given on saving); older batches are sold first.</p>
         <TextField label="Date received" type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="receive-date" />
         <div className="list-rows">
           {parsed.map((p) => {
@@ -73,11 +74,12 @@ function ReceiveDialog({ open, onClose, adapter, restock, itemsById }) {
                 <div className="receive-item"><strong>{p.l.itemName}</strong><span className="muted small">{formatQty(remainingH(p.l), p.l.unit)} to receive{p.item ? ` · in stock ${formatQty(p.item.qtyH, p.item.unit)}` : ''}</span></div>
                 <TextField label="Received" aria-label={`Received ${p.l.itemName}`} value={p.v.qty} onChange={(e) => set(p.l.itemId, { qty: e.target.value })} inputMode="decimal" suffix={unitLabel(p.l.unit)} inputClassName="num" error={p.qErr} />
                 <TextField label="Unit cost" aria-label={`Unit cost ${p.l.itemName}`} value={p.v.cost} onChange={(e) => set(p.l.itemId, { cost: e.target.value })} inputMode="decimal" prefix="₱" inputClassName="num" error={p.qtyH ? p.cErr : null} />
+                <TextField label="Cash price" aria-label={`Cash price ${p.l.itemName}`} value={p.v.price} onChange={(e) => set(p.l.itemId, { price: e.target.value })} inputMode="decimal" prefix="₱" inputClassName="num" error={p.qtyH ? p.pErr : null} />
                 <div className="receive-cost">
-                  {differs && p.qtyH > 0 ? (
+                  {(differs || (p.item && p.priceC !== null && p.priceC !== p.item.priceC)) && p.qtyH > 0 ? (
                     <label className="checkbox"><input type="checkbox" checked={!!p.v.update} onChange={(e) => set(p.l.itemId, { update: e.target.checked })} />
-                      Update item cost {formatMoney(p.item.costC)} → {formatMoney(p.costC)}</label>
-                  ) : <span className="muted small">{p.item ? `Item cost ${formatMoney(p.item.costC)}` : ''}</span>}
+                      Make these the item's default cost and price</label>
+                  ) : <span className="muted small">{p.item ? `Defaults: cost ${formatMoney(p.item.costC)}, price ${formatMoney(p.item.priceC)}` : ''}</span>}
                 </div>
               </div>
             );
@@ -138,7 +140,8 @@ export function RestockDetailPage({ adapter, id }) {
   const receipts = (r.receipts || []).map((rc, i) => ({ ...rc, id: String(i) }));
   const receiptCols = [
     { key: 'date', header: 'Date', render: (rc) => formatDate(rc.date) },
-    { key: 'lines', header: 'Received', className: 'wrap', render: (rc) => rc.lines.map((l) => `${formatQty(l.qtyH, l.unit)} ${l.itemName} @ ${formatMoney(l.unitCostC)}`).join(', ') },
+    { key: 'batch', header: 'Batch', render: (rc) => rc.batchId || '—' },
+    { key: 'lines', header: 'Received', className: 'wrap', render: (rc) => rc.lines.map((l) => `${formatQty(l.qtyH, l.unit)} ${l.itemName} @ ${formatMoney(l.unitCostC)}` + (Number.isInteger(l.priceC) ? ` (sells ${formatMoney(l.priceC)})` : '')).join(', ') },
     { key: 'by', header: 'By', render: (rc) => rc.byName || '—' },
     { key: 'value', header: 'Value', align: 'right', render: (rc) => formatMoney(rc.lines.reduce((s, l) => s + lineCost(l.qtyH, l.unitCostC), 0)) },
   ];

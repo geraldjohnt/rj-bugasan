@@ -176,7 +176,7 @@ async function loadPurchasing(adapter, actor, asOf, itemIds) {
     return createRestock(adapter, actor, data);
   };
   const receive = (id, date, lines) => receiveRestock(adapter, actor, id, {
-    date, lines: lines.map(([name, qty, cost, updateCost = true]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), updateCost })),
+    date, lines: lines.map(([name, qty, cost, updateCost = true, price = null]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), priceC: price === null ? null : P(price), updateCost })),
   });
   let restocks = 0;
 
@@ -213,6 +213,22 @@ async function loadPurchasing(adapter, actor, asOf, itemIds) {
   await createExpense(adapter, actor, validateExpenseForm({ date: addDays(asOf, -12), category: 'Delivery/Fuel', amount: '380', note: 'Gas for delivery' }).data);
   await voidExpense(adapter, actor, mistake, 'Entered twice');
   expenses++;
+
+  // Phase 13 — batches (D-050 … D-055): a newer NFA batch at a higher cost and cash price (item defaults kept),
+  // then a delivered walk-in sale that uses up the older batch and takes 1 sack of the new one (weighted price),
+  // with a delivery fee as an other charge (D-054).
+  const r6 = await order('Nueva Ecija Rice Mill', addDays(asOf, -2), addDays(asOf, -1), [['NFA Well-milled 50kg Sack', 6, 2000]], 'New harvest, higher price.');
+  await receive(r6, addDays(asOf, -1), [['NFA Well-milled 50kg Sack', 6, 2000, false, 2350]]);
+  restocks++;
+  const din = await adapter.get('items', itemIds['NFA Well-milled 50kg Sack']);
+  const older = (din.batches || []).slice(0, -1).reduce((a, b) => a + b.qtyH, 0);
+  if (older > 0 && older <= 3000) {
+    await createSale(adapter, actor, {
+      saleDate: addDays(asOf, -1), customerId: 'WALK_IN', lines: [{ itemId: din.id, qtyH: older + 100 }], terms: 'FULL', method: 'CASH',
+      discount: { type: 'NONE' }, fulfillment: 'DELIVERED', deliveryDate: addDays(asOf, -1), notes: 'Sample: spans two batches; delivery fee charged.',
+      charges: [{ name: 'Delivery fee', amountC: P(150) }],
+    }, DEFAULT_SALES_SETTINGS, asOf);
+  }
 
   let events = 0;
   for (const e of [{ title: 'Pay store rent', date: addDays(asOf, 5), time: '09:00', note: 'Landlord: Mrs. Garcia' },

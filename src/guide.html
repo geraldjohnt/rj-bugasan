@@ -80,8 +80,10 @@
 <h2 id="sale">3. Recording a sale</h2>
 <ol>
   <li>Click <strong>New sale</strong>. Choose the customer (or <em>Walk-in</em> for a paid counter sale; type part of the name or phone number to search).</li>
-  <li>Add items and quantities. The screen shows stock on hand and stops you from selling more than you have. You may change the unit price on a line; the list price stays visible.</li>
-  <li>Optional discount in % or ₱.</li>
+  <li>Add items and quantities. The screen shows stock on hand and stops you from selling more than you have. Stock is taken from the <strong>oldest batch first</strong>; the line shows which batches it uses. The price comes from those batches: when a line takes from two batches with different prices, it uses the <strong>average</strong> (for example 2 sacks at ₱1,500 and 3 at ₱1,550 → ₱1,530 each). You may change the unit price on a line; the batch or payday price stays visible with <em>use it</em> to go back.</li>
+  <li>To sell from a particular batch (for example a damaged sack), choose it in the <strong>Batch</strong> list under the line.</li>
+  <li>Optional discount in % or ₱ (on the items only).</li>
+  <li>Optional <strong>Other charges</strong>: click <em>Add charge</em> and type a name and amount, for example <em>Delivery fee ₱50</em>. Names you used before are suggested with their last amount. Charges are added after the discount and are part of any balance or installments.</li>
   <li>Choose the terms: <strong>Paid in full</strong>, <strong>Partial / pay later</strong> (with an optional due date) or <strong>Installment</strong>.</li>
   <li>Choose how they paid (Cash, Bank transfer, E-wallet; add the reference number for transfers).</li>
   <li>Set the delivery status if you deliver, then <strong>Save sale</strong>. Print the receipt from the sale's page.</li>
@@ -109,15 +111,18 @@
 <h2 id="stock">7. Items and stock</h2>
 <ul>
   <li>Every stock change is recorded as a movement (Stock → Movements): opening stock, sales, cancellations, restocks, adjustments, counts and opened sacks.</li>
-  <li><strong>Adjust stock</strong> for spillage, spoilage and similar, with a reason.</li>
-  <li><strong>Open sack</strong> moves one or more sacks into the linked per-kg item.</li>
+  <li><strong>Batches:</strong> each restock delivery becomes a batch with its own number (for example <em>RJ-RS-SUP001-0004</em>: supplier SUP001, its 4th delivery), cost and cash price. The item page lists the batches in stock, oldest first; the oldest is sold first. Use <em>Edit</em> on a batch to change its cost or cash price (later sales only). Stock you had before batches existed was put into a first batch (<em>RJ-RS-OLD-…</em>) at the item's cost and price.</li>
+  <li>The <strong>Cash price</strong> shown for an item is the price of its oldest batch; <em>next</em> shows the next batch's price when it differs. Changing the item's cash price asks whether to apply it to the batches in stock too.</li>
+  <li><strong>Adjust stock</strong> for spillage, spoilage and similar, with a reason (removed from the oldest batch unless you choose one).</li>
+  <li><strong>Open sack</strong> moves one or more sacks into the linked per-kg item. The kilos keep the sack's batch number; their cost is the sack batch cost ÷ sack weight unless you type one.</li>
   <li><strong>Stock count:</strong> start a count, enter what you counted, then finalize; the differences become adjustments.</li>
   <li>Items below their minimum stock are flagged on the Items list and the Dashboard.</li>
 </ul>
 
 <h2 id="restocks">8. Restocks, suppliers and expenses</h2>
 <ul>
-  <li>Create a <strong>restock</strong> order for a supplier. Stock increases only when you <strong>Receive</strong> it (all or part). If the cost changed, tick <em>Update item cost</em>.</li>
+  <li>Create a <strong>restock</strong> order for a supplier. Stock increases only when you <strong>Receive</strong> it (all or part). On receiving, enter the <strong>cost</strong> and the <strong>cash selling price</strong> of each item; the delivery becomes one batch. Tick <em>Make these the item's default cost and price</em> if new batches should start from these values.</li>
+  <li>Every supplier has a code (SUP001, SUP002 …) used in its batch numbers.</li>
   <li>Cancel an order if nothing arrived; <em>Close</em> it if the rest will not come.</li>
   <li><strong>Expenses</strong> (rent, wages, fuel …) reduce net profit. Wrong entries are voided, not deleted.</li>
 </ul>
@@ -130,6 +135,7 @@
   <li>The <strong>Dashboard</strong> shows today's sales, this month's revenue, profit and cash collected, receivables, overdue amounts, stock value and what needs attention.</li>
   <li><strong>Reports:</strong> Sales, Profit by item, Profit &amp; loss, Cash collected, Receivables aging, Inventory valuation, Movements &amp; losses, Restocks by supplier. Pick a period, then <em>Print / PDF</em> or <em>Export CSV</em> (opens in Excel).</li>
   <li><em>Revenue</em> counts sales on their sale date; <em>cash collected</em> counts payments on the day received. Opening balances count toward receivables and cash collected, never toward revenue.</li>
+  <li>Profit uses the real cost of the batches each sale took. <em>Other charges</em> (delivery fee …) are part of revenue and shown on their own line in Profit &amp; loss; Profit by item leaves them out.</li>
 </ul>
 
 <h2 id="backup">11. Backup and restore</h2>

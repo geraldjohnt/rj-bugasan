@@ -17,9 +17,11 @@ import { loadSalesSettings, DEFAULT_SALES_SETTINGS } from '../../data/settingsRe
 import { formatMoney, parseMoney, centavosToPlain } from '../../domain/money.js';
 import { UNITS, parseQty, formatQty } from '../../domain/quantity.js';
 import { formatDate, today } from '../../domain/dates.js';
-import { unitLabel, listPriceFor, installmentPriceOf } from '../../domain/inventory.js';
-import { planSale, TERMS_LABELS, FULFILLMENT_LABELS } from '../../domain/sales.js';
-import { TERMS, DISCOUNT, WALK_IN_ID, requestedByItem } from '../../domain/saleTotals.js';
+import { unitLabel } from '../../domain/inventory.js';
+import { planSale, suggestedPrices, TERMS_LABELS, FULFILLMENT_LABELS } from '../../domain/sales.js';
+import { displayPriceC, batchesOf, takenText } from '../../domain/batches.js';
+import { useQuery } from '../../data/useData.js';
+import { TERMS, DISCOUNT, WALK_IN_ID, requestedByItem, MAX_CHARGES } from '../../domain/saleTotals.js';
 import { FREQUENCY_LABELS, ALLOWED_COUNTS } from '../../domain/schedule.js';
 import { useItems } from '../inventory/ItemsPage.jsx';
 import { useCustomers } from '../customers/CustomersPage.jsx';
@@ -27,7 +29,16 @@ import { CustomerFormDialog } from '../customers/CustomerDialogs.jsx';
 import { METHOD_OPTIONS } from './PaymentDialogs.jsx';
 
 let lineSeq = 0;
-const newLine = () => ({ key: ++lineSeq, itemId: '', qty: '', price: '', auto: true });
+const newLine = () => ({ key: ++lineSeq, itemId: '', qty: '', price: '', auto: true, batchId: '' });
+const newCharge = () => ({ key: ++lineSeq, name: '', amount: '' });
+
+/** D-054: charge names used on recent sales, with the last amount, for quick entry. */
+function useChargeSuggestions(adapter) {
+  const { rows } = useQuery(adapter, 'sales', { orderBy: [['createdAt', 'desc']], limit: 200 }, 'recent-sales-charges');
+  const m = new Map();
+  for (const s of rows || []) for (const c of s.charges || []) if (!m.has(c.name.toLowerCase())) m.set(c.name.toLowerCase(), c);
+  return [...m.values()];
+}
 
 function parseLine(l, item) {
   const out = { qtyH: null, priceC: null, qtyErr: null, priceErr: null };
@@ -50,6 +61,8 @@ export function NewSalePage({ adapter }) {
   const [customerId, setCustomerId] = React.useState(query.customer || WALK_IN_ID);
   const [saleDate, setSaleDate] = React.useState(today());
   const [lines, setLines] = React.useState(() => [newLine()]);
+  const [charges, setCharges] = React.useState([]);
+  const chargeSuggestions = useChargeSuggestions(adapter);
   const [discount, setDiscount] = React.useState({ type: DISCOUNT.NONE, value: '' });
   const [terms, setTerms] = React.useState(TERMS.FULL);
   const [method, setMethod] = React.useState('CASH');
@@ -76,7 +89,16 @@ export function NewSalePage({ adapter }) {
   const isWalkIn = customerId === WALK_IN_ID;
 
   // ---- parse the form
-  const parsed = lines.map((l) => ({ ...l, item: itemsById[l.itemId], ...parseLine(l, itemsById[l.itemId]) }));
+  const parsed0 = lines.map((l) => ({ ...l, item: itemsById[l.itemId], ...parseLine(l, itemsById[l.itemId]) }));
+  // D-050/D-052: lines whose price was not typed follow the batches they take (weighted cash price) or the payday price.
+  const priced = parsed0.filter((l) => l.item && l.qtyH);
+  const sugg = suggestedPrices(priced.map((l) => ({ itemId: l.itemId, qtyH: l.qtyH, batchId: l.batchId || null })), itemsById, terms);
+  const suggByKey = new Map(priced.map((l, i) => [l.key, sugg[i]]));
+  const parsed = parsed0.map((l) => {
+    if (!l.item || !l.auto) return l;
+    const p = suggByKey.has(l.key) ? suggByKey.get(l.key) : suggestedPrices([{ itemId: l.itemId, qtyH: 1, batchId: l.batchId || null }], itemsById, terms)[0];
+    return { ...l, priceC: p, priceErr: null, listC: p };
+  });
   const filled = parsed.filter((l) => l.item);
   const requested = requestedByItem(filled.filter((l) => l.qtyH).map((l) => ({ itemId: l.itemId, qtyH: l.qtyH })));
   let discountValue = 0, discountErr = null;
@@ -85,31 +107,39 @@ export function NewSalePage({ adapter }) {
   try { paidNowC = parseMoney(paidNow) ?? 0; } catch (e) { paidErr = e.message; }
   let downC = 0, downErr = null;
   try { downC = parseMoney(plan.downPayment) ?? 0; } catch (e) { downErr = e.message; }
+  let chargeErr = null;
+  const chargeInput = charges.map((c) => {
+    let amountC = null;
+    try { amountC = parseMoney(c.amount); } catch (e) { chargeErr = chargeErr || e.message; }
+    return { name: c.name, amountC };
+  });
 
   const fieldErr = filled.find((l) => l.qtyErr || l.priceErr || l.qtyH === null || l.priceC === null);
   const input = {
-    saleDate, customerId, lines: filled.map((l) => ({ itemId: l.itemId, qtyH: l.qtyH, unitPriceC: l.priceC })),
+    saleDate, customerId, lines: filled.map((l) => ({ itemId: l.itemId, qtyH: l.qtyH, unitPriceC: l.priceC, batchId: l.batchId || null })),
+    charges: chargeInput,
     discount: { type: discount.type, value: discountValue }, terms, method, reference, paidNowC, dueDate: dueDate || null,
     plan: { count: plan.count, frequency: plan.frequency, downPaymentC: downC, dueDates }, fulfillment, deliveryDate: deliveryDate || null, notes, creditOverride: true,
   };
   let result = null, planError = null;
-  if (!fieldErr && !discountErr && !paidErr && !downErr && customer) {
+  if (!fieldErr && !discountErr && !paidErr && !downErr && !chargeErr && customer) {
     try { result = planSale(input, { itemsById, customer, settings, today: today() }); } catch (e) { planError = e; }
   }
   const formError = (!filled.length && 'Add at least one item.') || (fieldErr && (fieldErr.qtyErr || fieldErr.priceErr || 'Enter a quantity and price for every line.'))
-    || discountErr || paidErr || downErr || (planError && planError.message) || null;
+    || discountErr || paidErr || downErr || chargeErr || (planError && planError.message) || null;
   const creditWarning = result && result.creditWarning;
   const canSave = online && result && !formError && (!creditWarning || creditOk) && !busy;
 
   const setLine = (key, patch) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)));
   function pickItem(key, itemId) {
     const it = itemsById[itemId];
-    setLine(key, { itemId, price: it ? centavosToPlain(listPriceFor(it, terms)) : '', auto: true, qty: it && it.unit === UNITS.SACK ? '1' : '' });
+    setLine(key, { itemId, price: '', auto: true, batchId: '', qty: it && it.unit === UNITS.SACK ? '1' : '' });
   }
-  // D-046: lines whose price was not typed follow the terms (cash price vs payday price).
-  React.useEffect(() => {
-    setLines((ls) => ls.map((l) => { const it = itemsById[l.itemId]; return it && l.auto ? { ...l, price: centavosToPlain(listPriceFor(it, terms)) } : l; }));
-  }, [terms]);
+  const setCharge = (key, patch) => setCharges((cs) => cs.map((c) => (c.key === key ? { ...c, ...patch } : c)));
+  function chargeName(key, name) {
+    const known = chargeSuggestions.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+    setCharges((cs) => cs.map((c) => (c.key === key ? { ...c, name, amount: c.amount || !known ? c.amount : centavosToPlain(known.amountC) } : c)));
+  }
 
   async function save() {
     setTried(true);
@@ -124,7 +154,7 @@ export function NewSalePage({ adapter }) {
 
   const itemOptions = (items || []).filter((i) => i.status === 'ACTIVE').map((i) => ({
     value: i.id, label: i.name, disabled: i.qtyH <= 0,
-    detail: `${formatQty(i.qtyH, i.unit)} in stock · cash ${formatMoney(i.priceC)} · payday ${formatMoney(installmentPriceOf(i))} /${i.unit === UNITS.SACK ? 'sack' : 'kg'}`,
+    detail: `${formatQty(i.qtyH, i.unit)} in stock · cash ${formatMoney(displayPriceC(i))}${Number.isInteger(i.installmentPriceC) ? ` · payday ${formatMoney(i.installmentPriceC)}` : ''} /${i.unit === UNITS.SACK ? 'sack' : 'kg'}`,
   }));
   const customerOptions = [
     { value: WALK_IN_ID, label: 'Walk-in', detail: 'Paid in full at the counter' },
@@ -158,21 +188,55 @@ export function NewSalePage({ adapter }) {
               {parsed.map((l, idx) => {
                 const it = l.item;
                 const over = it && l.qtyH && requested.get(it.id) > it.qtyH;
+                const fi = filled.indexOf(l);
+                const planned = result && fi >= 0 ? result.saleLines[fi] : null;
+                const listC = planned ? planned.listPriceC : l.listC;
+                const shown = l.auto ? (l.priceC !== null && l.priceC !== undefined ? centavosToPlain(l.priceC) : '') : l.price;
+                const bs = it ? batchesOf(it) : [];
                 return (
-                  <div key={l.key} className="sale-line">
+                  <div key={l.key} className="sale-line-wrap">
+                  <div className="sale-line">
                     <Combobox label={idx === 0 ? 'Item' : undefined} inputLabel={`Item ${idx + 1}`} className="sale-line-item" options={itemOptions} value={l.itemId} onChange={(v) => pickItem(l.key, v)} placeholder="Search rice item" />
                     <TextField label={idx === 0 ? 'Quantity' : undefined} aria-label={`Quantity ${idx + 1}`} className="sale-line-qty" value={l.qty} onChange={(e) => setLine(l.key, { qty: e.target.value })}
                       inputMode="decimal" suffix={it ? unitLabel(it.unit) : ''} inputClassName="num" error={tried || l.qty ? l.qtyErr || (over ? `Only ${formatQty(it.qtyH, it.unit)} in stock` : null) : null} disabled={!it} />
-                    <TextField label={idx === 0 ? 'Unit price' : undefined} aria-label={`Unit price ${idx + 1}`} className="sale-line-price" value={l.price} onChange={(e) => setLine(l.key, { price: e.target.value, auto: false })}
+                    <TextField label={idx === 0 ? 'Unit price' : undefined} aria-label={`Unit price ${idx + 1}`} className="sale-line-price" value={shown} onChange={(e) => setLine(l.key, { price: e.target.value, auto: false })}
                       inputMode="decimal" prefix="₱" inputClassName="num" error={l.priceErr} disabled={!it}
-                      help={it && l.priceC !== null ? (l.priceC < it.costC ? <span className="delta-out">Below cost ({formatMoney(it.costC)})</span> : l.priceC !== listPriceFor(it, terms) ? `${terms === TERMS.FULL ? 'Cash' : 'Payday'} price ${formatMoney(listPriceFor(it, terms))}` : null) : null} />
-                    <div className="sale-line-total">{idx === 0 && <div className="field-label">Amount</div>}<strong className="num">{it && l.qtyH && l.priceC !== null ? formatMoney(Math.round(l.qtyH * l.priceC / 100)) : '—'}</strong></div>
+                      help={it && l.priceC !== null && l.priceC !== undefined ? (planned && l.priceC < planned.unitCostC ? <span className="delta-out">Below cost ({formatMoney(planned.unitCostC)})</span>
+                        : !l.auto && listC !== undefined && l.priceC !== listC ? <>{terms === TERMS.FULL ? 'Cash' : 'Payday'} price {formatMoney(listC)} · <button type="button" className="link-button" onClick={() => setLine(l.key, { auto: true, price: '' })}>use it</button></> : null) : null} />
+                    <div className="sale-line-total">{idx === 0 && <div className="field-label">Amount</div>}<strong className="num">{it && l.qtyH && l.priceC !== null && l.priceC !== undefined ? formatMoney(Math.round(l.qtyH * l.priceC / 100)) : '—'}</strong></div>
                     <IconButton icon="trash" label={`Remove line ${idx + 1}`} size="sm" className="sale-line-remove" onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== l.key) : [newLine()]))} />
+                  </div>
+                  {it && bs.length > 0 && (
+                    <div className="sale-line-batch">
+                      <SelectField aria-label={`Batch ${idx + 1}`} value={l.batchId} onChange={(e) => setLine(l.key, { batchId: e.target.value })}
+                        options={[{ value: '', label: 'Batch: automatic (oldest first)' }, ...bs.map((b) => ({ value: b.id, label: `${b.id} — ${formatQty(b.qtyH, it.unit)} at ${formatMoney(b.priceC)}` }))]} />
+                      {planned && <span className="muted small">From {takenText(planned.batches, it.unit)}</span>}
+                    </div>
+                  )}
                   </div>
                 );
               })}
             </div>
             <div className="panel-footer"><Button size="sm" icon="plus" onClick={() => setLines((ls) => [...ls, newLine()])}>Add line</Button></div>
+          </Panel>
+
+          <Panel title="Other charges" flush>
+            <datalist id="charge-names">{chargeSuggestions.map((c) => <option key={c.name} value={c.name}>{formatMoney(c.amountC)}</option>)}</datalist>
+            {charges.length > 0 && <div className="sale-lines">
+              {charges.map((c, idx) => (
+                <div key={c.key} className="sale-line charge-line">
+                  <TextField label={idx === 0 ? 'Charge' : undefined} aria-label={`Charge ${idx + 1}`} className="sale-line-item" value={c.name} list="charge-names" maxLength={60}
+                    placeholder="e.g. Delivery fee" onChange={(e) => chargeName(c.key, e.target.value)} />
+                  <TextField label={idx === 0 ? 'Amount' : undefined} aria-label={`Charge amount ${idx + 1}`} className="sale-line-price" value={c.amount} onChange={(e) => setCharge(c.key, { amount: e.target.value })}
+                    inputMode="decimal" prefix="₱" inputClassName="num" />
+                  <IconButton icon="trash" label={`Remove charge ${idx + 1}`} size="sm" className="sale-line-remove" onClick={() => setCharges((cs) => cs.filter((x) => x.key !== c.key))} />
+                </div>
+              ))}
+            </div>}
+            <div className="panel-footer">
+              <Button size="sm" icon="plus" onClick={() => setCharges((cs) => [...cs, newCharge()])} disabled={charges.length >= MAX_CHARGES}>Add charge</Button>
+              {!charges.length && <span className="muted small">Delivery fee or other fees. Not discounted; part of the balance.</span>}
+            </div>
           </Panel>
 
           <Panel title="Delivery and notes">
@@ -189,6 +253,7 @@ export function NewSalePage({ adapter }) {
             <div className="summary-box">
               <div className="row"><span>Subtotal</span><strong>{formatMoney(result ? result.totals.subtotalC : 0)}</strong></div>
               {result && result.totals.discountC > 0 && <div className="row"><span>Discount</span><strong>−{formatMoney(result.totals.discountC)}</strong></div>}
+              {result && result.totals.charges.map((c, i) => <div key={i} className="row"><span>{c.name}</span><strong>{formatMoney(c.amountC)}</strong></div>)}
               <div className="row total-row"><span>Total</span><strong>{formatMoney(result ? result.totals.totalC : 0)}</strong></div>
             </div>
             <Segmented label="Discount" value={discount.type} onChange={(type) => setDiscount({ type, value: '' })} options={[{ value: 'NONE', label: 'None' }, { value: 'PERCENT', label: '%' }, { value: 'FIXED', label: '₱' }]} />
@@ -232,7 +297,7 @@ export function NewSalePage({ adapter }) {
               <div className="summary-box">
                 <div className="row"><span>Paid now</span><strong>{formatMoney(result.paidNowC)}</strong></div>
                 <div className="row"><span>Balance</span><strong>{formatMoney(result.balanceC)}</strong></div>
-                {terms === TERMS.FULL && <div className="row muted"><span>Gross profit</span><span>{formatMoney(result.totals.grossProfitC)}</span></div>}
+                {terms === TERMS.FULL && <div className="row muted"><span>Gross profit (items)</span><span>{formatMoney(result.totals.grossProfitC)}</span></div>}
               </div>
             )}
             {creditWarning && (

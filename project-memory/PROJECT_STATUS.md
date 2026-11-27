@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-11-27
 **Overall status:** Design approved (D-017). Implementation started.
-**Current phase:** Phases 11 (Activity log, backup/restore, opening balances) and 12 (go-live & release prep) — implemented, tested, released as 0.6.0; all development phases built. Remaining: owner go-live steps (FIREBASE_SETUP "Phases 11–12 — go-live checklist").
+**Current phase:** Phase 13 (restock batches oldest first + other charges on sales) — implemented and tested 2026-11-27, not yet released. Previous: Phases 11 (Activity log, backup/restore, opening balances) and 12 (go-live & release prep) — implemented, tested, released as 0.6.0; all development phases built. Remaining: owner go-live steps (FIREBASE_SETUP "Phases 11–12 — go-live checklist").
 **Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales), Restocks/Suppliers/Expenses, Calendar, Dashboard and Reports exist and are tested. Phase 11 (Activity log, Backup/restore, Opening balances) and Phase 12 (user guide, deploy/verify scripts, go-live checklist) exist and are tested. Installment plans: 2–5 payments, default 2 (D-043).
 
 ## Completed
@@ -48,6 +48,9 @@
 ## Completed 2026-11-26 (session 7)
 - Payday (installment) price per item and terms-based sale prices (D-046); Items → Price poster PNG for Facebook (D-047). Tests: unit/service 110/110, rules 43/43, all 8 E2E suites on `/build`. Released as 0.7.0.
 
+## Completed 2026-11-27 (Phase 13, session 10)
+- Restock batches oldest first (D-050), batch ids and supplier codes (D-051), weighted price (D-052), old stock as first batch (D-055, supersedes D-053), batch/item price edits (D-056), other charges on sales (D-054). Tests: unit/service 132/132, rules 46/46, E2E 9 suites on `/build` (new `batches` suite 11 steps), offline smoke on `/build`.
+
 ## Not started
 - None (all phases built; Phase 12 "Verified" needs the owner's go-live steps).
 
@@ -62,7 +65,7 @@
 - Keep the readable source (`/src`) committed; `/dist` is only the minified copy (user asked 2026-11-25; already the case).
 
 ## Immediate next actions
--1. **Restock batches / FIFO (D-050 … D-053):** design agreed in interview Round 9; waiting for the user's approval (BQ-1) before implementing as Phase 13.
+-1. **Phase 13 built and tested (D-050 … D-056)** — not released. Next: on "create PR and merge to main" run the release procedure (now 9 E2E suites incl. `batches`); then owner re-publishes rules and opens Items + Suppliers once online (FIREBASE_SETUP "Phase 13").
 0. Firebase project `rj-bugasan` connected; Email/Password enabled; spike passed → GO (D-019).
 1. ✅ Release 0.1.0 merged to main (2026-11-25, https://github.com/geraldjohnt/rj-bugasan/pull/1). `/dist` on main is the client folder.
 2. Owner: follow FIREBASE_SETUP.md "Phase 2 — go-live of login": publish `firebase/firestore.rules`, create the owner in the app, disable public sign-up (KI-011).

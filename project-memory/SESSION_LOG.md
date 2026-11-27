@@ -101,3 +101,6 @@
 - **Request:** restocks get IDs and their own prices; oldest stock sold first. User asked for a feasibility answer and questions first.
 - **Done:** feasibility confirmed; interview Round 9 (R9-Q1…Q11) recorded; proposed decisions D-050 … D-053; approval item BQ-1. No code changed.
 - Also: user asked for free-text charge lines on sales (delivery fee etc.); Round 10 recorded; proposed D-054; approval item BQ-2.
+- **Approved** by the user ("Approved, start building Phase 13"). During the build the user said to register old stock as the first batch → D-055 (supersedes D-053, which had not been built).
+- **Built:** Phase 13 (see DEVELOPMENT_PHASES). Also D-056 (item price edit can reprice batches in stock; receipt checkbox sets item defaults).
+- **Tests:** unit/service 132/132 (22 new), rules 46/46 in the emulator (3 new), E2E on `/build`: shell, inventory, customers, sales, restocks, calendar, reports, system and the new batches suite (11 steps); offline smoke on `/build`. Existing E2E expectations updated for the new sample restock/sale and renamed labels. Not released (D-018).

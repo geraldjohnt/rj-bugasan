@@ -100,16 +100,19 @@ export function SaleDetailPage({ adapter, id }) {
   const active = sale.status === 'ACTIVE';
   const isOB = sale.kind === 'OPENING_BALANCE';
   const hasOpenRows = rows.some((r) => r.status === 'PENDING' || r.status === 'PARTIAL');
-  const marginC = sale.totalC - (sale.costC ?? sale.lines.reduce((s, l) => s + Math.round(l.qtyH * l.unitCostC / 100), 0));
+  const chargesC = sale.chargesC || 0;
+  // Item profit only: other charges have no cost and are reported separately (D-054).
+  const marginC = sale.totalC - chargesC - (sale.costC ?? sale.lines.reduce((s, l) => s + Math.round(l.qtyH * l.unitCostC / 100), 0));
 
   const lineColumns = [
     { key: 'item', header: 'Item', className: 'key-col', render: (l) => <Link to={`/items/${l.itemId}`}>{l.itemName}</Link> },
+    { key: 'batch', header: 'Batch', className: 'wrap', render: (l) => (l.batches && l.batches.length ? <>{l.batches.map((b) => <span key={b.batchId} className="cell-line">{b.batchId} · {formatQty(b.qtyH, l.unit)} @ {formatMoney(b.priceC)}</span>)}{l.batchPicked && <span className="cell-sub">Picked by hand</span>}</> : '—') },
     { key: 'qty', header: 'Quantity', align: 'right', render: (l) => formatQty(l.qtyH, l.unit) },
     { key: 'price', header: 'Unit price', align: 'right', render: (l) => <>{formatMoney(l.unitPriceC)}{l.priceOverridden && <span className="cell-sub">List {formatMoney(l.listPriceC)}</span>}</> },
     { key: 'cost', header: 'Unit cost', align: 'right', render: (l) => <>{formatMoney(l.unitCostC)}{l.unitPriceC < l.unitCostC && <span className="cell-sub delta-out">Below cost</span>}</> },
     { key: 'total', header: 'Amount', align: 'right', render: (l) => formatMoney(l.lineTotalC) },
   ];
-  const lineFooter = ['Subtotal', '', '', '', formatMoney(sale.subtotalC)];
+  const lineFooter = ['Subtotal', '', '', '', '', formatMoney(sale.subtotalC)];
   const printReceipt = () => print(<SaleReceipt sale={sale} rows={rows} payments={payments} business={business} />);
 
   return (
@@ -132,16 +135,19 @@ export function SaleDetailPage({ adapter, id }) {
       {isOB && active && <Banner tone="info">Opening balance carried over from earlier records: {sale.description}. It is collected like a sale but does not count as revenue or profit.</Banner>}
       {sale.creditLimitOverride && active && <Banner tone="warning">This sale was saved over the customer's credit limit.</Banner>}
       <div className="stat-strip">
-        <div className="stat"><div className="stat-label">Total</div><div className={`stat-value ${active ? '' : 'strike'}`}>{formatMoney(sale.totalC)}</div>{sale.discountC > 0 && <div className="stat-sub">after {formatMoney(sale.discountC)} discount</div>}</div>
+        <div className="stat"><div className="stat-label">Total</div><div className={`stat-value ${active ? '' : 'strike'}`}>{formatMoney(sale.totalC)}</div>{(sale.discountC > 0 || chargesC > 0) && <div className="stat-sub">{[sale.discountC > 0 && `after ${formatMoney(sale.discountC)} discount`, chargesC > 0 && `incl. ${formatMoney(chargesC)} charges`].filter(Boolean).join(', ')}</div>}</div>
         <div className="stat"><div className="stat-label">Paid</div><div className="stat-value">{formatMoney(active ? sale.paidC : 0)}</div></div>
         <div className="stat"><div className="stat-label">Balance</div><div className={`stat-value ${active && sale.balanceC ? 'is-warning' : ''}`}>{formatMoney(active ? sale.balanceC : 0)}</div></div>
         {isOB ? <div className="stat"><div className="stat-label">Original date</div><div className="stat-value">{formatDate(sale.saleDate)}</div></div>
-          : <div className="stat"><div className="stat-label">Gross profit</div><div className={`stat-value ${marginC < 0 ? 'is-danger' : ''}`}>{active ? formatMoney(marginC) : '—'}</div></div>}
+          : <div className="stat"><div className="stat-label">Gross profit (items)</div><div className={`stat-value ${marginC < 0 ? 'is-danger' : ''}`}>{active ? formatMoney(marginC) : '—'}</div></div>}
       </div>
 
       {!isOB && <Panel title="Items" flush>
         <DataTable caption="Sale lines" columns={lineColumns} rows={sale.lines.map((l, i) => ({ ...l, id: i }))} footer={lineFooter} />
-        {sale.discountC > 0 && <div className="panel-footer totals-line"><span>Discount{sale.discountType === 'PERCENT' ? ` (${sale.discountValue / 100}%)` : ''}</span><strong>−{formatMoney(sale.discountC)}</strong><span>Total</span><strong>{formatMoney(sale.totalC)}</strong></div>}
+        {(sale.discountC > 0 || chargesC > 0) && <div className="panel-footer totals-line">
+          {sale.discountC > 0 && <><span>Discount{sale.discountType === 'PERCENT' ? ` (${sale.discountValue / 100}%)` : ''}</span><strong>−{formatMoney(sale.discountC)}</strong></>}
+          {(sale.charges || []).map((c, i) => <React.Fragment key={i}><span>{c.name}</span><strong>{formatMoney(c.amountC)}</strong></React.Fragment>)}
+          <span>Total</span><strong>{formatMoney(sale.totalC)}</strong></div>}
       </Panel>}
 
       {rows.length > 0 && (

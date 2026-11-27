@@ -142,6 +142,7 @@
 .table tfoot td { height: var(--row-h); padding: 0 var(--sp-4); font-weight: 600; background: var(--surface-2); border-top: 1px solid var(--border); }
 .table tr.is-muted td { color: var(--text-muted); }
 .table td .cell-sub { display: block; font-size: var(--fs-caption); line-height: var(--lh-caption); color: var(--text-muted); }
+.table td .cell-line { display: block; font-size: var(--fs-small); white-space: nowrap; }
 .table td.key-col { font-weight: 500; }
 .table td.key-col a { color: var(--text); }
 .table td.key-col a:hover { color: var(--primary); }
@@ -231,8 +232,12 @@
 .sale-line-total { text-align: right; padding-top: 8px; display: grid; gap: 6px; }
 .sale-line-total .field-label { margin-top: -8px; }
 .sale-line-remove { margin-top: 2px; }
-.sale-line:first-child .sale-line-remove { margin-top: 26px; }
-.sale-line:first-child .sale-line-total { padding-top: 0; }
+.sale-lines > :first-child .sale-line-remove, .sale-lines > .sale-line:first-child .sale-line-remove { margin-top: 26px; }
+.sale-lines > :first-child .sale-line-total { padding-top: 0; }
+.sale-line-wrap { display: grid; gap: var(--sp-2); }
+.sale-line-batch { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); }
+.sale-line-batch .field { min-width: 0; flex: 0 1 380px; }
+.charge-line { grid-template-columns: minmax(180px, 1fr) 128px auto; }
 .schedule-preview { display: grid; gap: var(--sp-2); }
 .schedule-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: var(--sp-2); align-items: center; font-size: var(--fs-small); }
 .collect-row-contact { display: grid; gap: 2px; font-size: var(--fs-small); white-space: normal; min-width: 150px; max-width: 240px; }
@@ -241,7 +246,9 @@
   .sale-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .sale-line-item { grid-column: span 2; }
   .sale-line-total { text-align: left; padding-top: 0; }
-  .sale-line:first-child .sale-line-remove { margin-top: 0; }
+  .sale-lines > :first-child .sale-line-remove, .sale-lines > .sale-line:first-child .sale-line-remove { margin-top: 0; }
+  .charge-line { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .charge-line .sale-line-item { grid-column: auto; }
   .cell-clip { max-width: 160px; }
 }
 
@@ -280,7 +287,7 @@
 /* ---------- Phase 8: restocks, suppliers, expenses ---------- */
 .footer-total { margin-left: auto; display: inline-flex; gap: var(--sp-3); align-items: baseline; font-variant-numeric: tabular-nums; }
 .receive-date { max-width: 220px; }
-.receive-row { display: grid; grid-template-columns: minmax(160px, 1.3fr) 130px 140px minmax(150px, 1fr); gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); }
+.receive-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) 120px 130px 130px minmax(140px, 1fr); gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); }
 .receive-row + .receive-row { border-top: 1px solid var(--border); }
 .receive-item { display: grid; gap: 2px; padding-top: 22px; }
 .receive-cost { padding-top: 28px; }
