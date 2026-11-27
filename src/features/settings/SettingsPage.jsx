@@ -9,6 +9,7 @@ import { useAuth } from '../../auth/AuthContext.jsx';
 import { ChangePasswordDialog } from '../../auth/AuthPages.jsx';
 import { SystemChecks } from '../system/SystemCheckPage.jsx';
 import { SampleDataPanel } from '../system/SampleData.jsx';
+import { AndroidAppPanel } from '../system/AndroidAppPanel.jsx';
 import { loadGeneralSettings, saveGeneralSettings, loadSalesSettings, saveSalesSettings } from '../../data/settingsRepo.js';
 import { FREQUENCY_LABELS, ALLOWED_COUNTS } from '../../domain/schedule.js';
 import { validateSalesSettings } from '../../domain/sales.js';
@@ -33,7 +34,7 @@ export function SettingsPage({ tab = 'general', adapter, onGeneralSaved }) {
         {current === 'sales' && <SalesSettings adapter={adapter} />}
         {current === 'appearance' && <AppearanceSettings />}
         {current === 'account' && <AccountSettings />}
-        {current === 'system' && <><Panel title="System check" flush><SystemChecks adapterKind={adapter.kind} /></Panel><SampleDataPanel adapter={adapter} /></>}
+        {current === 'system' && <><Panel title="System check" flush><SystemChecks adapterKind={adapter.kind} /></Panel><AndroidAppPanel /><SampleDataPanel adapter={adapter} /></>}
       </div>
     </div>
   );

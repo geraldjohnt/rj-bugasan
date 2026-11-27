@@ -64,6 +64,28 @@ await step('Sign in, load sample data; dashboard reminds that no backup exists',
   await page.waitForSelector('.banner:has-text("No backup has been downloaded yet")');
 });
 
+await step('Settings → System: Android app panel links to the newest APK in the folder (D-059)', async () => {
+  await page.goto(url + '#/settings/system');
+  const panel = page.locator('.panel').filter({ has: page.locator('h2, h3', { hasText: /^Android app$/ }) });
+  await panel.waitFor();
+  const apkDir = path.join(folder, 'apk');
+  const apks = fs.existsSync(apkDir) ? fs.readdirSync(apkDir).filter((f) => /^rj-ims-\d+\.\d+\.\d+\.apk$/.test(f)) : [];
+  if (!apks.length) {
+    expect(await panel.locator('[data-android-app="none"]').isVisible(), 'expected "No Android app" note when the folder has no APK');
+    return;
+  }
+  const newest = apks.map((f) => f.slice(7, -4)).sort((a, b) => b.localeCompare(a, undefined, { numeric: true }))[0];
+  const link = panel.locator('a[data-apk-download]');
+  expect(await link.getAttribute('data-apk-download') === newest, `download link should be version ${newest}`);
+  const href = await link.getAttribute('href');
+  expect(href === `apk/rj-ims-${newest}.apk` && fs.existsSync(path.join(folder, href)), `download link ${href} must point to an existing file`);
+  if (apks.length > 1) {
+    await panel.locator('summary:has-text("Earlier versions")').click();
+    const older = await panel.locator('[data-apk-older] a').evaluateAll((as) => as.map((a) => a.getAttribute('href')));
+    expect(older.length === apks.length - 1 && older.every((h) => fs.existsSync(path.join(folder, h))), 'earlier versions listed with existing files');
+  }
+});
+
 await step('Opening balances page: sample entries listed with totals; not in the Sales list', async () => {
   await page.goto(url + '#/opening-balances');
   await page.waitForSelector('h1:has-text("Opening balances")');

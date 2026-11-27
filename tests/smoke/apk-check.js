@@ -1,8 +1,8 @@
 /*
- * APK check (D-058): verifies apk/rj-ims-<version>.apk for the current package.json version.
+ * APK check (D-058, D-059): verifies dist/apk/rj-ims-<version>.apk for the current package.json version.
  *   1. Signature (apksigner verify), package id, version and launcher activity (aapt2 dump badging).
  *   2. The packed web app is the same as /dist (every /dist file is inside assets/www, byte for byte,
- *      except index.html, which only gains the Android bridge script tag).
+ *      except index.html, which only gains the Android bridge script tag, and the APK files themselves).
  *   3. The packed app starts from file:// with the network disabled (like dist-smoke), with a fake
  *      window.RJAndroid bridge, and window.print() and blob downloads are routed to that bridge.
  * Cannot replace a test on a real phone (no Android emulator here) — see TESTING_STATUS.
@@ -18,7 +18,7 @@ const { chromium } = require('playwright');
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
-const apk = path.join(ROOT, 'apk', `rj-ims-${pkg.version}.apk`);
+const apk = path.join(ROOT, 'dist', 'apk', `rj-ims-${pkg.version}.apk`);
 if (!fs.existsSync(apk)) { console.error(`Missing ${apk} — run npm run apk first.`); process.exit(1); }
 
 const failures = [];
@@ -49,7 +49,9 @@ try {
   const dist = path.join(ROOT, 'dist');
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
   let same = 0;
-  for (const f of walk(dist)) {
+  const distFiles = walk(dist).filter((f) => !f.endsWith('.apk'));
+  ok(!walk(www).some((f) => f.endsWith('.apk')), 'no APK files packed inside the APK');
+  for (const f of distFiles) {
     const rel = path.relative(dist, f);
     const packed = path.join(www, rel);
     if (!fs.existsSync(packed)) { failures.push(`Missing in APK: ${rel}`); continue; }
@@ -60,7 +62,7 @@ try {
     } else if (!fs.readFileSync(f).equals(fs.readFileSync(packed))) failures.push(`APK file differs from /dist: ${rel}`);
     else same++;
   }
-  ok(same === walk(dist).length, `all ${same} /dist files packed unchanged`);
+  ok(same === distFiles.length, `all ${same} /dist files packed unchanged`);
 
   // --- 3. packed app runs (file://, offline) and the bridge routes print + downloads
   const browser = await chromium.launch();

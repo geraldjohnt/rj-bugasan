@@ -1,6 +1,6 @@
 # Project Status
 
-**Last updated:** 2026-11-27 (session 11: Android APK, D-058)
+**Last updated:** 2026-11-27 (session 12: APK 0.9.0 in dist/apk + Settings download link, D-059)
 **Overall status:** Design approved (D-017). Implementation started.
 **Current phase:** Phase 13 (restock batches oldest first + other charges on sales) — implemented, tested and released as 0.8.0 (2026-11-27). Previous: Phases 11 (Activity log, backup/restore, opening balances) and 12 (go-live & release prep) — implemented, tested, released as 0.6.0; all development phases built. Remaining: owner go-live steps (FIREBASE_SETUP "Phases 11–12 — go-live checklist").
 **Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales), Restocks/Suppliers/Expenses, Calendar, Dashboard and Reports exist and are tested. Phase 11 (Activity log, Backup/restore, Opening balances) and Phase 12 (user guide, deploy/verify scripts, go-live checklist) exist and are tested. Installment plans: 2–5 payments, default 2 (D-043).
@@ -21,6 +21,7 @@
 - 0.7.0 — 2026-11-26 — Payday price per item (D-046) and Facebook price poster (D-047). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, E2E shell + inventory + customers + sales + restocks + calendar + reports + system (all pass).
 - 0.7.1 — 2026-11-26 — Official logo (favicon, sidebar/sign-in, printed receipts; D-048) and Reschedule dialog fix. Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (shell 17 steps incl. logo check).
 - 0.7.2 — 2026-11-26 — Printed receipts, statements and reports no longer get the browser's URL/date header and footer (zero page margin). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites.
+- 0.9.0 — 2026-11-27 — Android APK (D-058) in `dist/apk/` with download link in Settings → System (D-059). Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites; `npm run test:apk` PASS.
 - 0.8.1 — 2026-11-27 — "Load sample data" only in Settings → System, password protected (D-057). Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites.
 - 0.8.0 — 2026-11-27 — Phase 13: restock batches oldest first, weighted price, old stock as first batch, other charges on sales (D-050 … D-056). Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites (incl. batches 11 steps).
 - 0.7.3 — 2026-11-26 — Calendar entries open a details modal instead of navigating (D-049). Verified on minified `/dist` (`npm run verify:release`): unit 110/110, rules 43/43, dist smoke, all 8 E2E suites (calendar 11 steps).
@@ -60,7 +61,7 @@
 - None.
 
 ## Standing instructions
-- APK (D-058): build only when the user asks (`npm run apk`, after `/dist` is current); never as part of `npm run release`. Never delete older files in `apk/`.
+- APK (D-058, D-059): build only when the user asks (`npm run release` then `npm run apk`); never as part of `npm run release` alone. APKs live in `dist/apk/`; never delete older ones.
 - Release rule (D-018): on "create PR and merge to main" → `npm run release` → `npm test` + `npm run test:dist` → commit `/dist` → PR → merge.
 - User prefers questions as click-to-answer options with a recommended default.
 - Root README phase table must be updated whenever a phase changes (D-024).
@@ -68,7 +69,8 @@
 - Keep the readable source (`/src`) committed; `/dist` is only the minified copy (user asked 2026-11-25; already the case).
 
 ## Immediate next actions
--2. Owner: install `apk/rj-ims-0.8.1.apk` on an Android phone and test it (KI-026). Build a new APK only when the owner asks: `npm run apk` (D-058; needs the Android SDK — reinstall in a new cloud session).
+-3. ✅ 0.9.0 released (APKs in `dist/apk/`, Settings download link, D-059); GitHub Pages republishes `/dist` on merge.
+-2. Owner: install `dist/apk/rj-ims-0.9.0.apk` (or download it from Settings → System) on an Android phone and test it (KI-026). Build a new APK only when the owner asks: `npm run apk` (D-058; needs the Android SDK — reinstall in a new cloud session).
 -1. ✅ Phase 13 released as 0.8.0. Owner: re-publish `firebase/firestore.rules` (`npm run deploy:rules`), then open Items and Suppliers once online so old stock becomes first batches and suppliers get codes (FIREBASE_SETUP "Phase 13").
 0. Firebase project `rj-bugasan` connected; Email/Password enabled; spike passed → GO (D-019).
 1. ✅ Release 0.1.0 merged to main (2026-11-25, https://github.com/geraldjohnt/rj-bugasan/pull/1). `/dist` on main is the client folder.

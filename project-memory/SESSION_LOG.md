@@ -118,3 +118,9 @@
 - **Tests:** `npm run test:apk` PASS on `apk/rj-ims-0.8.1.apk`. A trial run with APK inside the release build and version 0.9.0 passed `verify:release`; reverted at the user's request (version stays 0.8.1, `/dist` untouched).
 - **Merged to main** (user: "create PR and merge to main"): release build + `verify:release` passed, `/dist` unchanged (no app change, version stays 0.8.1).
 - **Next:** owner tests the APK on a phone (KI-026). Future sessions need the Android SDK again (`~/android-sdk` is not kept by the container).
+
+## 2026-11-27 — Session 12: APK 0.9.0 in dist/apk, Settings download link
+- **Request:** build the APK for the new version; put APKs in `dist/apk/`; add a download link in Settings.
+- **Done (D-059):** `tools/apk-info.cjs` (APK list script), release build keeps `dist/apk/`, `build-apk.cjs` writes to `dist/apk/` and excludes `.apk` files from the packed app, `AndroidAppPanel` in Settings → System, E2E step in `system.e2e.js`, version 0.9.0, 0.8.1 APK moved to `dist/apk/`.
+- **Tests:** `npm run release` → `npm run apk` → `npm run verify:release` PASS (unit 132/132, rules 46/46, dist smoke, 9 E2E suites incl. the new Android-panel step) and `npm run test:apk` PASS on `dist/apk/rj-ims-0.9.0.apk`. System E2E also passed on `/build` (no-APK case).
+- **Release 0.9.0:** `npm run release` + `npm run verify:release` + `npm run test:apk` passed again; PR created and merged to main. Phone test still open (KI-026).

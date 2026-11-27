@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /*
- * Android APK build (developer machine only — D-058). Run on its own with `npm run apk`, only when the owner
- * asks for an APK (it is NOT part of `npm run release`). Packs the current /dist, so build /dist first.
+ * Android APK build (developer machine only — D-058, D-059). Run on its own with `npm run apk`, only when the
+ * owner asks for an APK (it is NOT part of `npm run release`). Packs the current /dist, so build /dist first.
  *
  * Packs the minified /dist app into a small native Android WebView wrapper (android/) and writes
- *   apk/rj-ims-<version>.apk
- * Earlier versions in apk/ are never deleted.
+ *   dist/apk/rj-ims-<version>.apk   (+ dist/apk/apk-info.js, read by Settings → System for the download link)
+ * Earlier versions in dist/apk/ are never deleted. APK files are not packed into the APK itself.
  *
  * No Gradle: uses the Android SDK build tools directly (aapt2, javac, d8, zipalign, apksigner).
  * Needs: a JDK (javac, jar, keytool) and an Android SDK with a platform (android-35 or newer) and build-tools.
@@ -20,7 +20,8 @@ const { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
 const ANDROID = path.join(ROOT, 'android');
-const OUT_DIR = path.join(ROOT, 'apk');
+const OUT_DIR = path.join(DIST, 'apk');
+const { apkInfoScript, apkVersions, APK_RE } = require('./apk-info.cjs');
 const KEYSTORE = path.join(ANDROID, 'keystore', 'rj-ims-release.jks');
 const KS_ALIAS = 'rj-ims';
 const KS_PASS = process.env.RJ_APK_KS_PASS || 'rj-ims-release';
@@ -91,7 +92,11 @@ async function buildApk() {
   try {
     // 1. Web app → assets/www (the same minified files as /dist) + the Android bridge script.
     const www = path.join(work, 'assets', 'www');
-    fs.cpSync(DIST, www, { recursive: true });
+    fs.cpSync(DIST, www, { recursive: true, filter: (src) => !APK_RE.test(path.basename(src)) });
+    // The APK list as it will be once this APK is added (same text is written to dist/apk at the end).
+    const apkInfo = apkInfoScript(apkVersions(OUT_DIR, version));
+    fs.mkdirSync(path.join(www, 'apk'), { recursive: true });
+    fs.writeFileSync(path.join(www, 'apk', 'apk-info.js'), apkInfo);
     const esbuild = require('esbuild');
     const bridge = esbuild.transformSync(fs.readFileSync(path.join(ANDROID, 'bridge', 'android-bridge.js'), 'utf8'), { minify: true, target: 'chrome80' }).code;
     fs.writeFileSync(path.join(www, 'android-bridge.js'), bridge);
@@ -135,10 +140,11 @@ async function buildApk() {
       '--key-pass', `pass:${KS_PASS}`, '--out', signed, aligned]);
     run(tool('apksigner'), ['verify', signed]);
 
-    // 6. Keep every version: apk/rj-ims-<version>.apk (only the file for THIS version is replaced).
+    // 6. Keep every version: dist/apk/rj-ims-<version>.apk (only the file for THIS version is replaced).
     fs.mkdirSync(OUT_DIR, { recursive: true });
     const dest = path.join(OUT_DIR, `rj-ims-${version}.apk`);
     fs.copyFileSync(signed, dest);
+    fs.writeFileSync(path.join(OUT_DIR, 'apk-info.js'), apkInfo);
     const kb = (fs.statSync(dest).size / 1024).toFixed(0);
     console.log(`[apk] ${path.relative(ROOT, dest)}  ${kb} KB  versionCode ${versionCode}  (${Date.now() - t0} ms)`);
     return dest;

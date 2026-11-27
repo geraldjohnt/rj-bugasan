@@ -3,6 +3,7 @@
  * Build script (developer machine only — the client never runs this).
  *   node tools/build.cjs            → /build  (development: readable code, source maps, spike page)
  *   node tools/build.cjs --release  → /dist   (release: minified, no maps, no dev/spike files) — see D-018
+ *                                     dist/apk/ (Android APKs, D-059) is kept; apk/apk-info.js is rewritten.
  * Output is a static folder that runs by double-clicking index.html (file://).
  */
 'use strict';
@@ -52,8 +53,9 @@ function minifyHtml(html) {
 
 async function main() {
   const t0 = Date.now();
-  rmrf(OUT);
+  // Empty the output folder, but keep apk/ (Android APKs of this and earlier versions — D-059; never deleted).
   mkdirp(OUT);
+  for (const e of fs.readdirSync(OUT)) if (e !== 'apk') rmrf(path.join(OUT, e));
 
   const common = {
     bundle: true,
@@ -121,6 +123,9 @@ async function main() {
 
   // Config (not a secret)
   copy(path.join(ROOT, 'config/firebase-config.js'), path.join(OUT, 'config/firebase-config.js'));
+
+  // Android APK list for Settings → System (D-059); the APKs themselves are built only on request (npm run apk).
+  require('./apk-info.cjs').writeApkInfo(OUT);
 
   // Development-only: Firebase file:// spike page
   if (!RELEASE) {
