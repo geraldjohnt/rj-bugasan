@@ -111,3 +111,9 @@
 - **Done:** D-057 — button removed from 7 empty states; Settings → System dialog asks for the password (re-authentication) before loading; E2E suites load sample data through Settings with the password, check the button is gone from empty states, and check empty/wrong password are refused (inventory suite).
 - Found while testing: the dialog's password could be wiped just after opening (state reset in an effect); fixed by resetting on click.
 - **Release 0.8.1:** `npm run release` + `npm run verify:release` passed on `/dist`; PR created and merged to main.
+
+## 2026-11-27 — Session 11: Android APK
+- **Request:** build the app into an APK in `apk/`, keeping previous versions. Mid-session: don't build the APK together with `/dist`; build only when asked, but build one now for testing.
+- **Done:** installed Android SDK (platform 35, build-tools 35.0.0; user approved the SDK license; `dl.google.com` added to the cloud environment) in `~/android-sdk` (not in the repo). Wrote `android/` wrapper and `tools/build-apk.cjs` (no Gradle). D-058, KI-025 (signing key in repo), KI-026 (not tested on a phone).
+- **Tests:** `npm run test:apk` PASS on `apk/rj-ims-0.8.1.apk`. A trial run with APK inside the release build and version 0.9.0 passed `verify:release`; reverted at the user's request (version stays 0.8.1, `/dist` untouched).
+- **Next:** owner tests the APK on a phone (KI-026). Future sessions need the Android SDK again (`~/android-sdk` is not kept by the container).
