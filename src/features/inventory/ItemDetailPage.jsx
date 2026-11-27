@@ -13,7 +13,10 @@ import { formatMoney } from '../../domain/money.js';
 import { stockValueC, installmentPriceOf } from '../../domain/inventory.js';
 import { useItems } from './ItemsPage.jsx';
 import { MovementsTable } from './MovementsPage.jsx';
-import { ItemFormDialog, AdjustStockDialog, OpenSackDialog, ConfirmDialog, StockBadge } from './InventoryDialogs.jsx';
+import { ItemFormDialog, AdjustStockDialog, OpenSackDialog, ConfirmDialog, StockBadge, BatchEditDialog } from './InventoryDialogs.jsx';
+import { DataTable } from '../../components/Feedback.jsx';
+import { displayPrice, batchesOf, uncoveredH, BATCH_SOURCE_LABELS } from '../../domain/batches.js';
+import { formatDate } from '../../domain/dates.js';
 
 export function ItemDetailPage({ adapter, id }) {
   const auth = useAuth();
@@ -25,6 +28,7 @@ export function ItemDetailPage({ adapter, id }) {
   const history = useQuery(adapter, 'inventoryMovements',
     { where: [['itemId', '==', id]], orderBy: [['createdAt', 'desc']], limit }, `item-history-${id}-${limit}`);
   const [dialog, setDialog] = React.useState(null); // 'edit' | 'adjust' | 'open' | 'archive'
+  const [batch, setBatch] = React.useState(null);
 
   if (error) return <div className="page"><Banner tone="danger">{errorMessage(error)}</Banner></div>;
   if (item === undefined) return <div className="page"><LoadingRows label="Loading item" /></div>;
@@ -58,9 +62,10 @@ export function ItemDetailPage({ adapter, id }) {
       {!active && <Banner tone="info">This item is archived. It cannot be sold or restocked, and its history is kept.</Banner>}
       <div className="stat-strip">
         <div className="stat"><div className="stat-label">In stock</div><div className="stat-value">{formatQty(item.qtyH, item.unit)}</div></div>
-        <div className="stat"><div className="stat-label">Cash price</div><div className="stat-value">{formatMoney(item.priceC)}</div></div>
+        <div className="stat"><div className="stat-label">Cash price</div><div className="stat-value">{formatMoney(displayPrice(item).priceC)}</div>
+          {displayPrice(item).nextPriceC !== null && <div className="muted small">next batch {formatMoney(displayPrice(item).nextPriceC)}</div>}</div>
         <div className="stat"><div className="stat-label">Payday price</div><div className="stat-value">{formatMoney(installmentPriceOf(item))}</div></div>
-        <div className="stat"><div className="stat-label">Cost</div><div className="stat-value">{formatMoney(item.costC)}</div></div>
+        <div className="stat"><div className="stat-label">Default cost</div><div className="stat-value">{formatMoney(item.costC)}</div></div>
         <div className="stat"><div className="stat-label">Stock value</div><div className="stat-value">{formatMoney(stockValueC(item))}</div></div>
       </div>
       <Panel title="Details">
@@ -69,10 +74,24 @@ export function ItemDetailPage({ adapter, id }) {
           <div><dt>{item.unit === UNITS.SACK ? 'Linked per-kg item' : 'Linked sack item'}</dt>
             <dd>{linked ? <Link to={`/items/${linked.id}`}>{linked.name}</Link> : 'Not linked'}</dd></div>
           <div><dt>SKU / code</dt><dd>{item.sku || '—'}</dd></div>
-          <div><dt>Margin per {item.unit === UNITS.SACK ? 'sack' : 'kg'}</dt>
+          <div><dt>Default cash price (new batches)</dt><dd>{formatMoney(item.priceC)}</dd></div>
+          <div><dt>Margin per {item.unit === UNITS.SACK ? 'sack' : 'kg'} (defaults)</dt>
             <dd>{formatMoney(item.priceC - item.costC)} {item.priceC < item.costC && <Badge tone="danger">Below cost</Badge>}</dd></div>
           {item.description && <div className="span-2"><dt>Description</dt><dd>{item.description}</dd></div>}
         </dl>
+      </Panel>
+      <Panel title="Batches" flush>
+        <p className="panel-body muted small">Oldest batch is sold first. Each restock delivery is a batch with its own cost and cash price.</p>
+        <DataTable caption="Batches" rowKey="id" rows={batchesOf(item)} columns={[
+          { key: 'id', header: 'Batch', className: 'key-col', render: (b) => <><strong>{b.id}</strong><span className="cell-sub">{BATCH_SOURCE_LABELS[b.source] || ''}{b.supplierName ? ` · ${b.supplierName}` : ''}{b.restockId ? <> · <Link to={`/restocks/${b.restockId}`}>{b.restockId}</Link></> : null}</span></> },
+          { key: 'date', header: 'Date', render: (b) => formatDate(b.date) },
+          { key: 'qty', header: 'In stock', align: 'right', render: (b) => formatQty(b.qtyH, item.unit) },
+          { key: 'recv', header: 'Received', align: 'right', render: (b) => formatQty(b.receivedQtyH ?? b.qtyH, item.unit) },
+          { key: 'cost', header: 'Cost', align: 'right', render: (b) => formatMoney(b.unitCostC) },
+          { key: 'price', header: 'Cash price', align: 'right', render: (b) => formatMoney(b.priceC) },
+          { key: 'act', header: '', align: 'right', render: (b) => <Button size="sm" icon="edit" onClick={() => setBatch(b)} disabled={!online}>Edit</Button> },
+        ]} empty={<EmptyState icon="items" title="No batches in stock">Received restocks become batches here.</EmptyState>} />
+        {uncoveredH(item) > 0 && <div className="panel-body"><Banner tone="info">{formatQty(uncoveredH(item), item.unit)} is not in a batch yet; it is added to the first batch automatically.</Banner></div>}
       </Panel>
       <Panel title="Stock history" flush>
         {history.error ? <div className="panel-body"><Banner tone="danger">{errorMessage(history.error)}</Banner></div>
@@ -83,6 +102,7 @@ export function ItemDetailPage({ adapter, id }) {
       </Panel>
 
       <ItemFormDialog open={dialog === 'edit'} onClose={() => setDialog(null)} adapter={adapter} item={item} items={all} />
+      <BatchEditDialog open={!!batch} onClose={() => setBatch(null)} adapter={adapter} item={item} batch={batch} />
       <AdjustStockDialog open={dialog === 'adjust'} onClose={() => setDialog(null)} adapter={adapter} item={item} />
       <OpenSackDialog open={dialog === 'open'} onClose={() => setDialog(null)} adapter={adapter} sack={sackForOpen} kg={kgForOpen} />
       <ConfirmDialog open={dialog === 'archive'} onClose={() => setDialog(null)}

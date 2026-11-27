@@ -71,7 +71,7 @@ await step('Load sample data: suppliers and restocks in every status appear', as
   await page.waitForSelector('.table a:has-text("RS-")');
   expect(await page.locator('.table tbody tr').count() === 2, 'open orders shown: ' + await page.locator('.table tbody tr').count());
   await field('Status', '.toolbar').selectOption('');
-  await page.waitForSelector('.toolbar-end:has-text("5 shown")');
+  await page.waitForSelector('.toolbar-end:has-text("6 shown")');
   for (const s of ['Received', 'Partially received', 'Ordered', 'Cancelled']) expect(await page.isVisible(`.table .badge:text-is("${s}")`), 'missing status ' + s);
   await shot('40-restocks-list');
 });
@@ -120,7 +120,7 @@ await step('Receive part of it at a new cost: update-cost box is pre-checked; st
   await page.click('button:has-text("Receive goods")');
   await page.fill('input[aria-label="Received Dinorado 50kg Sack"]', '3');
   await page.fill('input[aria-label="Received Malagkit per KG"]', '0');
-  const box = page.locator('.dialog label.checkbox:has-text("Update item cost ₱2,900.00 → ₱3,000.00") input');
+  const box = page.locator('.dialog label.checkbox:has-text("default cost and price") input');
   expect(await box.isChecked(), 'update cost not pre-checked');
   await shot('41-receive');
   await page.click('.dialog-footer button:has-text("Receive and add to stock")');
@@ -156,7 +156,7 @@ await step('Receive the rest without updating cost: order becomes Received and i
   await page.click('button:has-text("Receive goods")');
   expect(await page.inputValue('input[aria-label="Received Dinorado 50kg Sack"]') === '2', 'remaining not prefilled');
   await page.fill('input[aria-label="Unit cost Dinorado 50kg Sack"]', '3100');
-  await page.locator('.dialog label.checkbox:has-text("Update item cost") input').first().uncheck();
+  await page.locator('.dialog label.checkbox:has-text("default cost and price") input').first().uncheck();
   await page.click('.dialog-footer button:has-text("Receive and add to stock")');
   await toast('is complete');
   await page.waitForSelector('.badge:text-is("Received")');
@@ -164,7 +164,8 @@ await step('Receive the rest without updating cost: order becomes Received and i
   const row = await itemRow('Dinorado 50kg Sack');
   expect(sacksIn(row) === sackBefore + 5, 'stock after full receipt');
   await page.click('a:text-is("Dinorado 50kg Sack")');
-  expect(await page.isVisible('text=₱3,000.00'), 'cost changed although unticked');
+  await page.waitForSelector('h1:has-text("Dinorado 50kg Sack")');
+  expect((await page.locator('.stat:has(.stat-label:text-is("Default cost")) .stat-value').textContent()).trim() === '₱3,000.00', 'cost changed although unticked');
 });
 
 await step('Cancel an order with nothing received; close a partly received order', async () => {

@@ -1,6 +1,6 @@
 # Testing Status
 
-**Last updated:** 2026-11-25
+**Last updated:** 2026-11-27
 
 Planned tests: see TESTING_STRATEGY.md.
 
@@ -59,3 +59,9 @@ Planned tests: see TESTING_STRATEGY.md.
 
 ## 2026-11-26 — Release 0.7.3 (calendar details modal)
 - `npm run verify:release` on minified `/dist`: unit/service 110/110, rules 43/43, dist smoke, E2E shell, inventory, customers, sales, restocks, calendar (11), reports, system — all pass.
+| Unit + service Phase 13: batches domain (13) + services (10: ids per supplier, old-supplier codes, oldest first + weighted price + exact cost + cancel back, owner pick, old stock as first batch, legacy item sale, opening batch + adjustments + batch edit, open sack batch cost, charges in totals/reports, item edit keeps batches) | PASS 132/132 total | 2026-11-27 | `npm test` |
+| Security rules incl. Phase 13 (3 tests: real receive/sale-with-charge/cancel/open-sack/batch-edit/adjust through the emulator; old data codes + first batches with counter jumps; rejects bad charges, bad supplier codes, backwards/unknown counters) | PASS 46/46 | 2026-11-27 | `npm run test:rules` |
+| E2E batches, demo mode, file:// on /build — 11 steps (supplier codes, sample NFA batch + spanning sale with delivery fee, receive with cash price → one batch id, oldest price + next hint, weighted price across batches + charge in total, receipt prints charge, cancel restores batches, owner batch pick, batch price edit + item reprice, phone width, no JS errors) | PASS 11/11 | 2026-11-27 | `node tests/e2e/batches.e2e.js build` |
+| E2E shell, inventory, customers, sales, restocks, calendar, reports, system on /build after Phase 13 (+ offline smoke on /build) | PASS (all 9 suites incl. batches) | 2026-11-27 | Expectations updated for the new sample data (7 sales, 6 restocks), renamed receive checkbox, automatic open-sack cost, "Default cost" stat, CSV "Other charges" column. Found while testing: a sample sale dated today pushed the calendar test's event behind "+N more" → sample sale dated yesterday |
+| Phase 13 on the real Firebase project | Not run | — | Needs rules re-published (FIREBASE_SETUP "Phase 13") |
+| Release 0.8.0 verification on minified /dist | PASS | 2026-11-27 | unit 132/132, rules 46/46, dist smoke, E2E shell + inventory + customers + sales + restocks + calendar + reports + system + batches (all pass) |

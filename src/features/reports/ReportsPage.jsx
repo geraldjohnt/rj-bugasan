@@ -49,10 +49,10 @@ const money = (k) => ({ align: 'right', render: (r) => formatMoney(r[k]), csv: (
 function buildReport(tab, d, from, to, now) {
   if (tab === 'sales') {
     const s = salesSummary(d.sales, from, to);
-    const rows = s.rows.slice().sort((a, b) => (a.saleDate < b.saleDate ? -1 : a.saleDate > b.saleDate ? 1 : a.id.localeCompare(b.id))).map((x) => ({ ...x, cogs: saleCostC(x), profit: x.totalC - saleCostC(x) }));
+    const rows = s.rows.slice().sort((a, b) => (a.saleDate < b.saleDate ? -1 : a.saleDate > b.saleDate ? 1 : a.id.localeCompare(b.id))).map((x) => ({ ...x, chargesC0: x.chargesC || 0, cogs: saleCostC(x), profit: x.totalC - saleCostC(x) }));
     return {
       stats: [['Sales', s.count], ['Revenue', formatMoney(s.revenueC)], ['Gross profit', `${formatMoney(s.grossProfitC)} (${formatPct(s.marginBp)})`], ['Still to collect', formatMoney(s.balanceC)]],
-      note: s.cancelledCount ? `${s.cancelledCount} cancelled sale(s) in this period are not counted.` : null,
+      note: [s.cancelledCount ? `${s.cancelledCount} cancelled sale(s) in this period are not counted.` : null, s.chargesC ? `Revenue includes ${formatMoney(s.chargesC)} of other charges (delivery fee …).` : null].filter(Boolean).join(' ') || null,
       sections: [{
         title: 'Sales', rows,
         columns: [
@@ -61,12 +61,13 @@ function buildReport(tab, d, from, to, now) {
           { key: 'cust', header: 'Customer', className: 'wrap', render: (r) => r.customerName, csv: (r) => r.customerName },
           { key: 'terms', header: 'Terms', render: (r) => TERMS_LABELS[r.terms], csv: (r) => TERMS_LABELS[r.terms] },
           { key: 'pay', header: 'Payment', render: (r) => PAYMENT_STATUS_LABELS[r.paymentStatus] || '', csv: (r) => PAYMENT_STATUS_LABELS[r.paymentStatus] || '' },
+          { key: 'chg', header: 'Other charges', ...money('chargesC0') },
           { key: 'total', header: 'Revenue', ...money('totalC') },
           { key: 'cogs', header: 'Cost', ...money('cogs') },
           { key: 'profit', header: 'Gross profit', ...money('profit') },
           { key: 'bal', header: 'Balance', ...money('balanceC') },
         ],
-        footer: ['Total', '', '', '', '', formatMoney(s.revenueC), formatMoney(s.cogsC), formatMoney(s.grossProfitC), formatMoney(s.balanceC)],
+        footer: ['Total', '', '', '', '', formatMoney(s.chargesC), formatMoney(s.revenueC), formatMoney(s.cogsC), formatMoney(s.grossProfitC), formatMoney(s.balanceC)],
       }],
     };
   }
@@ -74,8 +75,8 @@ function buildReport(tab, d, from, to, now) {
     const rows = profitByItem(d.sales, from, to).map((r) => ({ ...r, id: r.itemId }));
     const t = rows.reduce((a, r) => ({ rev: a.rev + r.revenueC, cogs: a.cogs + r.cogsC }), { rev: 0, cogs: 0 });
     return {
-      stats: [['Items sold', rows.length], ['Revenue', formatMoney(t.rev)], ['Cost of goods', formatMoney(t.cogs)], ['Gross profit', formatMoney(t.rev - t.cogs)]],
-      note: 'Sale discounts are spread over the items of each sale in proportion to their amounts. Cost is the item cost saved with each sale.',
+      stats: [['Items sold', rows.length], ['Revenue', formatMoney(t.rev)], ['Cost of goods', formatMoney(t.cogs)], ['Gross profit', formatMoney(t.rev - t.cogs)], ['Other charges', formatMoney(salesSummary(d.sales, from, to).chargesC)]],
+      note: 'Sale discounts are spread over the items of each sale in proportion to their amounts. Cost is the cost of the batches each sale took (oldest first). Other charges (delivery fee …) are not item revenue; see Profit & loss.',
       sections: [{
         title: 'Profit by item', rows,
         columns: [
@@ -94,7 +95,9 @@ function buildReport(tab, d, from, to, now) {
   if (tab === 'pnl') {
     const p = profitAndLoss(d.sales, d.expenses, from, to);
     const lines = [
-      { id: 'rev', label: 'Revenue (sales at sale date)', v: p.revenueC },
+      { id: 'prod', label: 'Product sales (after discounts)', v: p.productRevenueC },
+      { id: 'chg', label: 'Other charges (delivery fee …)', v: p.chargesC },
+      { id: 'rev', label: 'Revenue (sales at sale date)', v: p.revenueC, strong: true },
       { id: 'cogs', label: 'Cost of goods sold', v: -p.cogsC },
       { id: 'gross', label: 'Gross profit', v: p.grossProfitC, strong: true },
       ...EXPENSE_CATEGORIES.filter((c) => p.byCategory[c]).map((c) => ({ id: 'e-' + c, label: `Expense: ${c}`, v: -p.byCategory[c] })),

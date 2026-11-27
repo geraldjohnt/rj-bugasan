@@ -4,7 +4,11 @@ import { Button } from '../../components/Button.jsx';
 import { TextField, SelectField } from '../../components/Field.jsx';
 import { Link, navigate } from '../../app/router.jsx';
 import { useOnline } from '../../app/useOnline.js';
-import { useQuery, errorMessage } from '../../data/useData.js';
+import { useQuery, errorMessage, actorOf } from '../../data/useData.js';
+import { useAuth } from '../../auth/AuthContext.jsx';
+import { ensureBatches } from '../../data/inventoryService.js';
+import { displayPrice, uncoveredH, batchesOf } from '../../domain/batches.js';
+import { today } from '../../domain/dates.js';
 import { formatQty } from '../../domain/quantity.js';
 import { formatMoney } from '../../domain/money.js';
 import { stockStatus, stockValueC, inventorySummary } from '../../domain/inventory.js';
@@ -12,10 +16,27 @@ import { ItemFormDialog, StockBadge } from './InventoryDialogs.jsx';
 import { SampleDataButton } from '../system/SampleData.jsx';
 import { PricePosterDialog } from './PricePosterDialog.jsx';
 
-/** All items, live, sorted by name. Shared by inventory screens. */
+/**
+ * All items, live, sorted by name. Shared by inventory screens. D-055: the first time it sees stock that is not in
+ * any batch (data from before batches existed) it registers that stock as the item's first batch (owner, online).
+ */
 export function useItems(adapter) {
+  const auth = useAuth();
+  const online = useOnline();
   const { rows, error } = useQuery(adapter, 'items', { orderBy: [['nameLower', 'asc']] }, 'items-by-name');
+  const tried = React.useRef(false);
+  React.useEffect(() => {
+    if (!rows || tried.current || !online || !auth || !auth.user || !rows.some((i) => uncoveredH(i) > 0)) return;
+    tried.current = true;
+    ensureBatches(adapter, actorOf(auth.user), today()).catch(() => {});
+  }, [rows, online]);
   return { items: rows, error };
+}
+
+/** Cash price cell: the oldest batch's price, with the next batch's price when it differs (D-052). */
+export function PriceCell({ item }) {
+  const p = displayPrice(item);
+  return <>{formatMoney(p.priceC)}{p.nextPriceC !== null && <span className="cell-sub">next {formatMoney(p.nextPriceC)}</span>}</>;
 }
 
 export function ItemsPage({ adapter }) {
@@ -43,16 +64,16 @@ export function ItemsPage({ adapter }) {
     { key: 'qty', header: 'In stock', align: 'right', render: (i) => formatQty(i.qtyH, i.unit) },
     { key: 'status', header: 'Status', render: (i) => <StockBadge item={i} /> },
     { key: 'min', header: 'Low-stock level', align: 'right', render: (i) => (i.minStockH ? formatQty(i.minStockH, i.unit) : '—') },
-    { key: 'price', header: 'Cash price', align: 'right', render: (i) => formatMoney(i.priceC) },
+    { key: 'price', header: 'Cash price', align: 'right', render: (i) => <PriceCell item={i} /> },
     { key: 'payday', header: 'Payday price', align: 'right', render: (i) => (Number.isInteger(i.installmentPriceC) ? formatMoney(i.installmentPriceC) : <span className="muted">Same</span>) },
-    { key: 'cost', header: 'Cost', align: 'right', render: (i) => formatMoney(i.costC) },
+    { key: 'cost', header: 'Batches', align: 'right', render: (i) => batchesOf(i).length || '—' },
     { key: 'value', header: 'Stock value', align: 'right', render: (i) => formatMoney(stockValueC(i)) },
   ];
   const footer = ['Total', '', '', '', '', '', '', '', formatMoney(rows.reduce((s, i) => s + stockValueC(i), 0))];
 
   return (
     <div className="page stack">
-      <PageHeader title="Items" description="Rice products, stock on hand and value at cost."
+      <PageHeader title="Items" description="Rice products, stock on hand and value at cost. Prices shown are of the oldest batch in stock (sold first)."
         actions={<div className="button-row">
           <Button icon="image" onClick={() => setPoster(true)} disabled={!items || !all.some((i) => i.status === 'ACTIVE')}>Price poster</Button>
           <Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add item</Button>

@@ -7,7 +7,7 @@ import { Link, navigate } from '../../app/router.jsx';
 import { useOnline } from '../../app/useOnline.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { useQuery, useDoc, actorOf, errorMessage } from '../../data/useData.js';
-import { setSupplierStatus } from '../../data/purchasingService.js';
+import { setSupplierStatus, ensureSupplierCodes } from '../../data/purchasingService.js';
 import { formatMoney } from '../../domain/money.js';
 import { formatDate, today } from '../../domain/dates.js';
 import { isOpenRestock, receivedValueC } from '../../domain/purchasing.js';
@@ -30,17 +30,25 @@ function supplierStats(restocks) {
 
 export function SuppliersPage({ adapter }) {
   const { rows, error } = useQuery(adapter, 'suppliers', { orderBy: [['nameLower', 'asc']] }, 'suppliers');
+  const auth = useAuth();
+  const online = useOnline();
+  const tried = React.useRef(false);
+  // D-051: suppliers made before codes existed get SUP001, SUP002 … once (owner, online).
+  React.useEffect(() => {
+    if (!rows || tried.current || !online || !auth.user || !rows.some((x) => !x.code)) return;
+    tried.current = true;
+    ensureSupplierCodes(adapter, actorOf(auth.user)).catch(() => {});
+  }, [rows, online]);
   const { rows: restocks } = useQuery(adapter, 'restocks', { orderBy: [['orderDate', 'desc']], limit: 1000 }, 'suppliers-restocks');
   const [search, setSearch] = React.useState('');
   const [status, setStatus] = React.useState('ACTIVE');
   const [adding, setAdding] = React.useState(false);
-  const online = useOnline();
   const stats = supplierStats(restocks);
   const q = search.trim().toLowerCase();
   const shown = (rows || []).filter((s) => (!status || s.status === status)
     && (!q || [s.name, s.contactPerson, s.contactNumber, s.address].some((v) => String(v || '').toLowerCase().includes(q))));
   const columns = [
-    { key: 'name', header: 'Supplier', className: 'key-col wrap', render: (s) => <><Link to={`/suppliers/${s.id}`}>{s.name}</Link>{s.status === 'ARCHIVED' && <span className="cell-sub"><Badge>Archived</Badge></span>}</> },
+    { key: 'name', header: 'Supplier', className: 'key-col wrap', render: (s) => <><Link to={`/suppliers/${s.id}`}>{s.name}</Link>{s.code && <span className="cell-sub">{s.code}</span>}{s.status === 'ARCHIVED' && <span className="cell-sub"><Badge>Archived</Badge></span>}</> },
     { key: 'contact', header: 'Contact', className: 'wrap', render: (s) => <>{s.contactPerson || '—'}{s.contactNumber && <span className="cell-sub">{s.contactNumber}</span>}</> },
     { key: 'open', header: 'Open orders', align: 'right', render: (s) => (stats.get(s.id) || {}).open || 0 },
     { key: 'last', header: 'Last delivery', render: (s) => { const d = (stats.get(s.id) || {}).lastReceipt; return d ? formatDate(d) : <span className="muted">—</span>; } },
@@ -87,7 +95,7 @@ export function SupplierDetailPage({ adapter, id }) {
   return (
     <div className="page stack">
       <Link to="/suppliers" className="back-link">← Suppliers</Link>
-      <PageHeader title={<span className="page-title-row">{s.name}{archived && <Badge>Archived</Badge>}</span>} description={[s.contactPerson, s.contactNumber].filter(Boolean).join(' · ') || null}
+      <PageHeader title={<span className="page-title-row">{s.name}{archived && <Badge>Archived</Badge>}</span>} description={[s.code, s.contactPerson, s.contactNumber].filter(Boolean).join(' · ') || null}
         actions={<div className="button-row">
           {!archived && <Button variant="primary" icon="restocks" onClick={() => navigate(`/restocks/new?supplier=${id}`)} disabled={!online}>New restock</Button>}
           <Button icon="edit" onClick={() => setEditing(true)} disabled={!online}>Edit</Button>

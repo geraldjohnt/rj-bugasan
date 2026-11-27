@@ -7,7 +7,8 @@ import { UNITS, formatQty } from './quantity.js';
 import { isValidDate, compareDates } from './dates.js';
 import { computeTotals, stockShortages, validateTerms, creditLimitWarning, TERMS, DISCOUNT, WALK_IN_ID } from './saleTotals.js';
 import { buildSchedule, FREQUENCIES, ALLOWED_COUNTS } from './schedule.js';
-import { listPriceFor } from './inventory.js';
+import { installmentPriceOf } from './inventory.js';
+import { allocateLines, blendedPriceC, takenCostC, avgUnitCostC } from './batches.js';
 
 export const METHODS = { CASH: 'CASH', BANK: 'BANK', EWALLET: 'EWALLET' };
 export const METHOD_LABELS = { CASH: 'Cash', BANK: 'Bank transfer', EWALLET: 'E-wallet', INSTALLMENT: 'Installment' };
@@ -67,28 +68,36 @@ export function planSale(input, { itemsById, customer, settings = DEFAULT_SALES_
   if (!lines.length) throw new DomainError('NO_LINES', 'Add at least one item.');
   if (lines.length > MAX_LINES) throw new DomainError('TOO_MANY_LINES', `A sale can have at most ${MAX_LINES} lines.`);
 
-  const enriched = lines.map((l) => {
+  for (const l of lines) {
     const item = itemsById[l.itemId];
     if (!item) throw new DomainError('ITEM_MISSING', 'An item in this sale no longer exists.');
     if (item.status !== 'ACTIVE') throw new DomainError('ITEM_ARCHIVED', `${item.name} is archived and cannot be sold.`);
-    return { ...l, unit: item.unit, unitCostC: item.costC };
-  });
-
-  const shortages = stockShortages(enriched, new Map(Object.values(itemsById).map((i) => [i.id, i.qtyH])));
+    if (!Number.isInteger(l.qtyH) || l.qtyH <= 0) throw new DomainError('QTY_NOT_POSITIVE', `Enter a quantity for ${item.name}.`);
+  }
+  const shortages = stockShortages(lines, new Map(Object.values(itemsById).map((i) => [i.id, i.qtyH])));
   if (shortages.length) {
     const s = shortages[0];
     const item = itemsById[s.itemId];
     throw new DomainError('NEGATIVE_STOCK', `Not enough stock: ${item.name} has ${formatQty(s.availableH, item.unit)}, the sale needs ${formatQty(s.requestedH, item.unit)}.`, { shortages });
   }
-
-  const totals = computeTotals(enriched, input.discount || { type: DISCOUNT.NONE });
-  const saleLines = totals.lines.map((l) => {
+  // D-050: oldest batch first (or the batch the owner picked); stock not in any batch cannot be sold (D-053).
+  const { taken, batchesByItem } = allocateLines(lines, itemsById);
+  const listPrices = suggestedPrices(lines, itemsById, input.terms, taken);
+  const enriched = lines.map((l, i) => {
     const item = itemsById[l.itemId];
-    const listPriceC = listPriceFor(item, input.terms);
+    const unitPriceC = Number.isInteger(l.unitPriceC) ? l.unitPriceC : listPrices[i];
+    return { ...l, unitPriceC, unit: item.unit, unitCostC: avgUnitCostC(taken[i]), costC: takenCostC(taken[i]) };
+  });
+
+  const totals = computeTotals(enriched, input.discount || { type: DISCOUNT.NONE }, input.charges || []);
+  const saleLines = totals.lines.map((l, i) => {
+    const item = itemsById[l.itemId];
+    const listPriceC = listPrices[i];
     return {
       itemId: item.id, itemName: item.name, unit: item.unit, sackWeightKg: item.unit === UNITS.SACK ? item.sackWeightKg : null,
       qtyH: l.qtyH, listPriceC, unitPriceC: l.unitPriceC, priceOverridden: l.unitPriceC !== listPriceC,
-      unitCostC: item.costC, lineTotalC: l.lineTotalC,
+      unitCostC: l.unitCostC, costC: l.costC, lineTotalC: l.lineTotalC,
+      batches: taken[i], batchPicked: lines[i].batchId || null,
     };
   });
 
@@ -125,8 +134,30 @@ export function planSale(input, { itemsById, customer, settings = DEFAULT_SALES_
   }
   const fulfillment = FULFILLMENT[input.fulfillment] ? input.fulfillment : FULFILLMENT.PENDING;
   if (input.deliveryDate && !isValidDate(input.deliveryDate)) throw new DomainError('INVALID_DATE', 'Enter a valid delivery date.');
-  return { saleLines, totals, paidNowC, balanceC, receivables, plan, creditWarning, fulfillment };
+  return { saleLines, totals, paidNowC, balanceC, receivables, plan, creditWarning, fulfillment, batchesByItem };
 }
+
+/**
+ * List price per sale line (D-046, D-052). Cash (FULL): the weighted average of the cash prices of the batches the line
+ * takes. Pay later: the item's payday price when it has one, otherwise the same batch price; always editable on the line.
+ * taken: result of allocateLines (computed when omitted). Lines that cannot be allocated get the item's shown price.
+ */
+export function suggestedPrices(lines, itemsById, terms, taken = null) {
+  let alloc = taken;
+  if (!alloc) { try { alloc = allocateLines(lines, itemsById).taken; } catch (e) { alloc = null; } }
+  return lines.map((l, i) => {
+    const item = itemsById[l.itemId];
+    if (!item) return 0;
+    const batchPrice = alloc && alloc[i] && alloc[i].length ? blendedPriceC(alloc[i]) : firstBatchPrice(item, l.batchId);
+    if (terms && terms !== TERMS.FULL && Number.isInteger(item.installmentPriceC)) return installmentPriceOf(item);
+    return batchPrice;
+  });
+}
+const firstBatchPrice = (item, batchId) => {
+  const bs = (item.batches || []).filter((b) => b.qtyH > 0);
+  const b = batchId ? bs.find((x) => x.id === batchId) : bs[0];
+  return b ? b.priceC : item.priceC;
+};
 
 /** Next sequence for a counter document ({ next }) read inside a transaction. */
 export const nextSeq = (counterDoc) => (counterDoc && Number.isInteger(counterDoc.next) ? counterDoc.next : 1);

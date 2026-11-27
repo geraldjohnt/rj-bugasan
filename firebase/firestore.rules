@@ -4,7 +4,8 @@ rules_version = '2';
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
  * Scope: Phase 2 (owner bootstrap, users, usernames, settings), Phase 4 (items, inventoryMovements, stockCounts,
  * activityLogs), Phase 5 (customers), Phases 6–7 (counters, sales, installments, payments), Phase 8 (suppliers, restocks,
- * expenses), Phase 9 (calendarEvents) and Phase 11 (opening balances, backup restore).
+ * expenses), Phase 9 (calendarEvents), Phase 11 (opening balances, backup restore) and Phase 13 (batches, supplier codes,
+ * sale charges).
  * Every other path is denied until its phase adds rules.
  * Cross-document consistency (item quantity == sum of its movements) is enforced by client transactions (KI-003, D-016);
  * these rules enforce per-document shape and invariants.
@@ -76,12 +77,14 @@ service cloud.firestore {
     function validItem(d) {
       return d.keys().hasAll(['name', 'nameLower', 'unit', 'qtyH', 'priceC', 'costC', 'minStockH', 'status'])
         && d.keys().hasOnly(['name', 'nameLower', 'variety', 'category', 'unit', 'sackWeightKg', 'linkedSackItemId', 'linkedKgItemId',
-             'sku', 'description', 'qtyH', 'priceC', 'installmentPriceC', 'costC', 'minStockH', 'supplierId', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+             'sku', 'description', 'qtyH', 'priceC', 'installmentPriceC', 'costC', 'minStockH', 'supplierId', 'status', 'batches', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
         && d.nameLower == d.name.lower()
         && d.unit in ['SACK', 'KG']
         && nonNegInt(d.qtyH) && nonNegInt(d.priceC) && nonNegInt(d.costC) && nonNegInt(d.minStockH)
         && (!('installmentPriceC' in d) || d.installmentPriceC == null || nonNegInt(d.installmentPriceC))
+        // Phase 13 (D-050): open stock batches, oldest first, kept on the item (Σ batches ≤ qtyH is kept by the client).
+        && (!('batches' in d) || d.batches == null || (d.batches is list && d.batches.size() <= 150))
         && (d.unit == 'KG' || (d.qtyH % 100 == 0 && d.sackWeightKg is number && d.sackWeightKg > 0))
         && d.status in ['ACTIVE', 'ARCHIVED'];
     }
@@ -156,18 +159,24 @@ service cloud.firestore {
     function optDate(v) { return v == null || isDate(v); }
 
     // Sequence counters (BR-030, BR-050): sale-YYYY and payment-YYYY; each write takes exactly the next number.
+    // Phase 13 (D-051): `supplier` (supplier codes) and batch-<code> (batch ids) may advance by several at once
+    // (codes for many old suppliers, first batches for many old items), never backwards.
+    function isBatchCounter(name) { return name == 'supplier' || name.matches('^batch-(SUP[0-9]{3,}|OLD)$'); }
     match /counters/{name} {
       allow read: if isActive();
-      allow create: if isOwner() && name.matches('^(sale|payment|restock|ob)-[0-9]{4}$')
+      allow create: if isOwner() && (name.matches('^(sale|payment|restock|ob)-[0-9]{4}$') || isBatchCounter(name))
         && request.resource.data.keys().hasOnly(['next']) && request.resource.data.next is int && request.resource.data.next >= 2;
-      allow update: if isOwner() && request.resource.data.keys().hasOnly(['next'])
-        && request.resource.data.next == resource.data.next + 1;
+      allow update: if isOwner() && request.resource.data.keys().hasOnly(['next']) && request.resource.data.next is int
+        && (request.resource.data.next == resource.data.next + 1 || (isBatchCounter(name) && request.resource.data.next > resource.data.next));
       allow delete: if false;
     }
 
+    // D-054: other charges (delivery fee …) are added after the discount; older sales have no chargesC.
     function validSaleMoney(d) {
       return nonNegInt(d.subtotalC) && nonNegInt(d.discountC) && nonNegInt(d.totalC) && nonNegInt(d.paidC) && nonNegInt(d.balanceC)
-        && d.discountC <= d.subtotalC && d.totalC == d.subtotalC - d.discountC;
+        && nonNegInt(d.get('chargesC', 0))
+        && (!('charges' in d) || (d.charges is list && d.charges.size() <= 10))
+        && d.discountC <= d.subtotalC && d.totalC == d.subtotalC - d.discountC + d.get('chargesC', 0);
     }
     match /sales/{id} {
       allow read: if isActive();
@@ -270,7 +279,8 @@ service cloud.firestore {
     // ---- Phase 8: suppliers, restocks, expenses ------------------------------------------------------------
     function validSupplier(d) {
       return d.keys().hasAll(['name', 'nameLower', 'status'])
-        && d.keys().hasOnly(['name', 'nameLower', 'contactPerson', 'contactNumber', 'email', 'address', 'notes', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && d.keys().hasOnly(['name', 'nameLower', 'code', 'contactPerson', 'contactNumber', 'email', 'address', 'notes', 'status', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && (!('code' in d) || (d.code is string && d.code.matches('^SUP[0-9]{3,}$')))
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120 && d.nameLower == d.name.lower()
         && d.status in ['ACTIVE', 'ARCHIVED'];
     }

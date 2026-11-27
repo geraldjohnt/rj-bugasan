@@ -17,7 +17,10 @@ import { stockValueC, stockStatus } from './inventory.js';
 export const inRange = (d, from, to) => !!d && (!from || compareDates(d, from) >= 0) && (!to || compareDates(d, to) <= 0);
 export const isRevenueSale = (s) => s.status === 'ACTIVE' && s.kind !== 'OPENING_BALANCE';
 const sumBy = (rows, f) => rows.reduce((a, r) => a + f(r), 0);
-export const saleCostC = (s) => (Number.isInteger(s.costC) ? s.costC : sumBy(s.lines || [], (l) => lineCost(l.qtyH, l.unitCostC)));
+export const saleChargesC = (s) => (Number.isInteger(s.chargesC) ? s.chargesC : 0);
+/** Line cost: the exact batch cost when stored (D-050), else qty × unit cost. */
+export const lineCostOf = (l) => (Number.isInteger(l.costC) ? l.costC : lineCost(l.qtyH, l.unitCostC));
+export const saleCostC = (s) => (Number.isInteger(s.costC) ? s.costC : sumBy(s.lines || [], lineCostOf));
 
 /** Gross margin in hundredths of a percent (e.g. 1234 = 12.34%), or null without revenue. */
 export const marginBp = (profitC, revenueC) => (revenueC > 0 ? mulDivRound(profitC, 10000, revenueC) : null);
@@ -51,9 +54,11 @@ export const periodLabel = (from, to) => (from === to ? formatDate(from) : `${fo
 export function salesSummary(sales, from, to) {
   const rows = sales.filter((s) => isRevenueSale(s) && inRange(s.saleDate, from, to));
   const revenueC = sumBy(rows, (s) => s.totalC);
+  const chargesC = sumBy(rows, saleChargesC);
   const cogsC = sumBy(rows, saleCostC);
   return {
-    rows, count: rows.length, revenueC, cogsC, grossProfitC: revenueC - cogsC, marginBp: marginBp(revenueC - cogsC, revenueC),
+    // D-054: revenue = product sales (after discount) + other charges; charges have no cost.
+    rows, count: rows.length, revenueC, chargesC, productRevenueC: revenueC - chargesC, cogsC, grossProfitC: revenueC - cogsC, marginBp: marginBp(revenueC - cogsC, revenueC),
     discountC: sumBy(rows, (s) => s.discountC || 0), paidC: sumBy(rows, (s) => s.paidC), balanceC: sumBy(rows, (s) => s.balanceC),
     cancelledCount: sales.filter((s) => s.status === 'CANCELLED' && s.kind !== 'OPENING_BALANCE' && inRange(s.saleDate, from, to)).length,
   };
@@ -85,7 +90,7 @@ export function profitByItem(sales, from, to) {
     const net = netLineRevenue(s);
     (s.lines || []).forEach((l, i) => {
       const r = map.get(l.itemId) || { itemId: l.itemId, itemName: l.itemName, unit: l.unit, qtyH: 0, revenueC: 0, cogsC: 0, sales: 0 };
-      r.qtyH += l.qtyH; r.revenueC += net[i]; r.cogsC += lineCost(l.qtyH, l.unitCostC); r.sales += 1;
+      r.qtyH += l.qtyH; r.revenueC += net[i]; r.cogsC += lineCostOf(l); r.sales += 1;
       map.set(l.itemId, r);
     });
   }
@@ -114,7 +119,7 @@ export function expensesSummary(expenses, from, to) {
 export function profitAndLoss(sales, expenses, from, to) {
   const s = salesSummary(sales, from, to);
   const e = expensesSummary(expenses, from, to);
-  return { revenueC: s.revenueC, cogsC: s.cogsC, grossProfitC: s.grossProfitC, expensesC: e.totalC, netProfitC: s.grossProfitC - e.totalC, byCategory: e.byCategory, salesCount: s.count };
+  return { revenueC: s.revenueC, productRevenueC: s.productRevenueC, chargesC: s.chargesC, cogsC: s.cogsC, grossProfitC: s.grossProfitC, expensesC: e.totalC, netProfitC: s.grossProfitC - e.totalC, byCategory: e.byCategory, salesCount: s.count };
 }
 
 /* ------------------------------------------------------------------ receivables aging */

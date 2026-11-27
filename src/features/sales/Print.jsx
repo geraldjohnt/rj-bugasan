@@ -71,6 +71,7 @@ export function SaleReceipt({ sale, rows = [], payments = [], business }) {
         <tfoot>
           <tr><td colSpan="3">Subtotal</td><td className="num">{formatMoney(sale.subtotalC)}</td></tr>
           {sale.discountC > 0 && <tr><td colSpan="3">Discount{sale.discountType === 'PERCENT' ? ` (${sale.discountValue / 100}%)` : ''}</td><td className="num">−{formatMoney(sale.discountC)}</td></tr>}
+          {(sale.charges || []).map((c, i) => <tr key={`c${i}`}><td colSpan="3">{c.name}</td><td className="num">{formatMoney(c.amountC)}</td></tr>)}
           <tr className="doc-total"><td colSpan="3">Total</td><td className="num">{formatMoney(sale.totalC)}</td></tr>
           {active.map((p) => <tr key={p.id}><td colSpan="3">{p.isDownPayment ? 'Down payment' : 'Paid'} {formatDate(p.date)} · {METHOD_LABELS[p.method]} · {p.id}</td><td className="num">−{formatMoney(p.amountC)}</td></tr>)}
           {sale.status === 'ACTIVE' && <tr className="doc-total"><td colSpan="3">Balance</td><td className="num">{formatMoney(sale.balanceC)}</td></tr>}

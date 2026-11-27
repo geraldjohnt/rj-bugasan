@@ -110,3 +110,10 @@ See root CLAUDE.md "Release procedure".
 - E2E `tests/e2e/system.e2e.js` (uses Playwright downloads and `setInputFiles('#backup-file')`). Sales E2E: Carmen's outstanding/statement include the sample OB (₱5,200).
 - Header "Online" indicator uses `--success` (green) — user request 2026-11-25.
 - Sidebar brand: `Shell` takes `businessName` (from `general` in App.jsx, refreshed on Settings save); shell E2E asserts it (2026-11-26).
+
+## Phase 13 notes (2026-11-27)
+- `src/domain/batches.js` — all batch logic (pure): ids, `takeFromBatches`, `addBatch` (merge / `/2` suffix), `returnToBatches`, `removeStock`/`addFoundStock`, `allocateLines` (picked lines first), `blendedPriceC` (**the D-052 rule — change only here**), `coverUncovered`/`needsNewBatch` (D-055), `displayPrice`, `batchStockValueC`.
+- `planSale` allocates batches and returns `batchesByItem`; `suggestedPrices()` gives the auto price per line (the New sale form shows it for lines whose price was not typed).
+- Services: `coverItemsIn(tx, itemsById, date)` must run in the READ phase of any stock transaction; it returns normalized items and a `commit()` for the counter write. `writeItemMovement(..., { batches, batchParts, itemPatch })` writes the item's new batch list in the same update.
+- `ensureBatches` (Items list hook) and `ensureSupplierCodes` (Suppliers page) are one-off fixes for old data, like `ensureWalkIn`.
+- E2E: `tests/e2e/batches.e2e.js`; the shared sample data now adds a newer NFA batch (`RJ-RS-SUP002-…`) and a walk-in sale with a Delivery fee, so sales lists show 7 active sample sales and restocks 6.

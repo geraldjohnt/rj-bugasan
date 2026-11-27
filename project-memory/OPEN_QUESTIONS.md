@@ -23,3 +23,9 @@ Status values: Open · Answered (see INTERVIEW_LOG) · Deferred
 | AQ-3 | Business rules enforced client-side in v1 (KI-003) | Security depth | Accept for owner-only v1; revisit before staff accounts | Answered 2026-11-25: accepted as part of approval (D-016) |
 | AQ-4 | Confirm assumptions A-005 to A-009 | Business behavior | Accept as written | Answered 2026-11-25: all accepted |
 | AQ-5 | Approve overall design (Phase 0 acceptance) | Gate for coding | — | Answered 2026-11-25: APPROVED, start Phase 1 (D-017) |
+
+## Restock batches (raised 2026-11-27)
+| ID | Subject | Why it matters | Recommended option | Status |
+|---|---|---|---|---|
+| BQ-1 | Approve batch/FIFO design (D-050 … D-053) | Major change to stock, sales and reports; supersedes D-007 | Approve, implement as Phase 13 | Answered 2026-11-27: approved; D-053 then superseded by D-055 |
+| BQ-2 | Approve other-charges design (D-054) | New sale total formula | Approve, implement with Phase 13 | Answered 2026-11-27: approved |

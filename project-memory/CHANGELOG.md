@@ -43,3 +43,7 @@
 - **Release 0.7.2**: `/dist` rebuilt and verified (unit 110/110, rules 43/43, smoke, all 8 E2E suites).
 - Calendar: clicking an entry now pops up a details modal instead of leaving the calendar (D-049); "Open sale" / "Open restock" in the modal opens the full record, custom events get an Edit button.
 - **Release 0.7.3** (calendar details modal): `/dist` rebuilt and verified (unit 110/110, rules 43/43, smoke, all 8 E2E suites).
+
+## 2026-11-27
+- **Phase 13 — Restock batches and other charges** (not yet released): every restock delivery is a batch `RJ-RS-<supplier code>-NNNN` with its own cost and cash price; sales take the oldest batch first (owner can pick a batch), lines across batches use the weighted price, profit uses the real batch cost, cancel returns stock to the same batches; old stock registered automatically as each item's first batch; batches shown and editable on the item page; supplier codes SUP001…; New sale **Other charges** (delivery fee etc.) with suggestions, on receipts and reports; Firestore rules, sample data and user guide updated. Decisions D-050 … D-056 (D-007 and D-053 superseded).
+- **Release 0.8.0** (Phase 13): minified `/dist`, Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites (incl. batches 11 steps).

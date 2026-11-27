@@ -11,10 +11,11 @@ import { parseDate, today as todayIn, isValidDate } from '../domain/dates.js';
 import { formatDocNo, requestedByItem, TERMS, WALK_IN_ID } from '../domain/saleTotals.js';
 import { planSale, nextSeq, paymentStatusOf, DEFAULT_SALES_SETTINGS, FULFILLMENT, linesText } from '../domain/sales.js';
 import { MOVEMENT_TYPES as MT } from '../domain/inventory.js';
+import { avgUnitCostC, returnToBatches } from '../domain/batches.js';
 import { STATUS } from '../domain/allocation.js';
 import { reliabilityDelta, sumDeltas } from '../domain/collections.js';
 import { logWrite } from './activityLog.js';
-import { assertOnline } from './inventoryService.js';
+import { assertOnline, coverItemsIn } from './inventoryService.js';
 import { walkInDoc } from './customerService.js';
 
 const stamp = (adapter, actor) => ({ updatedAt: adapter.serverTime(), updatedBy: actor.uid });
@@ -37,16 +38,22 @@ export async function readRows(tx, sale) {
   return rows;
 }
 
-export function writeItemMovement(tx, adapter, actor, item, { type, deltaH, unitCostC, refType, refId, businessDate, note = null }) {
+/**
+ * One stock movement + the item update. batches: the item's new batch list (D-050) when it changes; batchParts: the
+ * batch quantities this movement moved ([{ batchId, qtyH, unitCostC }]), kept on the movement for the audit trail.
+ * itemPatch: extra item fields written in the same update (e.g. default cost).
+ */
+export function writeItemMovement(tx, adapter, actor, item, { type, deltaH, unitCostC, refType, refId, businessDate, note = null, batches, batchParts, itemPatch = {} }) {
   const afterH = item.qtyH + deltaH;
   if (afterH < 0) throw new DomainError('NEGATIVE_STOCK', `Not enough stock: ${item.name} has ${formatQty(item.qtyH, item.unit)}.`);
   tx.set('inventoryMovements', adapter.newId(), {
     itemId: item.id, itemName: item.name, unit: item.unit, type,
     qtyDeltaH: deltaH, qtyBeforeH: item.qtyH, qtyAfterH: afterH, unitCostC,
     reason: null, note, refType, refId, groupId: null, businessDate,
+    ...(batchParts && batchParts.length ? { batches: batchParts.map((b) => ({ batchId: b.batchId, qtyH: b.qtyH, unitCostC: b.unitCostC })) } : {}),
     createdAt: adapter.serverTime(), createdBy: actor.uid,
   });
-  tx.update('items', item.id, { qtyH: afterH, ...stamp(adapter, actor) });
+  tx.update('items', item.id, { qtyH: afterH, ...(batches ? { batches } : {}), ...itemPatch, ...stamp(adapter, actor) });
   return afterH;
 }
 
@@ -76,11 +83,14 @@ export async function createSale(adapter, actor, input, settings = DEFAULT_SALES
     const saleCounter = await tx.get('counters', `sale-${year}`);
     const payCounter = await tx.get('counters', `payment-${year}`);
     const custSnap = await tx.get('customers', input.customerId || WALK_IN_ID);
-    const itemsById = {};
+    const rawItems = {};
     for (const id of itemIds) {
       const s = await tx.get('items', id);
-      if (s.exists) itemsById[id] = { id, ...s.data };
+      if (s.exists) rawItems[id] = { id, ...s.data };
     }
+    // D-055: stock not in any batch counts as each item's first batch.
+    const cover = await coverItemsIn(tx, rawItems, input.saleDate);
+    const itemsById = cover.items;
     const saleSeq = nextSeq(saleCounter.data);
     const saleId = formatDocNo(prefix, year, saleSeq, digits);
     if ((await tx.get('sales', saleId)).exists) throw new DomainError('DUPLICATE_ID', `Sale number ${saleId} is already used. Check the Sale ID prefix in Settings.`);
@@ -93,10 +103,16 @@ export async function createSale(adapter, actor, input, settings = DEFAULT_SALES
     const plan = planSale(input, { itemsById, customer, settings, today });
 
     // ---- writes
+    cover.commit();
     tx.set('counters', `sale-${year}`, { next: saleSeq + 1 });
     for (const id of itemIds) {
-      const qtyH = plan.saleLines.filter((l) => l.itemId === id).reduce((s, l) => s + l.qtyH, 0);
-      writeItemMovement(tx, adapter, actor, itemsById[id], { type: MT.SALE, deltaH: -qtyH, unitCostC: itemsById[id].costC, refType: 'SALE', refId: saleId, businessDate: input.saleDate });
+      const lines = plan.saleLines.filter((l) => l.itemId === id);
+      const qtyH = lines.reduce((s, l) => s + l.qtyH, 0);
+      const parts = lines.flatMap((l) => l.batches);
+      writeItemMovement(tx, adapter, actor, itemsById[id], {
+        type: MT.SALE, deltaH: -qtyH, unitCostC: avgUnitCostC(parts), refType: 'SALE', refId: saleId, businessDate: input.saleDate,
+        batches: plan.batchesByItem[id], batchParts: parts,
+      });
     }
 
     let paymentId = null;
@@ -125,7 +141,7 @@ export async function createSale(adapter, actor, input, settings = DEFAULT_SALES
       lines: plan.saleLines,
       subtotalC: plan.totals.subtotalC,
       discountType: (input.discount && input.discount.type) || 'NONE', discountValue: (input.discount && input.discount.value) || 0,
-      discountC: plan.totals.discountC, totalC: plan.totals.totalC, costC: plan.totals.costC,
+      discountC: plan.totals.discountC, charges: plan.totals.charges, chargesC: plan.totals.chargesC, totalC: plan.totals.totalC, costC: plan.totals.costC,
       terms: input.terms, paymentMethod: input.terms === TERMS.INSTALLMENT ? 'INSTALLMENT' : input.method,
       plan: plan.plan, paidC: plan.paidNowC, balanceC: plan.balanceC, paymentStatus: paymentStatusOf(plan.paidNowC, plan.totals.totalC),
       paymentIds: paymentId ? [paymentId] : [], installmentCount: plan.receivables.length,
@@ -145,8 +161,10 @@ export async function createSale(adapter, actor, input, settings = DEFAULT_SALES
     logWrite(tx, adapter, actor, {
       action: 'SALE_CREATE', entityType: 'sale', entityId: saleId,
       summary: `Sale ${saleId} to ${customer.name}: ${formatMoney(plan.totals.totalC)}` + (plan.balanceC ? `, balance ${formatMoney(plan.balanceC)}` : ', paid in full')
-        + (plan.saleLines.some((l) => l.priceOverridden) ? ' (price changed on a line)' : ''),
-      changes: { lines: plan.saleLines.map((l) => ({ itemId: l.itemId, qtyH: l.qtyH, unitPriceC: l.unitPriceC, listPriceC: l.listPriceC })) },
+        + (plan.saleLines.some((l) => l.priceOverridden) ? ' (price changed on a line)' : '')
+        + (plan.saleLines.some((l) => l.batchPicked) ? ' (batch picked by hand)' : '')
+        + (plan.totals.chargesC ? `; charges: ${plan.totals.charges.map((c) => `${c.name} ${formatMoney(c.amountC)}`).join(', ')}` : ''),
+      changes: { lines: plan.saleLines.map((l) => ({ itemId: l.itemId, qtyH: l.qtyH, unitPriceC: l.unitPriceC, listPriceC: l.listPriceC, batches: l.batches.map((b) => `${b.batchId}:${b.qtyH}`) })) },
     });
     if (plan.creditWarning) {
       logWrite(tx, adapter, actor, {
@@ -188,7 +206,13 @@ export async function cancelSale(adapter, actor, saleId, reason) {
     for (const id of itemIds) {
       const lines = sale.lines.filter((l) => l.itemId === id);
       const qtyH = lines.reduce((s, l) => s + l.qtyH, 0);
-      writeItemMovement(tx, adapter, actor, items[id], { type: MT.SALE_CANCEL, deltaH: qtyH, unitCostC: lines[0].unitCostC, refType: 'SALE', refId: sale.id, businessDate: todayIn(), note: `Cancelled ${sale.id}` });
+      // D-050: stock goes back into the batches it came from (re-opened if they were used up). Sales made before
+      // batches existed have no batch parts; their stock returns as stock not in any batch.
+      const parts = lines.flatMap((l) => l.batches || []);
+      writeItemMovement(tx, adapter, actor, items[id], {
+        type: MT.SALE_CANCEL, deltaH: qtyH, unitCostC: parts.length ? avgUnitCostC(parts) : lines[0].unitCostC, refType: 'SALE', refId: sale.id, businessDate: todayIn(), note: `Cancelled ${sale.id}`,
+        batches: parts.length ? returnToBatches(items[id], parts) : undefined, batchParts: parts,
+      });
     }
     const at = adapter.serverTime();
     for (const p of payments) {
