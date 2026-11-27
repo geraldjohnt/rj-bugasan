@@ -12,7 +12,6 @@ import { formatMoney } from '../../domain/money.js';
 import { formatDate, today } from '../../domain/dates.js';
 import { isOpenRestock, receivedValueC } from '../../domain/purchasing.js';
 import { SupplierFormDialog, RestocksTable } from './PurchasingParts.jsx';
-import { SampleDataButton } from '../system/SampleData.jsx';
 import { ConfirmDialog } from '../inventory/InventoryDialogs.jsx';
 
 function supplierStats(restocks) {
@@ -69,7 +68,7 @@ export function SuppliersPage({ adapter }) {
           <DataTable caption="Suppliers" columns={columns} rows={shown}
             empty={rows.length
               ? <EmptyState icon="search" title="No matching suppliers">Change the search or filters.</EmptyState>
-              : <EmptyState icon="suppliers" title="No suppliers yet" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add supplier</Button><SampleDataButton adapter={adapter} /></div>}>
+              : <EmptyState icon="suppliers" title="No suppliers yet" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add supplier</Button></div>}>
                   Add the suppliers you buy rice from, then record restock orders.</EmptyState>} />
         )}
       </Panel>

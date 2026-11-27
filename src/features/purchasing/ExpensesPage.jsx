@@ -13,7 +13,6 @@ import { formatDate, today } from '../../domain/dates.js';
 import { EXPENSE_CATEGORIES, validateExpenseForm } from '../../domain/purchasing.js';
 import { monthBounds } from '../../domain/reports.js';
 import { ReasonDialog } from './RestockDetailPage.jsx';
-import { SampleDataButton } from '../system/SampleData.jsx';
 
 function ExpenseDialog({ open, onClose, adapter }) {
   const auth = useAuth();
@@ -103,7 +102,7 @@ export function ExpensesPage({ adapter }) {
             footer={active.length ? ['Total', '', '', formatMoney(totalC), ''] : null}
             empty={all.length
               ? <EmptyState icon="search" title="No matching expenses">Change the filters.</EmptyState>
-              : <EmptyState icon="expenses" title="No expenses in this period" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add expense</Button><SampleDataButton adapter={adapter} /></div>}>
+              : <EmptyState icon="expenses" title="No expenses in this period" action={<div className="button-row"><Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add expense</Button></div>}>
                   Change the dates, or record rent, wages, fuel and other costs.</EmptyState>} />
         )}
       </Panel>

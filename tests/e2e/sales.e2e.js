@@ -34,6 +34,14 @@ const shot = async (name) => { if (shots) { fs.mkdirSync(shots, { recursive: tru
 
 const field = (label, scope = '.dialog') => page.locator(`${scope} .field`).filter({ has: page.locator('.field-label', { hasText: new RegExp('^' + label) }) }).locator('input, select, textarea').first();
 const toast = (text) => page.waitForSelector(`.toast:has-text("${text}")`);
+
+/** D-057: sample data loads only from Settings → System, after re-entering the password. */
+async function loadSample() {
+  if (!page.url().includes('#/settings/system')) await page.goto(url + '#/settings/system');
+  await page.click('.panel button:has-text("Load sample data")');
+  await page.fill('.dialog input[autocomplete="current-password"]', 'demo1234');
+  await page.click('.dialog-footer button:has-text("Load sample data")');
+}
 const stat = async (label) => (await page.locator('.stat').filter({ has: page.locator('.stat-label', { hasText: new RegExp('^' + label + '$') }) }).locator('.stat-value').textContent()).trim();
 const tab = (name) => page.click(`.tab:has-text("${name}")`);
 const money = (s) => Number(String(s).replace(/[^\d.−-]/g, '').replace('−', '-'));
@@ -59,13 +67,13 @@ await step('Sign in; Sales shows the empty state with New sale and sample data',
   await page.fill('input[autocomplete="current-password"]', 'demo1234');
   await page.click('button[type="submit"]');
   await page.waitForSelector('text=No sales yet');
-  expect(await page.isVisible('.empty-state button:has-text("Load sample data")'), 'sample data button missing');
+  expect(!(await page.isVisible('button:has-text("Load sample data")')), 'sample data button must only be in Settings → System (D-057)');
 });
 
 await step('Load sample data: sales, stats and a cancelled sale appear', async () => {
-  await page.click('.empty-state button:has-text("Load sample data")');
-  await page.click('.dialog-footer button:has-text("Load sample data")');
+  await loadSample();
   await toast('Sample data loaded');
+  await page.goto(url + '#/sales');
   await page.waitForSelector('.table a:has-text("RJ-2026-")');
   const shown = await page.locator('.table tbody tr').count();
   expect(shown === 7, 'active sales shown: ' + shown); // incl. the Phase 13 sample sale with a delivery fee

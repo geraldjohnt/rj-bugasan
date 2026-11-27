@@ -12,7 +12,6 @@ import { formatDate } from '../../domain/dates.js';
 import { CUSTOMER_TYPES, matchesCustomer } from '../../domain/customers.js';
 import { CustomerFormDialog } from './CustomerDialogs.jsx';
 import { ReliabilityBadge } from './CustomerBadges.jsx';
-import { SampleDataButton } from '../system/SampleData.jsx';
 
 /** All customers, live, sorted by name. Creates the built-in Walk-in customer the first time (owner, online). */
 export function useCustomers(adapter) {
@@ -79,8 +78,8 @@ export function CustomersPage({ adapter }) {
           <DataTable caption="Customers" columns={columns} rows={registered.length ? rows : []} rowClassName={(c) => (c.status === 'ARCHIVED' || c.system ? 'is-muted' : '')}
             empty={registered.length
               ? <EmptyState icon="search" title="No matching customers">Change the search or filters.</EmptyState>
-              : <EmptyState icon="customers" title="No customers yet" action={<div className="button-row"><Button variant="primary" icon="addCustomer" onClick={() => setAdding(true)} disabled={!online}>Add customer</Button><SampleDataButton adapter={adapter} /></div>}>
-                  Add your first customer, or load sample data to try the system.
+              : <EmptyState icon="customers" title="No customers yet" action={<div className="button-row"><Button variant="primary" icon="addCustomer" onClick={() => setAdding(true)} disabled={!online}>Add customer</Button></div>}>
+                  Add your first customer (or load sample data under Settings → System).
                 </EmptyState>} />
         )}
       </Panel>

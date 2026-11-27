@@ -75,3 +75,4 @@
 | RJ-003 | Editing saved sales | Cancel & re-create instead (R3-Q5) |
 | RJ-004 | Offline sale queuing | Risk of overselling across devices (R8-Q2) |
 | RJ-005 | Language switching | English only (R8-Q6) |
+| RQ-052 | "Load sample data" only in Settings → System, password protected. | R11-Q3, D-057 |

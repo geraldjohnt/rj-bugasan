@@ -7,7 +7,6 @@ import { useQuery, errorMessage } from '../../data/useData.js';
 import { formatMoney } from '../../domain/money.js';
 import { FULFILLMENT_LABELS, PAYMENT_STATUS_LABELS, TERMS_LABELS } from '../../domain/sales.js';
 import { SalesTable } from './SaleTables.jsx';
-import { SampleDataButton } from '../system/SampleData.jsx';
 
 export function SalesPage({ adapter }) {
   const [limit, setLimit] = React.useState(200);
@@ -56,8 +55,8 @@ export function SalesPage({ adapter }) {
           <SalesTable rows={shown}
             empty={all.length
               ? <EmptyState icon="search" title="No matching sales">Change the search or filters.</EmptyState>
-              : <EmptyState icon="sales" title="No sales yet" action={<div className="button-row"><Button variant="primary" icon="newSale" onClick={() => navigate('/sales/new')}>New sale</Button><SampleDataButton adapter={adapter} /></div>}>
-                  Record your first sale, or load sample data to try the system.</EmptyState>} />
+              : <EmptyState icon="sales" title="No sales yet" action={<div className="button-row"><Button variant="primary" icon="newSale" onClick={() => navigate('/sales/new')}>New sale</Button></div>}>
+                  Record your first sale (or load sample data under Settings → System).</EmptyState>} />
         )}
         {rows && rows.length >= limit && <div className="list-more"><Button size="sm" onClick={() => setLimit(limit + 200)}>Show more</Button></div>}
       </Panel>

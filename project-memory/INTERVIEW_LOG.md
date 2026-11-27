@@ -155,3 +155,4 @@ User request: "In sale, the user can add items like delivery fee, other fees, an
 |---|---|---|---|
 | R11-Q1 | Approve the batch + charges design? | "Approved, start building Phase 13." | BQ-1, BQ-2 answered |
 | R11-Q2 | (User, unprompted) Existing stock | "Just register the old stock to batches. Just assume that they belong to the first batch." Replaces R9-Q8/Q9/Q10. | D-055 |
+| R11-Q3 | (User) Sample data button | "Remove the buttons Load sample data on all pages. It should only live in the settings but password protected." | D-057 |

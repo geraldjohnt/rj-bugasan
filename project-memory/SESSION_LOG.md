@@ -105,3 +105,9 @@
 - **Built:** Phase 13 (see DEVELOPMENT_PHASES). Also D-056 (item price edit can reprice batches in stock; receipt checkbox sets item defaults).
 - **Tests:** unit/service 132/132 (22 new), rules 46/46 in the emulator (3 new), E2E on `/build`: shell, inventory, customers, sales, restocks, calendar, reports, system and the new batches suite (11 steps); offline smoke on `/build`. Existing E2E expectations updated for the new sample restock/sale and renamed labels. Not released (D-018).
 - **Release 0.8.0:** version bumped, `npm run release` + `npm run verify:release` passed on `/dist` (unit 132/132, rules 46/46, smoke, 9 E2E suites); PR created and merged to main.
+
+## 2026-11-27 — Session 10 (cont.): sample data only in Settings, password protected
+- **Request:** remove "Load sample data" from all pages; keep it only in Settings, password protected; then create PR and merge.
+- **Done:** D-057 — button removed from 7 empty states; Settings → System dialog asks for the password (re-authentication) before loading; E2E suites load sample data through Settings with the password, check the button is gone from empty states, and check empty/wrong password are refused (inventory suite).
+- Found while testing: the dialog's password could be wiped just after opening (state reset in an effect); fixed by resetting on click.
+- **Release 0.8.1:** `npm run release` + `npm run verify:release` passed on `/dist`; PR created and merged to main.
