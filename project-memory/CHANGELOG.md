@@ -49,3 +49,7 @@
 - **Release 0.8.0** (Phase 13): minified `/dist`, Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites (incl. batches 11 steps).
 - "Load sample data" removed from every page's empty state; it is only in Settings → System and asks for the password first (D-057).
 - **Release 0.8.1** (D-057): Verified on minified `/dist` (`npm run verify:release`): unit 132/132, rules 46/46, dist smoke, all 9 E2E suites.
+
+## 2026-11-27 — Android APK (D-058)
+- New `android/` wrapper (WebView activity, print/download/file-picker bridge), `tools/build-apk.cjs`, `npm run apk`, `npm run test:apk` (`tests/smoke/apk-check.js`).
+- Built `apk/rj-ims-0.8.1.apk` from the current `/dist` for owner testing. APK builds run only when the owner asks (not part of `npm run release`). `/dist` and the app version unchanged.

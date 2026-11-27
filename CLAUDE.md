@@ -58,3 +58,8 @@ Whenever the user asks to **create a PR and merge to main**:
    Never put secrets in `/dist` (the Firebase web config is not a secret).
 
 Day-to-day development builds go to `/build` (git-ignored), never to `/dist`.
+
+## Android APK (user instruction 2026-11-27, D-058)
+Build the APK **only when the user asks** — never as part of the release build. Run `npm run apk` (packs the current `/dist`
+into `apk/rj-ims-<version>.apk`), then `npm run test:apk`. Never delete earlier files in `apk/`. Needs a local Android SDK
+(platform 35+, build-tools; see `tools/build-apk.cjs`). Keep signing with `android/keystore/rj-ims-release.jks`.
