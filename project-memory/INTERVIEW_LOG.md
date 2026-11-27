@@ -137,3 +137,14 @@ User request: "Restocking should have ID also. Since restocking might have diffe
 | R9-Q9 | Stock not covered by any batch | **Block** selling that stock until batches cover it. | D-053 |
 | R9-Q10 | Must hand-entered batches equal current stock? | They **can't exceed** current stock (may be entered a few at a time); they don't change the stock count. | D-053 |
 | R9-Q11 | Price shown on Items / poster / new sale | **Oldest open batch's** cash price, with a hint when the next batch differs. | D-052 |
+
+## Round 10 — Other charges on a sale (asked & answered 2026-11-27)
+
+User request: "In sale, the user can add items like delivery fee, other fees, and more. Best if the user can just add the item name, and the price for that."
+
+| ID | Question | Answer | Resulting requirement / decision |
+|---|---|---|---|
+| R10-Q1 | Reporting | Separate "Other charges" (in the sale total, zero cost, own line in reports). | D-054 |
+| R10-Q2 | Discount | Applies to items only, not charges. | D-054 |
+| R10-Q3 | Open balance / installment | Charges are part of the balance and split like the rest. | D-054 |
+| R10-Q4 | Quick entry | Type freely; previously used names suggested with their last price. | D-054 |

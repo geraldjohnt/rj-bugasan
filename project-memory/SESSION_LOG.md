@@ -100,3 +100,4 @@
 ## 2026-11-27 — Session 10: restock batches (planning only)
 - **Request:** restocks get IDs and their own prices; oldest stock sold first. User asked for a feasibility answer and questions first.
 - **Done:** feasibility confirmed; interview Round 9 (R9-Q1…Q11) recorded; proposed decisions D-050 … D-053; approval item BQ-1. No code changed.
+- Also: user asked for free-text charge lines on sales (delivery fee etc.); Round 10 recorded; proposed D-054; approval item BQ-2.
