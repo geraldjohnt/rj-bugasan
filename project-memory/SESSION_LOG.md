@@ -116,4 +116,5 @@
 - **Request:** build the app into an APK in `apk/`, keeping previous versions. Mid-session: don't build the APK together with `/dist`; build only when asked, but build one now for testing.
 - **Done:** installed Android SDK (platform 35, build-tools 35.0.0; user approved the SDK license; `dl.google.com` added to the cloud environment) in `~/android-sdk` (not in the repo). Wrote `android/` wrapper and `tools/build-apk.cjs` (no Gradle). D-058, KI-025 (signing key in repo), KI-026 (not tested on a phone).
 - **Tests:** `npm run test:apk` PASS on `apk/rj-ims-0.8.1.apk`. A trial run with APK inside the release build and version 0.9.0 passed `verify:release`; reverted at the user's request (version stays 0.8.1, `/dist` untouched).
+- **Merged to main** (user: "create PR and merge to main"): release build + `verify:release` passed, `/dist` unchanged (no app change, version stays 0.8.1).
 - **Next:** owner tests the APK on a phone (KI-026). Future sessions need the Android SDK again (`~/android-sdk` is not kept by the container).
