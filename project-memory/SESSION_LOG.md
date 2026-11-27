@@ -104,3 +104,4 @@
 - **Approved** by the user ("Approved, start building Phase 13"). During the build the user said to register old stock as the first batch → D-055 (supersedes D-053, which had not been built).
 - **Built:** Phase 13 (see DEVELOPMENT_PHASES). Also D-056 (item price edit can reprice batches in stock; receipt checkbox sets item defaults).
 - **Tests:** unit/service 132/132 (22 new), rules 46/46 in the emulator (3 new), E2E on `/build`: shell, inventory, customers, sales, restocks, calendar, reports, system and the new batches suite (11 steps); offline smoke on `/build`. Existing E2E expectations updated for the new sample restock/sale and renamed labels. Not released (D-018).
+- **Release 0.8.0:** version bumped, `npm run release` + `npm run verify:release` passed on `/dist` (unit 132/132, rules 46/46, smoke, 9 E2E suites); PR created and merged to main.

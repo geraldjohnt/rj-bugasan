@@ -1,6 +1,6 @@
 {
   "name": "rj-ims",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "private": true,
   "description": "RJ Inventory and Sales Management System",
   "scripts": {
