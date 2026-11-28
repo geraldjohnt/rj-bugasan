@@ -76,3 +76,7 @@
 | RJ-004 | Offline sale queuing | Risk of overselling across devices (R8-Q2) |
 | RJ-005 | Language switching | English only (R8-Q6) |
 | RQ-052 | "Load sample data" only in Settings → System, password protected. | R11-Q3, D-057 |
+| RQ-053 | Receiving a restock delivery accepts free-text expense lines (trucking, fuel, labor …) with past names suggested; the Receive dialog shows each line's expense share, cost incl. expenses per unit (split by value) and profit per unit; batch cost is not changed. | R12-Q1…Q3, Q9, Q10, D-060, D-061 |
+| RQ-054 | Restock expense lines are saved on the Expenses page (category Restock, linked to the restock) and changed only from the restock; direct expenses need no restock. | R12-Q4, Q6, Q11, Q12, D-062 |
+| RQ-055 | A received delivery's unit cost, cash price and expenses stay editable after receiving (incl. complete orders); a cost change updates profit of sales already made from that batch. | R12-Q1, Q5, D-063 |
+| RQ-056 | A new item can be added from the restock order form using the full item form. | R12-Q7, Q8, D-064 |

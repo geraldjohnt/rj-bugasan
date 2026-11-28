@@ -10,7 +10,8 @@ import { useQuery, actorOf, errorMessage } from '../../data/useData.js';
 import { createExpense, voidExpense } from '../../data/purchasingService.js';
 import { formatMoney } from '../../domain/money.js';
 import { formatDate, today } from '../../domain/dates.js';
-import { EXPENSE_CATEGORIES, validateExpenseForm } from '../../domain/purchasing.js';
+import { EXPENSE_CATEGORIES, ALL_EXPENSE_CATEGORIES, validateExpenseForm, isRestockExpense } from '../../domain/purchasing.js';
+import { Link } from '../../app/router.jsx';
 import { monthBounds } from '../../domain/reports.js';
 import { ReasonDialog } from './RestockDetailPage.jsx';
 
@@ -74,13 +75,15 @@ export function ExpensesPage({ adapter }) {
   const columns = [
     { key: 'date', header: 'Date', render: (e) => formatDate(e.date) },
     { key: 'category', header: 'Category', render: (e) => <>{e.category}{e.status === 'VOIDED' && <span className="cell-sub"><Badge>Voided</Badge></span>}</> },
-    { key: 'note', header: 'Note', className: 'wrap', render: (e) => <>{e.note || <span className="muted">—</span>}{e.void && <span className="cell-sub">Voided: {e.void.reason}</span>}</> },
+    { key: 'note', header: 'Note', className: 'wrap', render: (e) => <>{isRestockExpense(e)
+      ? <><Link to={`/restocks/${e.restockId}`}>Restock {e.restockId}</Link> · {e.note}<span className="cell-sub">Delivery {e.batchId}</span></>
+      : (e.note || <span className="muted">—</span>)}{e.void && <span className="cell-sub">Voided: {e.void.reason}</span>}</> },
     { key: 'amount', header: 'Amount', align: 'right', render: (e) => <span className={e.status === 'VOIDED' ? 'strike' : ''}>{formatMoney(e.amountC)}</span> },
-    { key: 'actions', header: '', align: 'right', render: (e) => (e.status === 'ACTIVE' ? <IconButton size="sm" icon="cancel" label={`Void expense of ${formatDate(e.date)}`} onClick={() => setVoiding(e)} disabled={!online} /> : null) },
+    { key: 'actions', header: '', align: 'right', render: (e) => (isRestockExpense(e) ? null : e.status === 'ACTIVE' ? <IconButton size="sm" icon="cancel" label={`Void expense of ${formatDate(e.date)}`} onClick={() => setVoiding(e)} disabled={!online} /> : null) },
   ];
   return (
     <div className="page stack">
-      <PageHeader title="Expenses" description="Store costs such as rent, wages and fuel. They are subtracted from gross profit to give net profit."
+      <PageHeader title="Expenses" description="Store costs such as rent, wages and fuel. They are subtracted from gross profit to give net profit. Restock expenses are added when receiving goods and are changed on the restock."
         actions={<Button variant="primary" icon="plus" onClick={() => setAdding(true)} disabled={!online}>Add expense</Button>} />
       {error && <Banner tone="danger">{errorMessage(error)}</Banner>}
       <div className="stat-strip">
@@ -93,7 +96,7 @@ export function ExpensesPage({ adapter }) {
         <div className="toolbar">
           <TextField label="From" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
           <TextField label="To" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          <SelectField label="Category" value={category} onChange={(e) => setCategory(e.target.value)} options={[{ value: '', label: 'All' }, ...EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }))]} />
+          <SelectField label="Category" value={category} onChange={(e) => setCategory(e.target.value)} options={[{ value: '', label: 'All' }, ...ALL_EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }))]} />
           <SelectField label="Status" value={status} onChange={(e) => setStatus(e.target.value)} options={[{ value: 'ACTIVE', label: 'Active' }, { value: 'VOIDED', label: 'Voided' }, { value: '', label: 'All' }]} />
           <span className="toolbar-end">{rows ? `${shown.length} shown` : ''}</span>
         </div>

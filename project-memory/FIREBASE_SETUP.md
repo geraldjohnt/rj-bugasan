@@ -76,6 +76,10 @@ Do steps 1–3 in one sitting: until the owner exists, the first person to compl
 7. **Check on the store PC** (Edge/Chrome/Firefox): sign in, one sale, one receipt print, one CSV export, one backup download (KI-009, KI-015, KI-019, KI-021).
 8. Hand the client the `/dist` folder (zip) or the GitHub Pages link, plus `guide.html` (also in the app's user menu → User guide).
 
+## Phase 14 — restock expenses (owner)
+1. Re-publish the rules once this is released: `npm run deploy:rules` (or paste `firebase/firestore.rules` into Firestore → Rules → Publish). No new indexes (single-field queries only).
+2. Receive one delivery with an expense (e.g. Trucking) and check it appears on the Expenses page as "Restock RS-…"; edit the delivery once.
+
 ## Phase 13 — batches and other charges on the real database (owner)
 1. Re-publish the rules once this is released: `npm run deploy:rules` (or paste `firebase/firestore.rules` into Firestore → Rules → Publish). No new indexes.
 2. Open **Items** once while online: stock from before batches is registered as each item's first batch (`RJ-RS-OLD-…`) automatically. Open **Suppliers** once: existing suppliers get codes SUP001, SUP002 …

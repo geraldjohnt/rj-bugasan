@@ -291,6 +291,13 @@
 .receive-row + .receive-row { border-top: 1px solid var(--border); }
 .receive-item { display: grid; gap: 2px; padding-top: 22px; }
 .receive-cost { padding-top: 28px; }
+/* Phase 14: restock expenses (D-060, D-061) */
+.receive-landed { grid-column: 1 / -1; margin-top: calc(var(--sp-2) * -1); }
+.landed-cost { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.landed-cost strong { color: var(--text); }
+.landed-cost .text-danger, .text-danger { color: var(--danger); }
+.restock-expenses .panel-footer { border-top: 0; padding-left: 0; padding-right: 0; }
+.restock-expenses .sale-lines .sale-line { padding-left: 0; padding-right: 0; }
 @media (max-width: 767px) {
   .receive-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .receive-item, .receive-cost { grid-column: span 2; padding-top: 0; }

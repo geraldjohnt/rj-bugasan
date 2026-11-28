@@ -128,4 +128,6 @@
 ## 2026-11-28 — Session 13: restock expenses (requirements)
 - **Request:** expense lines (fuel, trucking, labor… free text) on restocks, split per unit to guide pricing, saved to Expenses linked to the restock; add new items from inside a restock.
 - **Done:** interview Round 12 (12 answers, INTERVIEW_LOG); proposed D-060 … D-064; approval item EQ-1. No code changed.
-- **Next:** owner approves EQ-1 → build as Phase 14 (with sample data, E2E, release on request).
+- **Approved** (EQ-1) and **built Phase 14** in the same session: domain, services, rules, UI, sample data, guide, tests.
+- **Tests:** `npm test` 142/142, `npm run test:rules` 48/48, all 10 E2E suites on `/build` pass (new `restockExpenses` 9 steps). No release build (not requested).
+- **Next:** owner tries it (demo or after release); release on "create PR and merge to main".

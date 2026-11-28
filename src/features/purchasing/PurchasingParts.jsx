@@ -1,18 +1,18 @@
-/* Shared parts for Phase 8 screens: restock status badge, restocks table, supplier form dialog. */
+/* Shared parts for Phase 8 screens: restock status badge, restocks table, supplier form dialog, restock expense lines (Phase 14). */
 import { Badge, DataTable, Banner } from '../../components/Feedback.jsx';
 import { Dialog } from '../../components/Dialog.jsx';
-import { Button } from '../../components/Button.jsx';
+import { Button, IconButton } from '../../components/Button.jsx';
 import { TextField, TextAreaField } from '../../components/Field.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { useOnline } from '../../app/useOnline.js';
 import { Link } from '../../app/router.jsx';
-import { actorOf, errorMessage } from '../../data/useData.js';
+import { actorOf, errorMessage, useQuery } from '../../data/useData.js';
 import { createSupplier, updateSupplier } from '../../data/purchasingService.js';
-import { formatMoney } from '../../domain/money.js';
+import { formatMoney, centavosToPlain } from '../../domain/money.js';
 import { formatQty } from '../../domain/quantity.js';
 import { formatDate, compareDates } from '../../domain/dates.js';
-import { RESTOCK_STATUS_LABELS, validateSupplierForm, receivedValueC, isOpenRestock } from '../../domain/purchasing.js';
+import { RESTOCK_STATUS_LABELS, validateSupplierForm, receivedValueC, isOpenRestock, RESTOCK_EXPENSE_CATEGORY, MAX_RECEIPT_EXPENSES, expenseNameSuggestions } from '../../domain/purchasing.js';
 
 const TONE = { ORDERED: 'info', PARTIALLY_RECEIVED: 'warning', RECEIVED: 'success', CANCELLED: 'neutral' };
 
@@ -90,5 +90,54 @@ export function SupplierFormDialog({ open, onClose, adapter, supplier, suppliers
         <TextAreaField label="Notes" value={form.notes} onChange={set('notes')} error={errors.notes} rows={2} />
       </form>
     </Dialog>
+  );
+}
+
+/* ------------------------------------------------------------------ restock expense lines (Phase 14, D-060, D-062) */
+
+let expenseKey = 0;
+export const newExpenseRow = (o = {}) => ({ key: ++expenseKey, name: '', amount: '', ...o });
+export const expenseRowsFrom = (expenses) => (expenses || []).map((e) => newExpenseRow({ name: e.name, amount: centavosToPlain(e.amountC), expenseId: e.expenseId }));
+
+/** Names used before on restock expenses (newest first, with the last amount). */
+export function useRestockExpenseSuggestions(adapter) {
+  const { rows } = useQuery(adapter, 'expenses', { where: [['category', '==', RESTOCK_EXPENSE_CATEGORY]] }, 'restock-expense-names');
+  return React.useMemo(() => expenseNameSuggestions(rows || []), [rows]);
+}
+
+/**
+ * Free-text expense lines (Fuel, Trucking, Labor…) with suggestions. rows: [{ key, name, amount, expenseId? }];
+ * errors: { [index]: { name?, amount? } } from parseExpenseLines.
+ */
+export function ExpenseLinesEditor({ adapter, rows, setRows, errors = {} }) {
+  const suggestions = useRestockExpenseSuggestions(adapter);
+  const setRow = (key, patch) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  function setName(key, name) {
+    const known = suggestions.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, name, amount: r.amount || !known ? r.amount : centavosToPlain(known.amountC) } : r)));
+  }
+  return (
+    <div className="restock-expenses">
+      <datalist id="restock-expense-names">{suggestions.map((c) => <option key={c.name} value={c.name}>{formatMoney(c.amountC)}</option>)}</datalist>
+      {rows.length > 0 && <div className="sale-lines">
+        {rows.map((r, idx) => {
+          const e = errors[idx] || {};
+          return (
+            <div key={r.key} className="sale-line charge-line">
+              <TextField label={idx === 0 ? 'Expense' : undefined} aria-label={`Expense ${idx + 1}`} className="sale-line-item" value={r.name} list="restock-expense-names" maxLength={60}
+                placeholder="e.g. Trucking, Fuel, Labor" onChange={(ev) => setName(r.key, ev.target.value)} error={e.name} />
+              <TextField label={idx === 0 ? 'Amount' : undefined} aria-label={`Expense amount ${idx + 1}`} className="sale-line-price" value={r.amount} onChange={(ev) => setRow(r.key, { amount: ev.target.value })}
+                inputMode="decimal" prefix="₱" inputClassName="num" error={e.amount} />
+              <IconButton icon="trash" label={`Remove expense ${idx + 1}`} size="sm" className="sale-line-remove" onClick={() => setRows((rs) => rs.filter((x) => x.key !== r.key))} />
+            </div>
+          );
+        })}
+      </div>}
+      {errors.all && <Banner tone="danger">{errors.all}</Banner>}
+      <div className="panel-footer">
+        <Button size="sm" icon="plus" onClick={() => setRows((rs) => [...rs, newExpenseRow()])} disabled={rows.length >= MAX_RECEIPT_EXPENSES}>Add expense</Button>
+        {!rows.length && <span className="muted small">Shipping, trucking, fuel, labor… Saved to Expenses, linked to this restock.</span>}
+      </div>
+    </div>
   );
 }

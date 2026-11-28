@@ -29,6 +29,7 @@ Status vocabulary: Planned → In progress → Implemented → Tested → Verifi
 | 11 | Activity log UI, backup/restore, opening balances | Implemented & tested (demo + rules emulator); released in 0.6.0 | Owner-only activity log, backup download + 7-day reminder, restore with typed RESTORE, opening balances (`OB-`); sample OBs |
 | 12 | Firebase go-live & release | Implemented; released in 0.6.0 | User guide (`guide.html`), `npm run deploy:rules`, `npm run verify:release`, go-live checklist; owner steps remain (FIREBASE_SETUP) |
 | 13 | Restock batches (oldest first) & other charges on sales | Implemented & tested (demo + rules emulator); released in 0.8.0 | Batch ids `RJ-RS-SUP001-0001`, per-batch cost and cash price, weighted price across batches, owner batch pick, old stock as first batch, delivery fee and other charges; owner to re-publish rules after release |
+| 14 | Restock expenses, delivery edits, new item from a restock | Implemented & tested (demo + rules emulator); not released yet | Trucking/fuel/labor per delivery split by value (cost incl. expenses shown), saved to Expenses as "Restock" with suggestions, deliveries editable after receiving, New item on the order form; owner to re-publish rules after release |
 
 ## Trying it with sample data
 

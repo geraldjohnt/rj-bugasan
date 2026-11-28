@@ -175,3 +175,4 @@ User request: "When restocking, there should be expenses to input in there … s
 | R12-Q10 | Help with the profit on top? | **No** — owner types the selling price; the app shows profit per unit (price − cost incl. expenses). | D-061 |
 | R12-Q11 | Editing a linked expense after receiving | **Update the Expenses entry in place**, old/new amounts in the Activity log; removing a line voids its expense. | D-062 |
 | R12-Q12 | Void/edit a linked expense from the Expenses page? | **Only from the restock**; the Expenses page shows "Restock RS-… · Trucking" with a link. | D-062 |
+| R12-Q13 | Approve the design (EQ-1)? | "Approve, build Phase 14." | D-060 … D-064 |

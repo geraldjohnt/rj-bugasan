@@ -14,7 +14,7 @@ import { recordPayment, voidPayment } from './paymentService.js';
 import { DEFAULT_SALES_SETTINGS } from '../domain/sales.js';
 import { validateSupplierForm, validateRestockForm, validateExpenseForm } from '../domain/purchasing.js';
 import { validateEventForm } from '../domain/calendar.js';
-import { createSupplier, createRestock, receiveRestock, cancelRestock, createExpense, voidExpense } from './purchasingService.js';
+import { createSupplier, createRestock, receiveRestock, cancelRestock, createExpense, voidExpense, editReceipt } from './purchasingService.js';
 import { createEvent } from './calendarService.js';
 import { createOpeningBalance } from './openingBalanceService.js';
 
@@ -175,19 +175,26 @@ async function loadPurchasing(adapter, actor, asOf, itemIds) {
     if (Object.keys(errors).length) throw new Error('Invalid sample restock: ' + JSON.stringify(errors));
     return createRestock(adapter, actor, data);
   };
-  const receive = (id, date, lines) => receiveRestock(adapter, actor, id, {
-    date, lines: lines.map(([name, qty, cost, updateCost = true, price = null]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), priceC: price === null ? null : P(price), updateCost })),
+  const receive = (id, date, lines, expenses = []) => receiveRestock(adapter, actor, id, {
+    date, expenses: expenses.map(([name, amount]) => ({ name, amountC: P(amount) })), lines: lines.map(([name, qty, cost, updateCost = true, price = null]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), priceC: price === null ? null : P(price), updateCost })),
   });
   let restocks = 0;
 
   // 1. Fully received two months ago at the usual cost.
   const r1 = await order('Golden Grains Trading', addDays(asOf, -60), addDays(asOf, -57), [['Dinorado 50kg Sack', 10, 2900], ['Sinandomeng 50kg Sack', 8, 2300]]);
-  await receive(r1, addDays(asOf, -57), [['Dinorado 50kg Sack', 10, 2900], ['Sinandomeng 50kg Sack', 8, 2300]]);
+  // Phase 14 (D-060 … D-062): with its trucking and unloading costs, saved as linked "Restock" expenses.
+  await receive(r1, addDays(asOf, -57), [['Dinorado 50kg Sack', 10, 2900], ['Sinandomeng 50kg Sack', 8, 2300]], [['Trucking', 1200], ['Labor', 360]]);
   restocks++;
   // 2. Received at a higher cost (item cost updated) — NFA had no stock until now.
   const r2 = await order('Nueva Ecija Rice Mill', addDays(asOf, -30), addDays(asOf, -26), [['NFA Well-milled 50kg Sack', 6, 1900], ['Jasmine 25kg Sack', 4, 1450]]);
-  await receive(r2, addDays(asOf, -26), [['NFA Well-milled 50kg Sack', 6, 1950], ['Jasmine 25kg Sack', 4, 1500]]);
+  const rc2 = await receive(r2, addDays(asOf, -26), [['NFA Well-milled 50kg Sack', 6, 1950], ['Jasmine 25kg Sack', 4, 1500]], [['Trucking', 800], ['Fuel', 300]]);
   restocks++;
+  // Phase 14 (D-063): the supplier lowered the Jasmine price after delivery and the trucking bill came in higher.
+  const d2 = (await adapter.get('restocks', r2)).receipts.find((x) => x.batchId === rc2.batchId);
+  await editReceipt(adapter, actor, r2, rc2.batchId, {
+    lines: d2.lines.map((l) => ({ itemId: l.itemId, unitCostC: l.itemName === 'Jasmine 25kg Sack' ? P(1480) : l.unitCostC, priceC: l.priceC })),
+    expenses: d2.expenses.map((e) => (e.name === 'Trucking' ? { ...e, amountC: P(850) } : e)),
+  });
   // 3. Partly received; the rest is expected in a few days.
   const r3 = await order('Golden Grains Trading', addDays(asOf, -6), addDays(asOf, 3), [['Dinorado 50kg Sack', 12, 2900], ['Malagkit per KG', 25, 65]], 'Rest of the Dinorado follows.');
   await receive(r3, addDays(asOf, -4), [['Dinorado 50kg Sack', 5, 2900], ['Malagkit per KG', 25, 65]]);
@@ -204,7 +211,7 @@ async function loadPurchasing(adapter, actor, asOf, itemIds) {
     [-12, 'Delivery/Fuel', 380, 'Gas for delivery'], [-11, 'Wages', 4500, 'Helper (2 weeks)'], [-3, 'Utilities', 1720.4, 'Electricity'],
     [-2, 'Other', 250, 'Barangay permit photocopies'],
   ];
-  let expenses = 0, mistake = null;
+  let expenses = 4, mistake = null; // 4 restock expenses above
   for (const [days, category, amount, note] of EXPENSES) {
     const id = await createExpense(adapter, actor, validateExpenseForm({ date: addDays(asOf, days), category, amount: String(amount), note }).data);
     if (days === -12) mistake = id;
