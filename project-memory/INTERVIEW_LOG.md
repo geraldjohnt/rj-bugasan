@@ -176,3 +176,30 @@ User request: "When restocking, there should be expenses to input in there … s
 | R12-Q11 | Editing a linked expense after receiving | **Update the Expenses entry in place**, old/new amounts in the Activity log; removing a line voids its expense. | D-062 |
 | R12-Q12 | Void/edit a linked expense from the Expenses page? | **Only from the restock**; the Expenses page shows "Restock RS-… · Trucking" with a link. | D-062 |
 | R12-Q13 | Approve the design (EQ-1)? | "Approve, build Phase 14." | D-060 … D-064 |
+
+## Round 13 — Item expense & credit price at receiving, SKU, promised payment dates (asked & answered 2026-11-28)
+
+User request: "In receiving the restock, the user wants to input the Received, Unit Cost, Expense, Cash Price, and Credit Price … separate expenses on each item … Keep the Expenses line below the items … when adding a sale … paylater price … default value of the credit price … editable. … check what we are using as SKU … searchable … displayed when adding item in the restock or anywhere … plan what to use and the prefix. … a customer can sometimes just pay partial amount … promises to pay another time … the user can set another due date … additional and should not replace the first payment nor the next one … also reflect on the calendar … if the next promised date is the same as the next due date … the notification in the calendar is now 2 … purpose … track down the collection date of each due."
+
+Findings shown to the user before asking: the sale form already fills the Payday price for pay-later terms and lets it be edited (D-046); the Receive dialog had Received / Unit cost / Cash price + delivery expense lines (D-060/D-061); SKU was an optional free-text field, already searchable on Items, never auto-filled, not shown in pickers; partial payments already worked (row PARTIAL, stays due on its date) but no promised date existed.
+
+| ID | Question | Answer | Resulting decision |
+|---|---|---|---|
+| R13-Q1 | Per-item "Expense" amount at receiving means | **Total for that line** (app shows the per-unit share) | D-065 |
+| R13-Q2 | How the per-item expense counts | **Like the other restock expenses**: in cost incl. expenses and profit per unit; saved on the Expenses page as "Restock"; batch cost unchanged | D-065 |
+| R13-Q3 | Where the Credit price typed at receiving is saved | **On the item only** (updates the item's single credit price) | D-066 |
+| R13-Q4 | Name of the second price | **"Credit price"** everywhere (replaces "Payday price") | D-066 |
+| R13-Q5 | How SKUs are created | **Automatic, editable**; existing items without an SKU get one; typed SKUs are kept; must be unique | D-067 |
+| R13-Q6 | SKU format | **RJ-<first 3 letters of variety>-NNN**, e.g. RJ-DIN-001 | D-067 |
+| R13-Q7 | Item without a variety | **Use the first 3 letters of the item name** | D-067 |
+| R13-Q8 | Where SKU is shown/searchable | **Item pickers** (New sale, restock order, Receive, Edit delivery), **lists & details** (Items list, restock/sale lines, movements, batches, reports, CSV), **printed receipts**. Not on the price poster | D-067 |
+| R13-Q9 | Promised date on a partial payment | **Required** | D-068 |
+| R13-Q10 | When it is required | Only when, after the payment, an installment **due today or overdue** is still not fully paid (early partial payments need none) | D-068 |
+| R13-Q11 | Which sales | **All with a balance** (installments, open balance, opening balances) | D-068 |
+| R13-Q12 | Promise amount | **The unpaid rest of that installment** (automatic) | D-068 |
+| R13-Q13 | Promised date after the next due date | **Allowed with a warning** | D-068 |
+| R13-Q14 | Missed promise | Installment stays **overdue from its original due date**; promise flagged **missed**; a new promise can be added; all promises kept as history | D-069 |
+| R13-Q15 | When a promise is kept | Remainder **fully paid on or before the promised date** | D-069 |
+| R13-Q16 | Reliability ("paid on time") | **A kept promise counts as on time** | D-069 |
+| R13-Q17 | Where promises show | **Calendar** (own entry, so same date as a due date = 2 entries), **Collections**, **Sale detail** schedule, **Customer statement**. Not the Dashboard | D-069 |
+| R13-Q18 | Edit delivery (D-063) | Also edits the **per-item expense** (updates its linked expense) and **Credit price** (updates the item) | D-065, D-066 |

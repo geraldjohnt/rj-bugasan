@@ -132,3 +132,7 @@
 - **Tests:** `npm test` 142/142, `npm run test:rules` 48/48, all 10 E2E suites on `/build` pass (new `restockExpenses` 9 steps). No release build (not requested).
 - **Release 0.10.0** (user: "create PR and merge to main"): merged main into the branch, version 0.10.0, `npm run release` + `npm run verify:release` passed (unit 142/142, rules 48/48, dist smoke, 10 E2E suites); PR created and merged. No APK (not asked).
 - **Next:** owner re-publishes rules (FIREBASE_SETUP "Phase 14") and tries a receive with expenses.
+
+## 2026-11-28 — Session 14: item expense, credit price, SKU, promised dates (requirements)
+- **Request:** per-item Expense and Credit price at receiving; pay-later price defaults to the credit price; SKU plan and display; promised dates on partial payments shown on the calendar.
+- **Done:** checked the code (sale already defaults to the Payday price, D-046; SKU free text, searchable on Items only; partial payments exist, no promise). Interview Round 13 (18 answers); proposed D-065 … D-069; approval item FQ-1. No code changed.

@@ -106,3 +106,8 @@ Never mark a phase complete until its acceptance criteria are verified.
 - **Status:** Implemented and tested (2026-11-28) in demo mode, Mock adapter and the Firestore emulator. Released as 0.10.0 (2026-11-28). Remaining for "Verified": owner re-publishes rules (FIREBASE_SETUP "Phase 14").
 - **Built:** `parseExpenseLines`, `splitByValue`, `expenseBreakdown`, `planReceiptEdit`, `expenseNameSuggestions` (domain/purchasing.js); `receiveRestock` expenses, `editReceipt`, `voidExpense` guard (purchasingService); Receive dialog expenses + landed cost, Edit delivery dialog, deliveries table (expenses, Edit), Expenses stat; `ExpenseLinesEditor`; Expenses page links; restock form New item; rules (restocks RECEIVED edit, expenses Restock create/update, sales cost update); sample data (expenses on two deliveries, one edited); user guide.
 - **Decisions:** D-060 … D-064.
+
+## Phase 15 — Item expense & credit price at receiving, automatic SKU, promised payment dates
+- **Scope:** per-item Expense and Credit price in Receive / Edit delivery (D-065, D-066); "Payday price" renamed "Credit price" (D-066); automatic editable SKU RJ-<CODE>-NNN with back-fill, shown and searchable everywhere items appear (D-067); required promised date on partial payments of due/overdue rows, extra calendar entries, kept/missed, reliability (D-068, D-069); rules, sample data, guide, tests.
+- **Status:** Planned — waiting for approval (FQ-1). No code yet.
+- **Decisions:** D-065 … D-069 (proposed).
