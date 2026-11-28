@@ -1,8 +1,8 @@
 # Project Status
 
-**Last updated:** 2026-11-28 (session 14: Phase 15 approved, built and tested — not released; D-065 … D-069)
+**Last updated:** 2026-11-28 (session 14: Phase 15 built, tested and released as 0.11.0; D-065 … D-069)
 **Overall status:** Design approved (D-017). Implementation started.
-**Current phase:** Phase 15 (per-item expense + credit price at receiving, "Credit price" rename, automatic SKU RJ-<CODE>-NNN, promised payment dates) — implemented and tested 2026-11-28, **not released** (release on request). Before: Phase 14 (restock expenses split by value and shown per unit, saved to Expenses as "Restock", received deliveries editable, New item on the restock form) — implemented, tested and **released as 0.10.0** (2026-11-28). Before: Phase 13 (restock batches oldest first + other charges on sales) — implemented, tested and released as 0.8.0 (2026-11-27). Previous: Phases 11 (Activity log, backup/restore, opening balances) and 12 (go-live & release prep) — implemented, tested, released as 0.6.0; all development phases built. Remaining: owner go-live steps (FIREBASE_SETUP "Phases 11–12 — go-live checklist").
+**Current phase:** Phase 15 (per-item expense + credit price at receiving, "Credit price" rename, automatic SKU RJ-<CODE>-NNN, promised payment dates) — implemented, tested and **released as 0.11.0** (2026-11-28). Before: Phase 14 (restock expenses split by value and shown per unit, saved to Expenses as "Restock", received deliveries editable, New item on the restock form) — implemented, tested and **released as 0.10.0** (2026-11-28). Before: Phase 13 (restock batches oldest first + other charges on sales) — implemented, tested and released as 0.8.0 (2026-11-27). Previous: Phases 11 (Activity log, backup/restore, opening balances) and 12 (go-live & release prep) — implemented, tested, released as 0.6.0; all development phases built. Remaining: owner go-live steps (FIREBASE_SETUP "Phases 11–12 — go-live checklist").
 **Implementation status:** App shell, login/setup/lock/settings, design system, business calculation core and the Inventory module the Customers module, and Sales / Payments / Collections (new sale, sales list/detail, cancel, delivery, receipts, record/void payment, reschedule, Collections screen, customer statement, Settings → Sales, sample sales), Restocks/Suppliers/Expenses, Calendar, Dashboard and Reports exist and are tested. Phase 11 (Activity log, Backup/restore, Opening balances) and Phase 12 (user guide, deploy/verify scripts, go-live checklist) exist and are tested. Installment plans: 2–5 payments, default 2 (D-043).
 
 ## Completed
@@ -11,6 +11,7 @@
   Mock adapter with transactions (8/8 tests pass), Firestore adapter (unverified), foundation screen, offline file:// smoke test (passes in Chromium).
 
 ## Releases
+- 0.11.0 — 2026-11-28 — Phase 15: item expense + credit price at receiving, Credit price label, automatic SKUs, promised payment dates (D-065 … D-069). Verified on minified `/dist` (`npm run verify:release`): unit 154/154, rules 51/51, dist smoke, all 11 E2E suites (incl. phase15 12 steps). No APK built (on request only).
 - 0.10.0 — 2026-11-28 — Phase 14: restock expenses, editable deliveries, New item on the restock form (D-060 … D-064). Verified on minified `/dist` (`npm run verify:release`): unit 142/142, rules 48/48, dist smoke, all 10 E2E suites (incl. restockExpenses 9 steps). No APK built (on request only).
 - 0.1.0 — 2026-11-25 — https://github.com/geraldjohnt/rj-bugasan/pull/1 (merged). Verified: unit 35/35, rules 15/15, dist smoke, dist E2E 16/16 (earlier recorded as 17/17; the script has 16 steps).
 - 0.2.0 — 2026-11-25 — Phase 4 Inventory — https://github.com/geraldjohnt/rj-bugasan/pull/3. Verified on minified `/dist`: unit 53/53, rules 22/22, dist smoke, E2E shell 16/16 + inventory 15/15.
@@ -76,7 +77,7 @@
 - Keep the readable source (`/src`) committed; `/dist` is only the minified copy (user asked 2026-11-25; already the case).
 
 ## Immediate next actions
--5. ✅ Phase 15 built and tested (D-065 … D-069). Next: release on the owner's request ("create PR and merge to main" → D-018 procedure incl. the new `phase15` E2E). After release the owner re-publishes `firebase/firestore.rules` (FIREBASE_SETUP "Phase 15") and opens Items once online so existing items get SKUs.
+-5. ✅ Phase 15 released as 0.11.0. Owner re-publishes `firebase/firestore.rules` (FIREBASE_SETUP "Phase 15") and opens Items once online so existing items get SKUs.
 -4. ✅ Phase 14 released as 0.10.0. Owner: re-publish `firebase/firestore.rules` (`npm run deploy:rules`, FIREBASE_SETUP "Phase 14"), then receive one delivery with an expense. A 0.10.0 APK only if the owner asks.
 -3. ✅ 0.9.0 released (APKs in `dist/apk/`, Settings download link, D-059); GitHub Pages republishes `/dist` on merge.
 -2. Owner: install `dist/apk/rj-ims-0.9.0.apk` (or download it from Settings → System) on an Android phone and test it (KI-026). Build a new APK only when the owner asks: `npm run apk` (D-058; needs the Android SDK — reinstall in a new cloud session).

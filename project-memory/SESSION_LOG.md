@@ -139,3 +139,4 @@
 - **Approved** (FQ-1: "Approve, build Phase 15") and **built Phase 15** in the same session: domain, services, rules, UI, sample data, guide, tests.
 - Found while building: back-dated sample payments hit the promise rule → "due" is judged on the payment date (recorded in D-068); a newer promise before an older one's date marks it Replaced (D-069); blank SKU on edit keeps the SKU (D-067); calendar needed all open rows for promises in other months.
 - **Tests:** `npm test` 154/154, `npm run test:rules` 51/51, all 11 E2E suites on `/build` pass (new `phase15` 12 steps), offline smoke on `/build`. No release build (not requested).
+- **Release 0.11.0** (user: "Create PR and merge to main branch"): merged main into the branch, version 0.11.0, `npm run release` + `npm run verify:release` passed (unit 154/154, rules 51/51, dist smoke, 11 E2E suites); PR created and merged. No APK (not asked).
