@@ -4,7 +4,7 @@
  */
 import { DomainError } from './errors.js';
 import { UNITS, parseQty, formatQty } from './quantity.js';
-import { parseMoney } from './money.js';
+import { parseMoney, mulDivRound } from './money.js';
 import { isValidDate, compareDates } from './dates.js';
 import { lineCost } from './saleTotals.js';
 
@@ -15,6 +15,12 @@ export const MAX_RESTOCK_LINES = 40;
 
 /** BR-063 */
 export const EXPENSE_CATEGORIES = ['Delivery/Fuel', 'Rent', 'Wages', 'Utilities', 'Supplies', 'Other'];
+/** D-062: expenses entered on a restock receipt. Never chosen on the Expenses page (only created/changed from the restock). */
+export const RESTOCK_EXPENSE_CATEGORY = 'Restock';
+/** Every category an expense can have (filters, reports). */
+export const ALL_EXPENSE_CATEGORIES = [...EXPENSE_CATEGORIES, RESTOCK_EXPENSE_CATEGORY];
+export const MAX_RECEIPT_EXPENSES = 20;
+export const isRestockExpense = (e) => !!e && e.category === RESTOCK_EXPENSE_CATEGORY && !!e.restockId;
 
 const trim = (v) => String(v ?? '').trim();
 export const isOpenRestock = (r) => r.status === RESTOCK_STATUS.ORDERED || r.status === RESTOCK_STATUS.PARTIALLY_RECEIVED;
@@ -148,4 +154,131 @@ export function validateExpenseForm(form) {
   if (data.category === 'Other' && !data.note) errors.note = 'Describe the expense.';
   if (data.note.length > 500) errors.note = 'Too long.';
   return { data, errors };
+}
+
+/* ------------------------------------------------------------------ restock expenses (Phase 14, D-060 … D-063) */
+
+/**
+ * Parse the expense lines typed on a receipt (D-060). rows: [{ name, amount, expenseId? }] (strings as typed).
+ * Empty rows are skipped. Returns { lines: [{ name, amountC, expenseId? }], errors: { [rowIndex]: { name?, amount? } }, totalC }.
+ */
+export function parseExpenseLines(rows) {
+  const lines = [];
+  const errors = {};
+  (rows || []).forEach((r, idx) => {
+    const name = trim(r.name);
+    const amountText = trim(r.amount);
+    if (!name && !amountText) return;
+    const e = {};
+    if (!name) e.name = 'Enter what it was for.';
+    else if (name.length > 60) e.name = 'Use 60 characters or fewer.';
+    let amountC = null;
+    try { amountC = parseMoney(amountText); if (amountC === null) e.amount = 'Required.'; else if (amountC <= 0) e.amount = 'Enter an amount greater than zero.'; } catch (x) { e.amount = x.message; }
+    if (Object.keys(e).length) { errors[idx] = e; return; }
+    lines.push({ name, amountC, ...(r.expenseId ? { expenseId: r.expenseId } : {}) });
+  });
+  if (lines.length > MAX_RECEIPT_EXPENSES) errors.all = `Use ${MAX_RECEIPT_EXPENSES} expense lines or fewer.`;
+  return { lines, errors, totalC: lines.reduce((s, l) => s + l.amountC, 0) };
+}
+
+/** Check already-parsed expense lines (service side). */
+export function checkExpenseLines(lines) {
+  if (!Array.isArray(lines)) return [];
+  if (lines.length > MAX_RECEIPT_EXPENSES) throw new DomainError('TOO_MANY', `Use ${MAX_RECEIPT_EXPENSES} expense lines or fewer.`);
+  return lines.map((l) => {
+    const name = trim(l.name);
+    if (!name || name.length > 60) throw new DomainError('INVALID_EXPENSE', 'Each expense needs a name of up to 60 characters.');
+    if (!Number.isInteger(l.amountC) || l.amountC <= 0) throw new DomainError('INVALID_AMOUNT', `Invalid amount for ${name}.`);
+    return { name, amountC: l.amountC, ...(l.expenseId ? { expenseId: l.expenseId } : {}) };
+  });
+}
+
+/**
+ * D-061: split totalC over lines in proportion to their value (qty × unit cost), largest remainder so the shares add
+ * up exactly. When every line has value 0 the total is split equally. values: centavos per line. Returns centavos per line.
+ */
+export function splitByValue(values, totalC) {
+  if (!values.length || !totalC) return values.map(() => 0);
+  const base = values.reduce((s, v) => s + v, 0);
+  const weights = base > 0 ? values : values.map(() => 1);
+  const w = base > 0 ? base : values.length;
+  const raw = weights.map((v) => v * totalC);
+  const shares = raw.map((r) => Math.floor(r / w));
+  let left = totalC - shares.reduce((s, v) => s + v, 0);
+  const order = raw.map((r, i) => ({ i, rem: r % w })).sort((a, b) => b.rem - a.rem || a.i - b.i);
+  for (let k = 0; left > 0; k = (k + 1) % order.length, left--) shares[order[k].i] += 1;
+  return shares;
+}
+
+/** Expense share per unit (rounded to the centavo): shareC ÷ qty. qtyH is hundredths. */
+export const sharePerUnitC = (shareC, qtyH) => (qtyH > 0 ? mulDivRound(shareC, 100, qtyH) : 0);
+
+/**
+ * D-061: what the Receive dialog shows per line. lines: [{ qtyH, unitCostC, priceC }] (nulls allowed while typing).
+ * Returns [{ shareC, perUnitC, landedC, profitC }] (landed = unit cost + share per unit; profit = cash price − landed).
+ */
+export function expenseBreakdown(lines, totalC) {
+  const values = lines.map((l) => (l.qtyH > 0 && Number.isInteger(l.unitCostC) ? lineCost(l.qtyH, l.unitCostC) : 0));
+  const active = lines.map((l) => l.qtyH > 0);
+  const shares = splitByValue(values.filter((_, i) => active[i]), totalC);
+  let k = 0;
+  return lines.map((l, i) => {
+    if (!active[i]) return { shareC: 0, perUnitC: 0, landedC: null, profitC: null };
+    const shareC = shares[k++];
+    const perUnitC = sharePerUnitC(shareC, l.qtyH);
+    const landedC = Number.isInteger(l.unitCostC) ? l.unitCostC + perUnitC : null;
+    const profitC = landedC !== null && Number.isInteger(l.priceC) ? l.priceC - landedC : null;
+    return { shareC, perUnitC, landedC, profitC };
+  });
+}
+
+export const receiptExpensesC = (receipt) => ((receipt && receipt.expenses) || []).reduce((s, e) => s + e.amountC, 0);
+export const restockExpensesC = (restock) => (restock.receipts || []).reduce((s, r) => s + receiptExpensesC(r), 0);
+
+/**
+ * Names used before on restock expenses, newest first, each with its last amount (D-062 suggestions).
+ * expenses: expense documents. Returns [{ name, amountC }].
+ */
+export function expenseNameSuggestions(expenses) {
+  const rows = (expenses || []).filter((e) => e.category === RESTOCK_EXPENSE_CATEGORY && e.status === 'ACTIVE' && trim(e.note))
+    .slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const seen = new Map();
+  for (const e of rows) { const k = trim(e.note).toLowerCase(); if (!seen.has(k)) seen.set(k, { name: trim(e.note), amountC: e.amountC }); }
+  return [...seen.values()];
+}
+
+/**
+ * D-063: plan an edit of a received delivery. input: { lines: [{ itemId, unitCostC, priceC }], expenses: [{ name, amountC, expenseId? }] }.
+ * Quantities never change. Returns { index, receipt, changes: [{ itemId, itemName, costFrom, costTo, priceFrom, priceTo }],
+ * expenseOps: { create: [line], update: [{ expenseId, from, to }], void: [line] } }.
+ */
+export function planReceiptEdit(restock, batchId, input) {
+  const receipts = restock.receipts || [];
+  const index = receipts.findIndex((r) => r.batchId === batchId);
+  if (index < 0) throw new DomainError('RECEIPT_MISSING', `Delivery ${batchId} is not on ${restock.id || 'this order'}.`);
+  const old = receipts[index];
+  const byItem = new Map((input.lines || []).map((l) => [l.itemId, l]));
+  const changes = [];
+  const lines = old.lines.map((l) => {
+    const n = byItem.get(l.itemId);
+    if (!n) return l;
+    if (!Number.isInteger(n.unitCostC) || n.unitCostC < 0) throw new DomainError('INVALID_AMOUNT', `Invalid unit cost for ${l.itemName}.`);
+    if (!Number.isInteger(n.priceC) || n.priceC < 0) throw new DomainError('INVALID_AMOUNT', `Invalid selling price for ${l.itemName}.`);
+    if (n.unitCostC === l.unitCostC && n.priceC === l.priceC) return l;
+    changes.push({ itemId: l.itemId, itemName: l.itemName, unit: l.unit, costFrom: l.unitCostC, costTo: n.unitCostC, priceFrom: l.priceC, priceTo: n.priceC });
+    return { ...l, unitCostC: n.unitCostC, priceC: n.priceC };
+  });
+  const next = checkExpenseLines(input.expenses || []);
+  const prev = old.expenses || [];
+  const prevById = new Map(prev.filter((e) => e.expenseId).map((e) => [e.expenseId, e]));
+  const create = [], update = [];
+  for (const e of next) {
+    const p = e.expenseId ? prevById.get(e.expenseId) : null;
+    if (e.expenseId && !p) throw new DomainError('EXPENSE_MISSING', `${e.name} is not an expense of this delivery.`);
+    if (!p) create.push(e);
+    else if (p.name !== e.name || p.amountC !== e.amountC) update.push({ expenseId: e.expenseId, from: p, to: e });
+  }
+  const keep = new Set(next.filter((e) => e.expenseId).map((e) => e.expenseId));
+  const voids = prev.filter((e) => !e.expenseId || !keep.has(e.expenseId));
+  return { index, receipt: { ...old, lines }, expenses: next, changes, expenseOps: { create, update, void: voids } };
 }

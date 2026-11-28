@@ -64,6 +64,9 @@
 - BR-062a (D-056, supersedes BR-062's wording) Receiving asks the cash selling price of each line too; "Make these the item's default cost and price" is pre-checked when either differs from the item defaults.
 - BR-063 Expenses: date, category (Delivery/Fuel, Rent, Wages, Utilities, Supplies, Other), amount, note (required for Other — D-039). Corrected by voiding, not deleting.
 - BR-064 A partially received order whose remainder will not arrive may be **closed** with a reason (status RECEIVED, received stock kept) — D-038.
+- BR-065 (D-060, D-061) A receipt may carry free-text expense lines `{ name, amountC > 0 }` (max 20). Their total is split over the received lines **by value** (qty × unit cost; largest remainder; equal split if every value is 0). Cost incl. expenses per unit = unit cost + share ÷ qty; profit per unit = cash price − that. **Shown only**: batch cost and COGS use the unit cost.
+- BR-066 (D-062, extends BR-063) Each receipt expense line is an expense with category **Restock**, note = name, date = receipt date, `restockId` + `batchId`. It is changed only from the restock: edited in place, voided when removed. The Expenses page cannot add, edit or void Restock expenses. Restock expense names are suggested with the last amount.
+- BR-067 (D-063) A received delivery's unit cost, cash price and expenses stay editable (also when the order is RECEIVED); quantities do not. A new cost updates the open batch and the batch cost on ACTIVE sale lines that took from it (line and sale `costC`); a new price updates the open batch.
 
 ## 7. Reporting definitions (RQ-036)
 - **Revenue** = Σ totals of non-cancelled sales by sale date (opening-balance entries excluded).

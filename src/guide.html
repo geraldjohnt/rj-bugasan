@@ -122,9 +122,12 @@
 <h2 id="restocks">8. Restocks, suppliers and expenses</h2>
 <ul>
   <li>Create a <strong>restock</strong> order for a supplier. Stock increases only when you <strong>Receive</strong> it (all or part). On receiving, enter the <strong>cost</strong> and the <strong>cash selling price</strong> of each item; the delivery becomes one batch. Tick <em>Make these the item's default cost and price</em> if new batches should start from these values.</li>
+  <li><strong>New item</strong> on the restock order form opens the same form as Items → Add item, so you can order an item you have never sold without leaving the restock.</li>
+  <li><strong>Restock expenses:</strong> in the Receive dialog, add the delivery's expenses (Trucking, Fuel, Labor … type any name; names used before are suggested). The total is split over the items by value, and each item shows its <em>cost incl. expenses</em> per unit and the <em>profit</em> per unit at the cash price you type (example: 150 sacks at ₱2,500 with ₱6,000 expenses → ₱40 per sack → ₱2,540). This only helps you set the price; the batch cost stays ₱2,500. Each expense is saved on the Expenses page as category <em>Restock</em>, linked to the restock.</li>
+  <li><strong>Edit a delivery:</strong> on the restock page, <em>Edit</em> next to a delivery changes its unit cost, cash price and expenses, even after the order is complete. A new cost also changes the profit of sales already made from that batch. Quantities cannot be changed there (use a stock adjustment).</li>
   <li>Every supplier has a code (SUP001, SUP002 …) used in its batch numbers.</li>
   <li>Cancel an order if nothing arrived; <em>Close</em> it if the rest will not come.</li>
-  <li><strong>Expenses</strong> (rent, wages, fuel …) reduce net profit. Wrong entries are voided, not deleted.</li>
+  <li><strong>Expenses</strong> (rent, wages, fuel …) reduce net profit. Wrong entries are voided, not deleted. Restock expenses are changed on their restock, not on the Expenses page.</li>
 </ul>
 
 <h2 id="calendar">9. Calendar</h2>

@@ -226,6 +226,12 @@ service cloud.firestore {
             && request.resource.data.paidC == 0 && request.resource.data.balanceC == 0
             && request.resource.data.cancel.reason is string && request.resource.data.cancel.reason.size() > 0)
         );
+      // Phase 14 (D-063): editing a delivery's cost rewrites the batch cost recorded on sale lines (profit only;
+      // prices, quantities and totals stay). Line contents are checked by the app (KI-003).
+      allow update: if isOwner() && resource.data.status == 'ACTIVE'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lines', 'costC', 'updatedAt', 'updatedBy'])
+        && request.resource.data.lines is list && request.resource.data.lines.size() == resource.data.lines.size()
+        && nonNegInt(request.resource.data.costC);
       allow delete: if false;
     }
 
@@ -315,16 +321,30 @@ service cloud.firestore {
                 && request.resource.data.receipts.size() == 0
                 && request.resource.data.cancel.reason is string && request.resource.data.cancel.reason.size() > 0))
         && (request.resource.data.status != 'ORDERED' || request.resource.data.receipts.size() == 0);
+      // Phase 14 (D-063): a fully received order stays editable for its deliveries' cost, price and expenses only.
+      allow update: if isOwner() && validRestock(request.resource.data)
+        && resource.data.status == 'RECEIVED' && request.resource.data.status == 'RECEIVED'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['receipts', 'updatedAt', 'updatedBy'])
+        && request.resource.data.receipts.size() == resource.data.receipts.size();
       allow delete: if false;
     }
 
     // BR-063: expenses are corrected by voiding, never edited or deleted.
+    // Phase 14 (D-062): category 'Restock' expenses belong to a restock delivery (restockId + batchId) and follow it:
+    // their amount and name (note) may be updated in place while ACTIVE.
     match /expenses/{id} {
       allow read: if isActive();
       allow create: if isOwner()
-        && request.resource.data.keys().hasOnly(['date', 'category', 'amountC', 'note', 'status', 'void', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && request.resource.data.keys().hasOnly(['date', 'category', 'amountC', 'note', 'status', 'void', 'restockId', 'batchId', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && isDate(request.resource.data.date)
-        && request.resource.data.category in ['Delivery/Fuel', 'Rent', 'Wages', 'Utilities', 'Supplies', 'Other']
+        && (
+          (request.resource.data.category in ['Delivery/Fuel', 'Rent', 'Wages', 'Utilities', 'Supplies', 'Other']
+            && !('restockId' in request.resource.data) && !('batchId' in request.resource.data))
+          || (request.resource.data.category == 'Restock'
+            && request.resource.data.restockId is string && request.resource.data.restockId.matches('^RS-[0-9]{4}-[0-9]{5}$')
+            && request.resource.data.batchId is string && request.resource.data.batchId.size() > 0
+            && request.resource.data.note is string && request.resource.data.note.size() > 0 && request.resource.data.note.size() <= 60)
+        )
         && request.resource.data.amountC is int && request.resource.data.amountC > 0
         && optString(request.resource.data.note)
         && request.resource.data.status == 'ACTIVE' && request.resource.data.void == null
@@ -333,6 +353,10 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'void', 'updatedAt', 'updatedBy'])
         && request.resource.data.status == 'VOIDED'
         && request.resource.data.void.reason is string && request.resource.data.void.reason.size() > 0;
+      allow update: if isOwner() && resource.data.status == 'ACTIVE' && resource.data.category == 'Restock'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amountC', 'note', 'updatedAt', 'updatedBy'])
+        && request.resource.data.amountC is int && request.resource.data.amountC > 0
+        && request.resource.data.note is string && request.resource.data.note.size() > 0 && request.resource.data.note.size() <= 60;
       allow delete: if false;
     }
 

@@ -16,6 +16,7 @@ import { unitLabel } from '../../domain/inventory.js';
 import { lineCost } from '../../domain/saleTotals.js';
 import { RESTOCK_STATUS_LABELS, validateRestockForm, isOpenRestock } from '../../domain/purchasing.js';
 import { RestocksTable, SupplierFormDialog } from './PurchasingParts.jsx';
+import { ItemFormDialog } from '../inventory/InventoryDialogs.jsx';
 
 export function RestocksPage({ adapter }) {
   const [limit, setLimit] = React.useState(300);
@@ -84,6 +85,7 @@ export function RestockFormPage({ adapter, id, supplierId: presetSupplier }) {
   const [busy, setBusy] = React.useState(false);
   const [saveError, setSaveError] = React.useState(null);
   const [addingSupplier, setAddingSupplier] = React.useState(false);
+  const [addingItem, setAddingItem] = React.useState(false);
   const loaded = React.useRef(false);
 
   React.useEffect(() => {
@@ -160,6 +162,7 @@ export function RestockFormPage({ adapter, id, supplierId: presetSupplier }) {
           {errors.lines && <div className="panel-body"><Banner tone="danger">{errors.lines}</Banner></div>}
           <div className="panel-footer">
             <Button size="sm" icon="plus" onClick={() => setLines((ls) => [...ls, newLine()])}>Add line</Button>
+            <Button size="sm" icon="plus" onClick={() => setAddingItem(true)} disabled={!online || !items}>New item</Button>
             <span className="footer-total"><span>Order total</span><strong>{formatMoney(data.totalCostC)}</strong></span>
           </div>
         </Panel>
@@ -169,6 +172,13 @@ export function RestockFormPage({ adapter, id, supplierId: presetSupplier }) {
           <Button onClick={() => navigate(id ? `/restocks/${id}` : '/restocks')}>Cancel</Button>
         </div>
       </form>
+      {/* D-064: the full Items → Add item form; the new item goes on the first empty line (or a new one). */}
+      <ItemFormDialog open={addingItem} onClose={() => setAddingItem(false)} adapter={adapter} items={items || []}
+        onSaved={async (newId) => {
+          const it = await adapter.get('items', newId);
+          const patch = { itemId: newId, unitCost: it ? centavosToPlain(it.costC) : '' };
+          setLines((ls) => { const empty = ls.find((l) => !l.itemId); return empty ? ls.map((l) => (l.key === empty.key ? { ...l, ...patch } : l)) : [...ls, newLine(patch)]; });
+        }} />
       <SupplierFormDialog open={addingSupplier} onClose={() => setAddingSupplier(false)} adapter={adapter} suppliers={suppliers || []} onSaved={(sid) => setForm((f) => ({ ...f, supplierId: sid }))} />
     </div>
   );

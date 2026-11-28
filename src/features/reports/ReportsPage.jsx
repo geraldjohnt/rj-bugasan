@@ -14,7 +14,7 @@ import { formatMoney } from '../../domain/money.js';
 import { formatQty } from '../../domain/quantity.js';
 import { formatDate, today, isValidDate } from '../../domain/dates.js';
 import { TERMS_LABELS, METHOD_LABELS, PAYMENT_STATUS_LABELS } from '../../domain/sales.js';
-import { EXPENSE_CATEGORIES } from '../../domain/purchasing.js';
+import { ALL_EXPENSE_CATEGORIES } from '../../domain/purchasing.js';
 import {
   presets, monthBounds, periodLabel, salesSummary, profitByItem, profitAndLoss, cashCollected, receivablesAging, inventoryValuation,
   movementReport, restocksBySupplier, AGING, AGING_LABELS, METHOD_ORDER, formatPct, toCsv, csvMoney, csvQty, saleCostC,
@@ -100,7 +100,7 @@ function buildReport(tab, d, from, to, now) {
       { id: 'rev', label: 'Revenue (sales at sale date)', v: p.revenueC, strong: true },
       { id: 'cogs', label: 'Cost of goods sold', v: -p.cogsC },
       { id: 'gross', label: 'Gross profit', v: p.grossProfitC, strong: true },
-      ...EXPENSE_CATEGORIES.filter((c) => p.byCategory[c]).map((c) => ({ id: 'e-' + c, label: `Expense: ${c}`, v: -p.byCategory[c] })),
+      ...ALL_EXPENSE_CATEGORIES.filter((c) => p.byCategory[c]).map((c) => ({ id: 'e-' + c, label: `Expense: ${c}`, v: -p.byCategory[c] })),
       { id: 'exp', label: 'Total expenses', v: -p.expensesC },
       { id: 'net', label: 'Net profit', v: p.netProfitC, strong: true },
     ];
