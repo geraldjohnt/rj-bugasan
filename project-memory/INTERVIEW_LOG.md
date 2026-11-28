@@ -156,3 +156,22 @@ User request: "In sale, the user can add items like delivery fee, other fees, an
 | R11-Q1 | Approve the batch + charges design? | "Approved, start building Phase 13." | BQ-1, BQ-2 answered |
 | R11-Q2 | (User, unprompted) Existing stock | "Just register the old stock to batches. Just assume that they belong to the first batch." Replaces R9-Q8/Q9/Q10. | D-055 |
 | R11-Q3 | (User) Sample data button | "Remove the buttons Load sample data on all pages. It should only live in the settings but password protected." | D-057 |
+
+## Round 12 — Restock expenses and quick item add (asked & answered 2026-11-28)
+
+User request: "When restocking, there should be expenses to input in there … shipping fee, trucking, fuel, or labor … the user can input it freely … restocking 150 sacks of 2500 per sack. And the expenses total is 6000 … 40 additional to the price on each sack. But still there will be another additional to that including the profit … the user can also add an item inside adding a restock … these expenses can be saved to the expenses and be tracked connected to a restock. But expenses that are added directly in the expenses page might not be tagged in a restock and it's okay."
+
+| ID | Question | Answer | Resulting decision |
+|---|---|---|---|
+| R12-Q1 | When are restock expenses entered? | **At receiving** (per delivery), because costs can change (e.g. supplier changes the agreed 2,500). Everything stays **editable after receiving**, including the individual item lines. | D-060, D-063 |
+| R12-Q2 | What happens to the per-unit share (6,000 ÷ 150 = 40)? | **Show only.** Batch cost stays the supplier unit cost (2,500); the expenses reduce profit through the Expenses total. | D-061 |
+| R12-Q3 | Split across several items | **By value** (line qty × unit cost). | D-061 |
+| R12-Q4 | How they appear on the Expenses page | New category **"Restock"**; the typed name (Trucking, Fuel…) is the description; linked to the restock. | D-062 |
+| R12-Q5 | What is editable after receiving | **Unit cost, selling price and expense lines.** Quantity is not (fix with a stock adjustment). A cost change updates the batch cost for stock on hand and for profit on sales already made from that batch. | D-063 |
+| R12-Q6 | "It doesn't need to be saved" meant? | The lines **are saved** to the Expenses page. User first meant "not saved as a future suggestion", then changed their mind: **save the names as suggestions** (search "trucking", "fuel", "labor"…), and a new name can still be typed without setting anything up. | D-062 |
+| R12-Q7 | Where to add a brand-new item | **On the restock order form** (New/Edit restock), not in the Receive dialog. | D-064 |
+| R12-Q8 | Fields of that quick new-item dialog | **The full item form** (same as Items → Add item). | D-064 |
+| R12-Q9 | Where to show cost incl. expenses | **Receive dialog** only. | D-061 |
+| R12-Q10 | Help with the profit on top? | **No** — owner types the selling price; the app shows profit per unit (price − cost incl. expenses). | D-061 |
+| R12-Q11 | Editing a linked expense after receiving | **Update the Expenses entry in place**, old/new amounts in the Activity log; removing a line voids its expense. | D-062 |
+| R12-Q12 | Void/edit a linked expense from the Expenses page? | **Only from the restock**; the Expenses page shows "Restock RS-… · Trucking" with a link. | D-062 |

@@ -29,3 +29,8 @@ Status values: Open · Answered (see INTERVIEW_LOG) · Deferred
 |---|---|---|---|---|
 | BQ-1 | Approve batch/FIFO design (D-050 … D-053) | Major change to stock, sales and reports; supersedes D-007 | Approve, implement as Phase 13 | Answered 2026-11-27: approved; D-053 then superseded by D-055 |
 | BQ-2 | Approve other-charges design (D-054) | New sale total formula | Approve, implement with Phase 13 | Answered 2026-11-27: approved |
+
+## Restock expenses (raised 2026-11-28)
+| ID | Subject | Why it matters | Recommended option | Status |
+|---|---|---|---|---|
+| EQ-1 | Approve restock expenses + quick item add design (D-060 … D-064) | Changes receiving, expenses, sale-line costs on edit | Approve, implement as Phase 14 | Open |
