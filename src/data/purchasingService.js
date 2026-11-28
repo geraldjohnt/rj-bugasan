@@ -13,7 +13,7 @@ import { nextSeq } from '../domain/sales.js';
 import { MOVEMENT_TYPES as MT } from '../domain/inventory.js';
 import {
   RESTOCK_STATUS as RS, RESTOCK_PREFIX, RESTOCK_STATUS_LABELS, isOpenRestock, planReceipt, statusFromLines, restockTotalC, remainingH,
-  RESTOCK_EXPENSE_CATEGORY, isRestockExpense, checkExpenseLines, planReceiptEdit,
+  RESTOCK_EXPENSE_CATEGORY, isRestockExpense, checkExpenseLines, planReceiptEdit, checkCreditPrice, itemExpenseNote,
 } from '../domain/purchasing.js';
 import { takenCostC, avgUnitCostC, batchesOf } from '../domain/batches.js';
 import { lineCostOf } from '../domain/reports.js';
@@ -152,6 +152,8 @@ export async function updateRestock(adapter, actor, id, data) {
  * The delivery becomes ONE batch id RJ-RS-<supplier code>-NNNN shared by its item lines; each line keeps its own cost
  * and cash price. updateCost: also make this cost and price the item's defaults for new stock.
  * input.expenses (D-060, D-062): [{ name, amountC }] — each becomes an expense (category Restock) linked to this delivery.
+ * lines[].expenseC (D-065): the line's own expense (total) — a Restock expense linked to this delivery and item.
+ * lines[].creditC (D-066): credit price; when it differs from the item's, the item's credit price changes.
  * Returns { status, valueC, batchId, expensesC }.
  */
 export async function receiveRestock(adapter, actor, id, input) {
@@ -181,6 +183,7 @@ export async function receiveRestock(adapter, actor, id, input) {
     tx.set('counters', counter, { next: seq + 1 });
     const wanted = new Map((input.lines || []).map((l) => [l.itemId, l]));
     const costChanges = {};
+    const creditChanges = {};
     const receiptLines = [];
     for (const l of plan.receiptLines) {
       const item = items[l.itemId];
@@ -191,34 +194,50 @@ export async function receiveRestock(adapter, actor, id, input) {
         patch.costC = l.unitCostC; patch.priceC = priceC;
         costChanges[item.id] = { name: item.name, from: item.costC, to: l.unitCostC, priceFrom: item.priceC, priceTo: priceC };
       }
+      const creditC = checkCreditPrice(wanted.get(l.itemId).creditC, item.name);
+      const oldCredit = Number.isInteger(item.installmentPriceC) ? item.installmentPriceC : null;
+      if (creditC !== null && creditC !== oldCredit) {
+        patch.installmentPriceC = creditC;
+        creditChanges[item.id] = { name: item.name, from: oldCredit, to: creditC };
+      }
       writeItemMovement(tx, adapter, actor, item, {
         type: MT.RESTOCK_RECEIPT, deltaH: l.qtyH, unitCostC: l.unitCostC, refType: 'RESTOCK', refId: id, businessDate: input.date, note: `From ${r.supplierName} (batch ${added.id})`,
         batches: added.batches, batchParts: [{ batchId: added.id, qtyH: l.qtyH, unitCostC: l.unitCostC }], itemPatch: patch,
       });
-      receiptLines.push({ ...l, priceC, batchId: added.id });
+      const line = { ...l, priceC, batchId: added.id };
+      if (l.expenseC) {
+        line.expenseId = adapter.newId();
+        tx.set('expenses', line.expenseId, restockExpenseDoc(adapter, actor, { restockId: id, batchId, date: input.date, name: itemExpenseNote(l.itemName), amountC: l.expenseC, itemId: l.itemId }));
+      }
+      receiptLines.push(line);
     }
     for (const e of expenseLines) tx.set('expenses', e.expenseId, restockExpenseDoc(adapter, actor, { restockId: id, batchId, date: input.date, name: e.name, amountC: e.amountC }));
     const receipts = [...(r.receipts || []), { date: input.date, batchId, lines: receiptLines, expenses: expenseLines, by: actor.uid, byName: actor.displayName || '', at: new Date().toISOString() }];
     tx.update('restocks', id, { lines: plan.lines, receipts, status: plan.status, ...stamp(adapter, actor) });
-    const expensesC = expenseLines.reduce((a, e) => a + e.amountC, 0);
-    const costText = Object.values(costChanges).map((c) => `${c.name} cost ${formatMoney(c.from)} → ${formatMoney(c.to)}` + (c.priceFrom !== c.priceTo ? `, price ${formatMoney(c.priceFrom)} → ${formatMoney(c.priceTo)}` : ''));
+    const itemExpenses = receiptLines.filter((l) => l.expenseC);
+    const expensesC = expenseLines.reduce((a, e) => a + e.amountC, 0) + itemExpenses.reduce((a, l) => a + l.expenseC, 0);
+    const costText = [
+      ...Object.values(costChanges).map((c) => `${c.name} cost ${formatMoney(c.from)} → ${formatMoney(c.to)}` + (c.priceFrom !== c.priceTo ? `, price ${formatMoney(c.priceFrom)} → ${formatMoney(c.priceTo)}` : '')),
+      ...Object.values(creditChanges).map((c) => `${c.name} credit price ${c.from === null ? '—' : formatMoney(c.from)} → ${formatMoney(c.to)}`),
+    ];
     logWrite(tx, adapter, actor, {
       action: 'RESTOCK_RECEIVE', entityType: 'restock', entityId: id,
       summary: `Received batch ${batchId} on ${id} from ${r.supplierName}: ${linesSummary(receiptLines, 'qtyH')}` + (costText.length ? `; ${costText.join(', ')}` : '')
-        + (expenseLines.length ? `; expenses ${expenseLines.map((e) => `${e.name} ${formatMoney(e.amountC)}`).join(', ')}` : ''),
-      changes: { status: { from: r.status, to: plan.status }, batchId, costChanges, expensesC },
+        + (expenseLines.length || itemExpenses.length ? `; expenses ${[...itemExpenses.map((l) => `${l.itemName} ${formatMoney(l.expenseC)}`), ...expenseLines.map((e) => `${e.name} ${formatMoney(e.amountC)}`)].join(', ')}` : ''),
+      changes: { status: { from: r.status, to: plan.status }, batchId, costChanges, creditChanges, expensesC },
     });
     return { status: plan.status, valueC: plan.valueC, batchId, expensesC };
   });
 }
 
-const restockExpenseDoc = (adapter, actor, { restockId, batchId, date, name, amountC }) => ({
-  date, category: RESTOCK_EXPENSE_CATEGORY, amountC, note: name, restockId, batchId, status: 'ACTIVE', void: null, ...created(adapter, actor),
+const restockExpenseDoc = (adapter, actor, { restockId, batchId, date, name, amountC, itemId }) => ({
+  date, category: RESTOCK_EXPENSE_CATEGORY, amountC, note: name, restockId, batchId, ...(itemId ? { itemId } : {}), status: 'ACTIVE', void: null, ...created(adapter, actor),
 });
 
 /**
  * D-063: edit a received delivery — unit cost and cash price per line, and its expense lines. Quantities never change.
- * input: { lines: [{ itemId, unitCostC, priceC }], expenses: [{ name, amountC, expenseId? }] }.
+ * input: { lines: [{ itemId, unitCostC, priceC, expenseC?, creditC? }], expenses: [{ name, amountC, expenseId? }] }.
+ * expenseC (D-065) changes the line's own linked expense; creditC (D-066) changes the item's credit price.
  * A new unit cost changes the batch still in stock and the cost recorded on ACTIVE sale lines that took stock from that
  * batch (their profit changes). A new price changes the batch still in stock. Linked expenses are updated in place;
  * removed lines are voided; new lines are created (D-062). Returns { changed, salesUpdated }.
@@ -238,25 +257,56 @@ export async function editReceipt(adapter, actor, id, batchId, input) {
     const costChanged = new Map(plan.changes.filter((c) => c.costFrom !== c.costTo).map((c) => [c.itemId, c]));
     const items = {};
     for (const c of plan.changes) items[c.itemId] = await readDoc(tx, 'items', c.itemId, `${c.itemName} no longer exists.`);
+    const creditChanges = [];
+    for (const l of input.lines || []) {
+      const rl = plan.receipt.lines.find((x) => x.itemId === l.itemId);
+      if (!rl) continue;
+      const to = checkCreditPrice(l.creditC, rl.itemName);
+      if (to === null) continue;
+      const it = items[l.itemId] || await readDoc(tx, 'items', l.itemId, `${rl.itemName} no longer exists.`);
+      items[l.itemId] = it;
+      const from = Number.isInteger(it.installmentPriceC) ? it.installmentPriceC : null;
+      if (from !== to) creditChanges.push({ itemId: l.itemId, itemName: rl.itemName, from, to });
+    }
     const sales = [];
     if (costChanged.size) {
       for (const sid of candidates) { const d = await tx.get('sales', sid); if (d.exists && d.data.status === 'ACTIVE') sales.push({ id: sid, ...d.data }); }
     }
     const linked = {};
-    for (const e of [...plan.expenseOps.update.map((u) => u.from), ...plan.expenseOps.void]) {
+    const ie = plan.itemExpenseOps;
+    for (const e of [...plan.expenseOps.update.map((u) => u.from), ...plan.expenseOps.void, ...ie.update, ...ie.void]) {
       if (!e.expenseId) continue;
       const d = await tx.get('expenses', e.expenseId);
       if (d.exists) linked[e.expenseId] = { id: e.expenseId, ...d.data };
     }
-    const nothing = !plan.changes.length && !plan.expenseOps.create.length && !plan.expenseOps.update.length && !plan.expenseOps.void.length;
+    const nothing = !plan.changes.length && !plan.expenseOps.create.length && !plan.expenseOps.update.length && !plan.expenseOps.void.length
+      && !ie.create.length && !ie.update.length && !ie.void.length && !creditChanges.length;
     if (nothing) return { changed: false, salesUpdated: 0 };
 
     // ---- writes
+    const itemPatches = {};
     for (const c of plan.changes) {
       const item = items[c.itemId];
       if (batchesOf(item).some((b) => b.id === batchId)) {
-        tx.update('items', item.id, { batches: batchesOf(item).map((b) => (b.id === batchId ? { ...b, unitCostC: c.costTo, priceC: c.priceTo } : b)), ...stamp(adapter, actor) });
+        itemPatches[item.id] = { batches: batchesOf(item).map((b) => (b.id === batchId ? { ...b, unitCostC: c.costTo, priceC: c.priceTo } : b)) };
       }
+    }
+    for (const c of creditChanges) itemPatches[c.itemId] = { ...(itemPatches[c.itemId] || {}), installmentPriceC: c.to };
+    for (const [iid, patch] of Object.entries(itemPatches)) tx.update('items', iid, { ...patch, ...stamp(adapter, actor) });
+    // D-065: the lines' own expenses.
+    const receiptLines = plan.receipt.lines.map((l) => ({ ...l }));
+    for (const c of ie.create) {
+      const eid = adapter.newId();
+      tx.set('expenses', eid, restockExpenseDoc(adapter, actor, { restockId: id, batchId, date: plan.receipt.date, name: itemExpenseNote(c.itemName), amountC: c.amountC, itemId: c.itemId }));
+      const rl = receiptLines.find((x) => x.itemId === c.itemId); if (rl) rl.expenseId = eid;
+    }
+    for (const u of ie.update) {
+      const cur = u.expenseId && linked[u.expenseId];
+      if (cur && cur.status === 'ACTIVE') tx.update('expenses', u.expenseId, { amountC: u.to, ...stamp(adapter, actor) });
+    }
+    for (const v of ie.void) {
+      const cur = v.expenseId && linked[v.expenseId];
+      if (cur && cur.status === 'ACTIVE') tx.update('expenses', v.expenseId, { status: 'VOIDED', void: { reason: `Removed from restock ${id} (${batchId})`, at: new Date().toISOString(), by: actor.uid }, ...stamp(adapter, actor) });
     }
     let salesUpdated = 0;
     for (const s of sales) {
@@ -288,7 +338,7 @@ export async function editReceipt(adapter, actor, id, batchId, input) {
       const cur = v.expenseId && linked[v.expenseId];
       if (cur && cur.status === 'ACTIVE') tx.update('expenses', v.expenseId, { status: 'VOIDED', void: { reason: `Removed from restock ${id} (${batchId})`, at: new Date().toISOString(), by: actor.uid }, ...stamp(adapter, actor) });
     }
-    const receipts = r.receipts.map((x, i) => (i === plan.index ? { ...plan.receipt, expenses, edited: { at: new Date().toISOString(), by: actor.uid, byName: actor.displayName || '' } } : x));
+    const receipts = r.receipts.map((x, i) => (i === plan.index ? { ...plan.receipt, lines: receiptLines, expenses, edited: { at: new Date().toISOString(), by: actor.uid, byName: actor.displayName || '' } } : x));
     tx.update('restocks', id, { receipts, ...stamp(adapter, actor) });
 
     const parts = [
@@ -296,11 +346,15 @@ export async function editReceipt(adapter, actor, id, batchId, input) {
       ...plan.expenseOps.create.map((e) => `added ${e.name} ${formatMoney(e.amountC)}`),
       ...plan.expenseOps.update.map((u) => `${u.from.name} ${formatMoney(u.from.amountC)} → ${u.to.name !== u.from.name ? `${u.to.name} ` : ''}${formatMoney(u.to.amountC)}`),
       ...plan.expenseOps.void.map((e) => `removed ${e.name} ${formatMoney(e.amountC)}`),
+      ...ie.create.map((e) => `added ${e.itemName} expense ${formatMoney(e.amountC)}`),
+      ...ie.update.map((u) => `${u.itemName} expense ${formatMoney(u.from)} → ${formatMoney(u.to)}`),
+      ...ie.void.map((e) => `removed ${e.itemName} expense ${formatMoney(e.amountC)}`),
+      ...creditChanges.map((c) => `${c.itemName} credit price ${c.from === null ? '—' : formatMoney(c.from)} → ${formatMoney(c.to)}`),
     ];
     logWrite(tx, adapter, actor, {
       action: 'RESTOCK_RECEIPT_EDIT', entityType: 'restock', entityId: id,
       summary: `Edited delivery ${batchId} of ${id}: ${parts.join('; ')}` + (salesUpdated ? ` (cost updated on ${salesUpdated} sale${salesUpdated === 1 ? '' : 's'})` : ''),
-      changes: { batchId, lines: plan.changes, expenses: { created: plan.expenseOps.create, updated: plan.expenseOps.update, voided: plan.expenseOps.void }, salesUpdated },
+      changes: { batchId, lines: plan.changes, expenses: { created: plan.expenseOps.create, updated: plan.expenseOps.update, voided: plan.expenseOps.void }, itemExpenses: ie, creditChanges, salesUpdated },
     });
     return { changed: true, salesUpdated };
   });

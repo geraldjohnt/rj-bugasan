@@ -164,14 +164,14 @@ test('sample data loads consistently and is not duplicated on a second run', asy
   await assertLedger(db);
 });
 
-test('payday price is stored, can be cleared, and its changes are logged (D-046)', async () => {
+test('credit (payday) price is stored, can be cleared, and its changes are logged (D-046)', async () => {
   const db = createMockAdapter();
   const id = await createItem(db, actor, itemData({ installmentPriceC: '3500' }));
   assert.equal((await db.get('items', id)).installmentPriceC, 350000);
   await updateItem(db, actor, id, itemData({ installmentPriceC: '3600', openingQty: '' }));
   let [log] = await db.query('activityLogs', { where: [['action', '==', 'ITEM_PRICE_CHANGE']] });
   assert.deepEqual(log.changes.installmentPriceC, { from: 350000, to: 360000 });
-  assert.match(log.summary, /payday price/);
+  assert.match(log.summary, /credit price/);
   await updateItem(db, actor, id, itemData({ installmentPriceC: '', openingQty: '' }));
   assert.equal((await db.get('items', id)).installmentPriceC, null);
   // Old items without the field: saving with no payday price is not a change.

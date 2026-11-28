@@ -17,8 +17,9 @@ import { formatDateTime } from '../../app/format.js';
 import { TERMS_LABELS, METHOD_LABELS, FULFILLMENT_LABELS, linesText } from '../../domain/sales.js';
 import { FREQUENCY_LABELS } from '../../domain/schedule.js';
 import { PaymentStatusBadge, FulfillmentBadge, PaymentsTable, ScheduleTable, byNo } from './SaleTables.jsx';
-import { RecordPaymentDialog, VoidPaymentDialog, RescheduleDialog } from './PaymentDialogs.jsx';
+import { RecordPaymentDialog, VoidPaymentDialog, RescheduleDialog, AddPromiseDialog } from './PaymentDialogs.jsx';
 import { usePrint, useBusiness, SaleReceipt, PaymentReceipt } from './Print.jsx';
+import { useSkus } from '../inventory/ItemsPage.jsx';
 
 function CancelSaleDialog({ open, onClose, adapter, sale, activePayments }) {
   const auth = useAuth();
@@ -81,6 +82,7 @@ function DeliveryDialog({ open, onClose, adapter, sale }) {
 }
 
 export function SaleDetailPage({ adapter, id }) {
+  const skus = useSkus(adapter);
   const online = useOnline();
   const business = useBusiness(adapter);
   const [printNode, print] = usePrint();
@@ -105,7 +107,7 @@ export function SaleDetailPage({ adapter, id }) {
   const marginC = sale.totalC - chargesC - (sale.costC ?? sale.lines.reduce((s, l) => s + Math.round(l.qtyH * l.unitCostC / 100), 0));
 
   const lineColumns = [
-    { key: 'item', header: 'Item', className: 'key-col', render: (l) => <Link to={`/items/${l.itemId}`}>{l.itemName}</Link> },
+    { key: 'item', header: 'Item', className: 'key-col', render: (l) => <><Link to={`/items/${l.itemId}`}>{l.itemName}</Link>{(l.sku || skus[l.itemId]) && <span className="cell-sub sku">{l.sku || skus[l.itemId]}</span>}</> },
     { key: 'batch', header: 'Batch', className: 'wrap', render: (l) => (l.batches && l.batches.length ? <>{l.batches.map((b) => <span key={b.batchId} className="cell-line">{b.batchId} · {formatQty(b.qtyH, l.unit)} @ {formatMoney(b.priceC)}</span>)}{l.batchPicked && <span className="cell-sub">Picked by hand</span>}</> : '—') },
     { key: 'qty', header: 'Quantity', align: 'right', render: (l) => formatQty(l.qtyH, l.unit) },
     { key: 'price', header: 'Unit price', align: 'right', render: (l) => <>{formatMoney(l.unitPriceC)}{l.priceOverridden && <span className="cell-sub">List {formatMoney(l.listPriceC)}</span>}</> },
@@ -113,7 +115,7 @@ export function SaleDetailPage({ adapter, id }) {
     { key: 'total', header: 'Amount', align: 'right', render: (l) => formatMoney(l.lineTotalC) },
   ];
   const lineFooter = ['Subtotal', '', '', '', '', formatMoney(sale.subtotalC)];
-  const printReceipt = () => print(<SaleReceipt sale={sale} rows={rows} payments={payments} business={business} />);
+  const printReceipt = () => print(<SaleReceipt sale={sale} skus={skus} rows={rows} payments={payments} business={business} />);
 
   return (
     <div className="page stack">
@@ -152,7 +154,7 @@ export function SaleDetailPage({ adapter, id }) {
 
       {rows.length > 0 && (
         <Panel title={sale.terms === 'INSTALLMENT' ? 'Installment schedule' : 'Balance'} flush>
-          <ScheduleTable rows={rows} today={now} />
+          <ScheduleTable rows={rows} today={now} onAddPromise={active && online ? (r) => setDialog({ kind: 'promise', row: r }) : undefined} />
         </Panel>
       )}
 
@@ -176,6 +178,7 @@ export function SaleDetailPage({ adapter, id }) {
 
       <RecordPaymentDialog open={!!dialog && dialog.kind === 'pay'} onClose={() => setDialog(null)} adapter={adapter} saleId={sale.id} />
       <VoidPaymentDialog open={!!dialog && dialog.kind === 'void'} onClose={() => setDialog(null)} adapter={adapter} payment={dialog && dialog.payment} />
+      <AddPromiseDialog open={!!dialog && dialog.kind === 'promise'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} row={dialog && dialog.row} />
       <RescheduleDialog open={!!dialog && dialog.kind === 'reschedule'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} rows={rows} />
       {active && <CancelSaleDialog open={!!dialog && dialog.kind === 'cancel'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} activePayments={activePayments} />}
       {active && !isOB && <DeliveryDialog open={!!dialog && dialog.kind === 'delivery'} onClose={() => setDialog(null)} adapter={adapter} sale={sale} />}

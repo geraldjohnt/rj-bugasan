@@ -74,7 +74,12 @@ export function reliability(paidCount, paidOnTimeCount) {
   return { label: ratio >= 0.9 ? 'Good' : ratio >= 0.7 ? 'Fair' : 'Poor', ratio };
 }
 
-export const paidOnTime = (row) => row.status === STATUS.PAID && !!row.dueDate && compareDates(row.paidDate, row.dueDate) <= 0;
+/** Paid in full by the due date — or by a promised date made before paying (D-069). */
+export const paidOnTime = (row) => {
+  if (row.status !== STATUS.PAID || !row.dueDate || !row.paidDate) return false;
+  if (compareDates(row.paidDate, row.dueDate) <= 0) return true;
+  return (Array.isArray(row.promises) ? row.promises : []).some((p) => compareDates(p.madeOn, row.paidDate) <= 0 && compareDates(row.paidDate, p.date) <= 0);
+};
 
 /** Aging bucket by days past due (BR §7). */
 export function agingBucket(row, today) {

@@ -92,7 +92,7 @@ await step('Opening balances page: sample entries listed with totals; not in the
   await page.waitForSelector('tbody tr:has-text("OB-")');
   expect(await page.locator('tbody tr').count() === 2, 'two sample OBs');
   expect(await stat('Carried over') === '₱6,450.00', 'carried ' + await stat('Carried over'));
-  expect(await stat('Still to collect') === '₱5,950.00', 'to collect ' + await stat('Still to collect'));
+  expect(await stat('Still to collect') === '₱4,950.00', 'to collect ' + await stat('Still to collect')); // Phase 15 sample: ₱1,000 paid with a promise
   await page.goto(url + '#/sales');
   await page.waitForSelector('tbody tr');
   expect(!(await page.isVisible('tbody tr:has-text("OB-")')), 'OB shown in Sales list');

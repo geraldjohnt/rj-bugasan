@@ -276,6 +276,8 @@
 .doc-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
 .doc-table th, .doc-table td { padding: 4px 6px; border-bottom: 1px solid #bbb; text-align: left; }
 .doc-table th { border-bottom: 1px solid #000; font-weight: 600; }
+.doc-sku { font-size: 0.85em; color: #444; }
+.doc-subtitle { font-size: 13px; margin: 8px 0 4px; }
 .doc-table .num { text-align: right; }
 .doc-table tfoot td { border-bottom: 0; }
 .doc-total td { font-weight: 700; border-top: 1px solid #000; }
@@ -287,10 +289,13 @@
 /* ---------- Phase 8: restocks, suppliers, expenses ---------- */
 .footer-total { margin-left: auto; display: inline-flex; gap: var(--sp-3); align-items: baseline; font-variant-numeric: tabular-nums; }
 .receive-date { max-width: 220px; }
-.receive-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) 120px 130px 130px minmax(140px, 1fr); gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); }
+.receive-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) repeat(5, minmax(96px, 120px)); gap: var(--sp-3); align-items: start; padding: var(--sp-3) var(--sp-4); }
 .receive-row + .receive-row { border-top: 1px solid var(--border); }
 .receive-item { display: grid; gap: 2px; padding-top: 22px; }
-.receive-cost { padding-top: 28px; }
+.receive-row-edit { grid-template-columns: minmax(150px, 1.2fr) repeat(4, minmax(96px, 120px)); }
+.receive-cost { grid-column: 1 / -1; margin-top: calc(var(--sp-2) * -1); }
+/* Phase 15: SKU (D-067) */
+.sku { font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.92em; letter-spacing: .02em; color: var(--text-muted); }
 /* Phase 14: restock expenses (D-060, D-061) */
 .receive-landed { grid-column: 1 / -1; margin-top: calc(var(--sp-2) * -1); }
 .landed-cost { color: var(--text-muted); font-variant-numeric: tabular-nums; }
@@ -299,8 +304,8 @@
 .restock-expenses .panel-footer { border-top: 0; padding-left: 0; padding-right: 0; }
 .restock-expenses .sale-lines .sale-line { padding-left: 0; padding-right: 0; }
 @media (max-width: 767px) {
-  .receive-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .receive-item, .receive-cost { grid-column: span 2; padding-top: 0; }
+  .receive-row, .receive-row-edit { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .receive-item, .receive-cost { grid-column: 1 / -1; padding-top: 0; }
 }
 
 /* ---------- Phase 9: calendar ---------- */
@@ -317,6 +322,13 @@
 .cal-sale { --cal-c: var(--info); --cal-bg: var(--info-subtle); }
 .cal-payment_due { --cal-c: var(--warning); --cal-bg: var(--warning-subtle); }
 .cal-overdue { --cal-c: var(--danger); --cal-bg: var(--danger-subtle); }
+/* Phase 15 (D-069): promised payment dates */
+.promise-box { display: grid; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); border: 1px solid #7c3aed55; border-left: 3px solid #7c3aed; border-radius: var(--radius-control, 8px); background: color-mix(in srgb, #7c3aed 6%, transparent); }
+.promise-box p { margin: 0; }
+.promise-line { display: block; font-size: var(--fs-small, 0.85em); color: var(--text-muted); }
+.promise-line.is-missed { color: var(--danger); }
+.promise-line.is-open { color: #7c3aed; }
+.cal-promise { --cal-c: #7c3aed; --cal-bg: color-mix(in srgb, #7c3aed 14%, transparent); }
 .cal-restock { --cal-c: var(--success); --cal-bg: var(--success-subtle); }
 .cal-delivery { --cal-c: var(--primary); --cal-bg: var(--primary-subtle); }
 .cal-other { --cal-c: var(--text-muted); --cal-bg: var(--surface-2); }

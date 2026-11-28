@@ -230,7 +230,7 @@ export const rowHeightFor = (n) => (n <= 14 ? 42 : n <= 20 ? 36 : n <= 28 ? 30 :
 export function drawPoster(canvas, rows, opts) {
   const o = {
     cashTitle: 'CASH PRICE', cashSubtitle: 'Pay now and get the best price.',
-    paydayTitle: 'PAYDAY OPTION', paydaySubtitle: 'Take the rice today and pay on payday.',
+    paydayTitle: 'CREDIT PRICE', paydaySubtitle: 'Take the rice today and pay on payday.',
     cta: 'MESSAGE US NOW!!', ctaSub: 'For Order and Inquiries', ...opts,
   };
   const rowH = rowHeightFor(rows.length);

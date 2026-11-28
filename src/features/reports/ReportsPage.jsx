@@ -46,6 +46,9 @@ export function downloadText(filename, text, type = 'text/csv;charset=utf-8') {
  * columns: [{ key, header, align, render(row), csv(row) }] — csv() gives the plain value for export. */
 const money = (k) => ({ align: 'right', render: (r) => formatMoney(r[k]), csv: (r) => csvMoney(r[k]) });
 
+/** D-067: an item's SKU from the loaded items ('' when unknown). */
+const skuOf = (d, itemId) => { const i = (d.items || []).find((x) => x.id === itemId); return (i && i.sku) || ''; };
+
 function buildReport(tab, d, from, to, now) {
   if (tab === 'sales') {
     const s = salesSummary(d.sales, from, to);
@@ -81,6 +84,7 @@ function buildReport(tab, d, from, to, now) {
         title: 'Profit by item', rows,
         columns: [
           { key: 'item', header: 'Item', className: 'wrap', render: (r) => <Link to={`/items/${r.itemId}`}>{r.itemName}</Link>, csv: (r) => r.itemName },
+          { key: 'sku', header: 'SKU', render: (r) => <span className="sku">{skuOf(d, r.itemId)}</span>, csv: (r) => skuOf(d, r.itemId) },
           { key: 'qty', header: 'Quantity sold', align: 'right', render: (r) => formatQty(r.qtyH, r.unit), csv: (r) => csvQty(r.qtyH) },
           { key: 'unit', header: 'Unit', render: (r) => (r.unit === 'SACK' ? 'sack' : 'kg'), csv: (r) => (r.unit === 'SACK' ? 'sack' : 'kg') },
           { key: 'rev', header: 'Revenue', ...money('revenueC') },
@@ -88,7 +92,7 @@ function buildReport(tab, d, from, to, now) {
           { key: 'profit', header: 'Gross profit', ...money('profitC') },
           { key: 'm', header: 'Margin', align: 'right', render: (r) => formatPct(r.marginBp), csv: (r) => (r.marginBp === null ? '' : (r.marginBp / 100).toFixed(2)) },
         ],
-        footer: ['Total', '', '', formatMoney(t.rev), formatMoney(t.cogs), formatMoney(t.rev - t.cogs), ''],
+        footer: ['Total', '', '', '', formatMoney(t.rev), formatMoney(t.cogs), formatMoney(t.rev - t.cogs), ''],
       }],
     };
   }
@@ -164,6 +168,7 @@ function buildReport(tab, d, from, to, now) {
         title: 'Inventory valuation', rows: v.rows,
         columns: [
           { key: 'n', header: 'Item', className: 'wrap', render: (r) => <Link to={`/items/${r.id}`}>{r.name}</Link>, csv: (r) => r.name },
+          { key: 'sku', header: 'SKU', render: (r) => <span className="sku">{skuOf(d, r.id)}</span>, csv: (r) => skuOf(d, r.id) },
           { key: 'q', header: 'In stock', align: 'right', render: (r) => formatQty(r.qtyH, r.unit), csv: (r) => csvQty(r.qtyH) },
           { key: 'u', header: 'Unit', render: (r) => (r.unit === 'SACK' ? 'sack' : 'kg'), csv: (r) => (r.unit === 'SACK' ? 'sack' : 'kg') },
           { key: 'cost', header: 'Unit cost', ...money('costC') },
@@ -171,7 +176,7 @@ function buildReport(tab, d, from, to, now) {
           { key: 'price', header: 'Price', ...money('priceC') },
           { key: 'ret', header: 'Value at price', ...money('retailC') },
         ],
-        footer: ['Total', '', '', '', formatMoney(v.valueC), '', formatMoney(v.retailC)],
+        footer: ['Total', '', '', '', '', formatMoney(v.valueC), '', formatMoney(v.retailC)],
       }],
     };
   }
@@ -185,12 +190,13 @@ function buildReport(tab, d, from, to, now) {
           title: 'Losses by item and reason', rows: m.losses.map((l) => ({ ...l, id: l.key })),
           columns: [
             { key: 'n', header: 'Item', className: 'wrap', render: (r) => <Link to={`/items/${r.itemId}`}>{r.itemName}</Link>, csv: (r) => r.itemName },
+            { key: 'sku', header: 'SKU', render: (r) => <span className="sku">{skuOf(d, r.itemId)}</span>, csv: (r) => skuOf(d, r.itemId) },
             { key: 'r', header: 'Reason', render: (r) => r.reason, csv: (r) => r.reason },
             { key: 'q', header: 'Quantity lost', align: 'right', render: (r) => formatQty(r.qtyH, r.unit), csv: (r) => csvQty(r.qtyH) },
             { key: 'c', header: 'Entries', align: 'right', render: (r) => r.count, csv: (r) => r.count },
             { key: 'v', header: 'Value', ...money('valueC') },
           ],
-          footer: ['Total', '', '', '', formatMoney(m.lossC)],
+          footer: ['Total', '', '', '', '', formatMoney(m.lossC)],
           empty: 'No losses in this period.',
         },
         {
@@ -237,7 +243,7 @@ function useReportData(adapter, tab, from, to) {
   const expenses = q(need('pnl'), 'expenses', range('date'), `rep-exp-${from}-${to}`);
   const payments = q(need('cash'), 'payments', range('date'), `rep-pay-${from}-${to}`);
   const rows = q(need('aging'), 'installments', { where: [['status', 'in', ['PENDING', 'PARTIAL']]] }, 'collections-open');
-  const items = q(need('inventory'), 'items', { orderBy: [['nameLower', 'asc']] }, 'rep-items');
+  const items = q(need(['inventory', 'profit', 'movements']), 'items', { orderBy: [['nameLower', 'asc']] }, 'rep-items');
   const movements = q(need('movements'), 'inventoryMovements', range('businessDate'), `rep-mov-${from}-${to}`);
   const restocks = q(need('restocks'), 'restocks', { orderBy: [['orderDate', 'desc']], limit: 1000 }, 'rep-restocks');
   const all = { sales, expenses, payments, rows, items, movements, restocks };

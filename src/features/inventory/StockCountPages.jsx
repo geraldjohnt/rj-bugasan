@@ -14,7 +14,7 @@ import { formatQty, parseQty, qtyToPlain } from '../../domain/quantity.js';
 import { formatDate, today } from '../../domain/dates.js';
 import { unitLabel } from '../../domain/inventory.js';
 import { createCount, saveCountDraft, finalizeCount, discardCount } from '../../data/inventoryService.js';
-import { useItems } from './ItemsPage.jsx';
+import { useItems, useSkus } from './ItemsPage.jsx';
 import { ConfirmDialog } from './InventoryDialogs.jsx';
 
 /* ------------------------------------------------------------------ list */
@@ -77,6 +77,7 @@ export function StockCountListPage({ adapter }) {
 /* ------------------------------------------------------------------ count sheet */
 
 export function StockCountPage({ adapter, id }) {
+  const skus = useSkus(adapter);
   const auth = useAuth();
   const toast = useToast();
   const online = useOnline();
@@ -117,7 +118,7 @@ export function StockCountPage({ adapter, id }) {
   }
 
   const columns = [
-    { key: 'item', header: 'Item', className: 'key-col', render: (l) => <Link to={`/items/${l.itemId}`}>{l.itemName}</Link> },
+    { key: 'item', header: 'Item', className: 'key-col', render: (l) => <><Link to={`/items/${l.itemId}`}>{l.itemName}</Link>{skus[l.itemId] && <span className="cell-sub sku">{skus[l.itemId]}</span>}</> },
     { key: 'system', header: final ? 'System (at finalize)' : 'System', align: 'right', render: (l) => formatQty(l.systemH, l.unit) },
     { key: 'counted', header: 'Counted', align: 'right', render: (l) => (final
       ? (l.countedH === null ? <span className="muted">Not counted</span> : formatQty(l.countedH, l.unit))

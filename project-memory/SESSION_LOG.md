@@ -136,3 +136,6 @@
 ## 2026-11-28 — Session 14: item expense, credit price, SKU, promised dates (requirements)
 - **Request:** per-item Expense and Credit price at receiving; pay-later price defaults to the credit price; SKU plan and display; promised dates on partial payments shown on the calendar.
 - **Done:** checked the code (sale already defaults to the Payday price, D-046; SKU free text, searchable on Items only; partial payments exist, no promise). Interview Round 13 (18 answers); proposed D-065 … D-069; approval item FQ-1. No code changed.
+- **Approved** (FQ-1: "Approve, build Phase 15") and **built Phase 15** in the same session: domain, services, rules, UI, sample data, guide, tests.
+- Found while building: back-dated sample payments hit the promise rule → "due" is judged on the payment date (recorded in D-068); a newer promise before an older one's date marks it Replaced (D-069); blank SKU on edit keeps the SKU (D-067); calendar needed all open rows for promises in other months.
+- **Tests:** `npm test` 154/154, `npm run test:rules` 51/51, all 11 E2E suites on `/build` pass (new `phase15` 12 steps), offline smoke on `/build`. No release build (not requested).

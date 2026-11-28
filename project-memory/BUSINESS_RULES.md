@@ -67,39 +67,8 @@
 - BR-065 (D-060, D-061) A receipt may carry free-text expense lines `{ name, amountC > 0 }` (max 20). Their total is split over the received lines **by value** (qty × unit cost; largest remainder; equal split if every value is 0). Cost incl. expenses per unit = unit cost + share ÷ qty; profit per unit = cash price − that. **Shown only**: batch cost and COGS use the unit cost.
 - BR-066 (D-062, extends BR-063) Each receipt expense line is an expense with category **Restock**, note = name, date = receipt date, `restockId` + `batchId`. It is changed only from the restock: edited in place, voided when removed. The Expenses page cannot add, edit or void Restock expenses. Restock expense names are suggested with the last amount.
 - BR-067 (D-063) A received delivery's unit cost, cash price and expenses stay editable (also when the order is RECEIVED); quantities do not. A new cost updates the open batch and the batch cost on ACTIVE sale lines that took from it (line and sale `costC`); a new price updates the open batch.
-
-## 7. Reporting definitions (RQ-036)
-- **Revenue** = Σ totals of non-cancelled sales by sale date (opening-balance entries excluded).
-- **Cash collected** = Σ non-voided payments by payment date.
-- **Receivables** = Σ unpaid amounts of open installment rows (as of now or a chosen date).
-- **COGS** = Σ line cost of non-cancelled sale lines by sale date: the exact cost of the batches taken (`costC`), or qtyH × unitCost / 100 for sales from before batches.
-- **Revenue** includes other charges (D-054); reports show *Product sales* and *Other charges* separately. Profit by item excludes charges.
-- **Gross profit** = Revenue − COGS. **Net profit** = Gross profit − non-voided expenses in the period.
-- Aging buckets by days past due: Current (not yet due), 1–30, 31–60, 61+.
-
-## 8. Opening balances (RQ-007)
-- BR-080 Opening stock is entered as OPENING movements.
-- BR-081 Existing installment accounts from Excel are entered as **Opening balance** entries (`OB-{YYYY}-{NNNNN}`): customer, original date, description, remaining balance and remaining schedule. They create receivable rows but no stock movement and no revenue/profit. Stored as a `sales` document of kind `OPENING_BALANCE` with no lines (D-045); 1 row (plain balance, due date optional) or 2–5 installments; not added to the customer's total purchases. Payments, reschedule and cancel use the normal sale rules.
-
-## 9. Sessions, security, backup
-- BR-090 All data operations require an authenticated, active user. Authorization is enforced by Firestore Security Rules, not by hidden UI.
-- BR-091 Idle lock after N minutes (default 30) — re-enter password to continue.
-- BR-092 All writes require a connection; offline = read-only with banner.
-- BR-093 Activity log entries are written with the action they describe and are never editable or deletable.
-- BR-094 Backup reminder when the last backup is older than 7 days. Restore requires typing `RESTORE` and is logged.
-
-## 10. Batches, oldest first (Phase 13; D-050 … D-056)
-- BR-100 Each restock receipt is ONE batch id `RJ-RS-<supplier code>-NNNN` (counter per supplier, never resets; D-051). Each received item line becomes a batch on that item with its own qty, unit cost and cash price.
-- BR-101 Supplier codes `SUP001, SUP002 …` from counter `supplier`; suppliers created before codes get theirs in creation order (Suppliers page) or on their first receipt.
-- BR-102 Sales take stock from the item's oldest batch first (by batch date, then arrival). The owner may pick one batch for a line; picked lines are served before automatic ones.
-- BR-103 List price on cash (Full) terms = weighted average of the cash prices of the batches the line takes, rounded to the centavo (D-052; one function `blendedPriceC` so it can be changed). Pay-later terms use the item payday price when set, otherwise the same batch price. Always editable.
-- BR-104 Sale cancel returns quantities to the same batches (re-opened if used up). Sales from before batches return as stock not in a batch (then covered by BR-105).
-- BR-105 (D-055) Stock not in any batch belongs to the first batch: added to the oldest batch, or a new `RJ-RS-OLD-NNNN` at the item's default cost and price. Applied automatically; selling is never blocked.
-- BR-106 Adjustment out / count shortfall: stock not in a batch first, then the chosen or oldest batch. Adjustment in / count surplus: the chosen or newest batch.
-- BR-107 Open sack: sacks leave oldest first; the kilos become KG batches with the same batch id, cost = sack batch cost ÷ sack weight (or a typed override), price = KG item default cash price.
-- BR-108 Item cash price / cost are defaults for new batches. The shown price is the oldest batch's (with the next batch's price as a hint). Editing a batch's cost or price affects later sales only (D-056).
-
-## 11. Other charges on a sale (D-054)
-- BR-110 Up to 10 free-text charges per sale (name ≤ 60 chars, amount > 0), e.g. Delivery fee. No stock, no cost.
-- BR-111 Added after the discount (discount applies to items only); part of the open balance / installments.
-- BR-112 Shown on the sale page and receipts; reports count them in revenue, on their own line; item profit excludes them. Names used on recent sales are suggested with their last amount.
+- BR-068 (D-065) A receipt line may carry its own expense (total for the line, ≥ 0). It is added to that line's cost incl. expenses only (the delivery's other expense lines are still split by value), saved as a Restock expense with `itemId`, and edited/voided with the delivery. Batch cost stays the unit cost.
+- BR-069 (D-066) The Receive and Edit delivery dialogs show each item's credit price; a changed value becomes the item's credit price. Pay-later sale lines default to the item's credit price (D-046), editable.
+- BR-070 (D-067) Every item has a unique SKU. Blank on create → `RJ-<CODE>-NNN` (CODE = first 3 letters A–Z of the variety, else the name, padded with X; NNN from counter `sku-<CODE>`, never reused, skipping SKUs typed by hand). Typed SKUs: upper-case letters, digits, `- . /`, ≤ 30. Blank on edit keeps the SKU. Items without one get one when an item list loads online.
+- BR-071 (D-068) After a payment, every open row due on or before the payment date that is not fully paid needs a promised date (on or after the payment date) for its rest; one promise `{ date, amountC = rest, madeOn = payment date, paymentId }` is appended to each such row. Due dates and other rows are unchanged. A later promise can be added by hand to any open row (date today or later). Voiding the payment removes the promises it made.
+- BR-072 (D-069) Promise status: Kept (row fully paid on/before its date), Replaced (a newer promise was made on/before its date), Missed (date passed, or a newer promise came after it, without full payment), Open. Overdue still runs from the original due date. Reliability: a row paid in full by the date of a promise already made counts as paid on time (BR-025).

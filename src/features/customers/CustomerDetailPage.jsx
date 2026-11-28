@@ -20,6 +20,7 @@ import { useCustomers } from './CustomersPage.jsx';
 import { SalesTable, PaymentsTable, ScheduleTable, byDateDesc } from '../sales/SaleTables.jsx';
 import { RecordPaymentDialog, VoidPaymentDialog } from '../sales/PaymentDialogs.jsx';
 import { usePrint, useBusiness, PaymentReceipt, StatementDoc } from '../sales/Print.jsx';
+import { currentPromises } from '../../domain/promises.js';
 
 const TABS = [
   { value: 'summary', label: 'Summary' }, { value: 'sales', label: 'Sales' }, { value: 'payments', label: 'Payments' },
@@ -145,9 +146,9 @@ export function CustomerDetailPage({ adapter, id, tab = 'summary' }) {
         )}
         {current === 'statement' && (
           <div className="panel-body">
-            <div className="button-row"><Button icon="print" onClick={() => print(<StatementDoc customer={c} statement={statement} business={business} />)} disabled={loading}>Print statement</Button>
+            <div className="button-row"><Button icon="print" onClick={() => print(<StatementDoc customer={c} statement={statement} business={business} promises={currentPromises(openRows, now)} />)} disabled={loading}>Print statement</Button>
               <span className="muted">Cancelled sales and voided payments are left out.</span></div>
-            {loading ? <LoadingRows /> : <div className="statement-preview"><StatementDoc customer={c} statement={statement} business={business} /></div>}
+            {loading ? <LoadingRows /> : <div className="statement-preview"><StatementDoc customer={c} statement={statement} business={business} promises={currentPromises(openRows, now)} /></div>}
           </div>
         )}
       </Panel>

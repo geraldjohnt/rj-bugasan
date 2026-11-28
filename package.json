@@ -11,10 +11,10 @@
     "test:build": "node tests/smoke/dist-smoke.js build",
     "test:dist": "node tests/smoke/dist-smoke.js dist",
     "test:apk": "node tests/smoke/apk-check.js",
-    "test:e2e": "node tests/e2e/shell.e2e.js build && node tests/e2e/inventory.e2e.js build && node tests/e2e/customers.e2e.js build && node tests/e2e/sales.e2e.js build && node tests/e2e/restocks.e2e.js build && node tests/e2e/calendar.e2e.js build && node tests/e2e/reports.e2e.js build && node tests/e2e/system.e2e.js build && node tests/e2e/batches.e2e.js build && node tests/e2e/restockExpenses.e2e.js build",
+    "test:e2e": "node tests/e2e/shell.e2e.js build && node tests/e2e/inventory.e2e.js build && node tests/e2e/customers.e2e.js build && node tests/e2e/sales.e2e.js build && node tests/e2e/restocks.e2e.js build && node tests/e2e/calendar.e2e.js build && node tests/e2e/reports.e2e.js build && node tests/e2e/system.e2e.js build && node tests/e2e/batches.e2e.js build && node tests/e2e/restockExpenses.e2e.js build && node tests/e2e/phase15.e2e.js build",
     "test:rules": "firebase emulators:exec --only firestore --project demo-rj-ims \"node --test --test-concurrency=1 tests/rules/*.test.js\"",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes --project rj-bugasan",
-    "verify:release": "npm test && npm run test:rules && npm run test:dist && node tests/e2e/shell.e2e.js dist && node tests/e2e/inventory.e2e.js dist && node tests/e2e/customers.e2e.js dist && node tests/e2e/sales.e2e.js dist && node tests/e2e/restocks.e2e.js dist && node tests/e2e/calendar.e2e.js dist && node tests/e2e/reports.e2e.js dist && node tests/e2e/system.e2e.js dist && node tests/e2e/batches.e2e.js dist && node tests/e2e/restockExpenses.e2e.js dist"
+    "verify:release": "npm test && npm run test:rules && npm run test:dist && node tests/e2e/shell.e2e.js dist && node tests/e2e/inventory.e2e.js dist && node tests/e2e/customers.e2e.js dist && node tests/e2e/sales.e2e.js dist && node tests/e2e/restocks.e2e.js dist && node tests/e2e/calendar.e2e.js dist && node tests/e2e/reports.e2e.js dist && node tests/e2e/system.e2e.js dist && node tests/e2e/batches.e2e.js dist && node tests/e2e/restockExpenses.e2e.js dist && node tests/e2e/phase15.e2e.js dist"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "5.0.2",

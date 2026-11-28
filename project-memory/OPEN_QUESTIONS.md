@@ -38,4 +38,4 @@ Status values: Open · Answered (see INTERVIEW_LOG) · Deferred
 ## Item expense, credit price, SKU, promised dates (raised 2026-11-28)
 | ID | Subject | Why it matters | Recommended option | Status |
 |---|---|---|---|---|
-| FQ-1 | Approve design D-065 … D-069 | Changes receiving, item labels, SKUs on every item, payment dialog, calendar, reliability | Approve, implement as Phase 15 | Open |
+| FQ-1 | Approve design D-065 … D-069 | Changes receiving, item labels, SKUs on every item, payment dialog, calendar, reliability | Approve, implement as Phase 15 | Answered 2026-11-28: "Approve, build Phase 15" |

@@ -66,3 +66,10 @@
 - "New item" (full item form) on the restock order form (D-064).
 - Rules, sample data, user guide, tests (unit 142, rules 48, new E2E `restockExpenses` 9 steps).
 - **Release 0.10.0:** `npm run release` + `npm run verify:release` passed on `/dist`; PR created and merged to main.
+
+## 2026-11-28 — Phase 15 (not released)
+- Receive / Edit delivery: each item line has **Expense** (its own, total for the line) and **Credit price**; other delivery expenses stay below and are split by value. Item expenses are linked "Restock" expenses; a changed credit price updates the item (D-065, D-066).
+- "Payday price" renamed **Credit price** everywhere (items, sales, poster, guide) (D-066).
+- **Automatic SKUs** `RJ-<CODE>-NNN` (variety or name letters), unique, editable, back-filled for existing items; shown and searchable in item pickers, Items, Movements; shown on sale/restock/stock-count lines, reports + CSV, dashboard, printed receipts (D-067).
+- **Promised payment dates:** a partial payment that leaves a due installment unpaid asks for the promised date of the rest; promises are added (due dates unchanged), shown as their own calendar entries, in Collections → Promised, the sale schedule (Add promise) and the customer statement; kept / missed / replaced; a kept promise counts as paid on time; voiding the payment removes its promise (D-068, D-069).
+- Rules (expenses.itemId, sku counters, installments.promises), sample data, user guide, tests (unit 154, rules 51, new E2E `phase15` 12 steps).

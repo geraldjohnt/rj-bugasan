@@ -10,12 +10,13 @@ import { allocatePayment, reverseAllocations, outstandingOf, statusFor, STATUS }
 import { validateRevision } from '../domain/schedule.js';
 import { METHODS, nextSeq, paymentStatusOf } from '../domain/sales.js';
 import { reliabilityDelta, sumDeltas } from '../domain/collections.js';
+import { rowsNeedingPromise, checkPromiseDate, withPromise, withoutPaymentPromises, promisesOf } from '../domain/promises.js';
 import { logWrite } from './activityLog.js';
 import { assertOnline } from './inventoryService.js';
 import { readSale, readRows, paymentDoc, PAYMENT_PREFIX } from './salesService.js';
 
 const stamp = (adapter, actor) => ({ updatedAt: adapter.serverTime(), updatedBy: actor.uid });
-const ROW_FIELDS = (r) => ({ paidC: r.paidC, status: r.status, paidDate: r.paidDate });
+const ROW_FIELDS = (r) => ({ paidC: r.paidC, status: r.status, paidDate: r.paidDate, ...(r.promises ? { promises: r.promises } : {}) });
 
 async function readCustomer(tx, id) {
   const s = await tx.get('customers', id);
@@ -33,7 +34,9 @@ function customerPatch(c, outstandingDeltaC, rel, adapter, actor) {
 
 /**
  * Record a payment on a sale (BR-051): allocated oldest installment first; may not exceed the balance.
- * input: { saleId, date, amountC, method, reference, note }. Returns { paymentId, allocations, balanceC }.
+ * input: { saleId, date, amountC, method, reference, note, promiseDate }. Returns { paymentId, allocations, balanceC, promised }.
+ * D-068: when the payment leaves a row due on or before the payment date not fully paid, promiseDate (on or after the payment date) is
+ * required; a promise for each such row's rest is added to it (due dates unchanged).
  */
 export async function recordPayment(adapter, actor, input, today = todayIn()) {
   assertOnline();
@@ -51,16 +54,27 @@ export async function recordPayment(adapter, actor, input, today = todayIn()) {
     if (!customer) throw new DomainError('CUSTOMER_MISSING', 'The customer of this sale no longer exists.');
     if (outstandingOf(rows) <= 0) throw new DomainError('NO_BALANCE', 'This sale is fully paid.');
 
-    const { allocations, rows: after } = allocatePayment(rows, input.amountC, input.date);
+    const allocated = allocatePayment(rows, input.amountC, input.date);
+    const allocations = allocated.allocations;
+    // Rows due on or before the payment date (a back-dated payment is judged on its own date).
+    const needing = rowsNeedingPromise(allocated.rows, input.date);
+    if (needing.length && !input.promiseDate) {
+      throw new DomainError('PROMISE_REQUIRED', 'Part of what is due is still unpaid. Enter the date the customer promised to pay the rest.', { field: 'promiseDate' });
+    }
+    if (needing.length) checkPromiseDate(input.promiseDate, input.date, 'The promised date cannot be before the payment date.');
+    const at = new Date().toISOString();
+    const promisedIds = new Set(needing.map((r) => r.id));
+    const after = allocated.rows.map((r) => (promisedIds.has(r.id) ? withPromise(r, { date: input.promiseDate, madeOn: input.date, paymentId: null, by: actor.uid, at }) : r));
     const seq = nextSeq(counter.data);
     const paymentId = formatDocNo(PAYMENT_PREFIX, year, seq);
+    for (const r of after) if (promisedIds.has(r.id)) r.promises[r.promises.length - 1].paymentId = paymentId;
 
     tx.set('counters', `payment-${year}`, { next: seq + 1 });
     tx.set('payments', paymentId, paymentDoc(adapter, actor, { sale, customer, date: input.date, amountC: input.amountC, method: input.method, reference: input.reference, note: input.note, allocations }));
     const byId = new Map(rows.map((r) => [r.id, r]));
     const deltas = [];
     for (const r of after) {
-      if (!allocations.some((a) => a.installmentId === r.id)) continue;
+      if (!allocations.some((a) => a.installmentId === r.id) && !promisedIds.has(r.id)) continue;
       deltas.push(reliabilityDelta(byId.get(r.id), r));
       tx.update('installments', r.id, { ...ROW_FIELDS(r), ...stamp(adapter, actor) });
     }
@@ -70,10 +84,11 @@ export async function recordPayment(adapter, actor, input, today = todayIn()) {
     tx.update('customers', customer.id, customerPatch(customer, -input.amountC, sumDeltas(deltas), adapter, actor));
     logWrite(tx, adapter, actor, {
       action: 'PAYMENT_RECORD', entityType: 'payment', entityId: paymentId,
-      summary: `Payment ${paymentId}: ${formatMoney(input.amountC)} from ${customer.name} for ${sale.id}` + (balanceC ? `, balance ${formatMoney(balanceC)}` : ', now fully paid'),
-      changes: { saleId: sale.id, allocations },
+      summary: `Payment ${paymentId}: ${formatMoney(input.amountC)} from ${customer.name} for ${sale.id}` + (balanceC ? `, balance ${formatMoney(balanceC)}` : ', now fully paid')
+        + (needing.length ? `; promised to pay the rest on ${formatDate(input.promiseDate)} (${needing.map((r) => `#${r.no}`).join(', ')})` : ''),
+      changes: { saleId: sale.id, allocations, ...(needing.length ? { promiseDate: input.promiseDate, promisedRows: needing.map((r) => r.no) } : {}) },
     });
-    return { paymentId, allocations, balanceC };
+    return { paymentId, allocations, balanceC, promised: needing.length ? input.promiseDate : null };
   });
 }
 
@@ -96,12 +111,14 @@ export async function voidPayment(adapter, actor, paymentId, reason) {
     const customer = await readCustomer(tx, sale.customerId);
     if (sale.status !== 'ACTIVE') throw new DomainError('SALE_CANCELLED', 'The sale is cancelled; its payments were already voided.');
 
-    const after = reverseAllocations(rows, p.allocations || []);
+    // D-068: promises made with this payment go with it.
+    const after = reverseAllocations(rows, p.allocations || []).map((r) => (promisesOf(r).some((x) => x.paymentId === p.id) ? withoutPaymentPromises(r, p.id) : r));
     const byId = new Map(rows.map((r) => [r.id, r]));
     const deltas = [];
     tx.update('payments', p.id, { status: 'VOIDED', void: { reason: why, refund: false, at: adapter.serverTime(), by: actor.uid } });
     for (const r of after) {
-      if (!(p.allocations || []).some((a) => a.installmentId === r.id)) continue;
+      const hadPromise = promisesOf(byId.get(r.id)).some((x) => x.paymentId === p.id);
+      if (!(p.allocations || []).some((a) => a.installmentId === r.id) && !hadPromise) continue;
       deltas.push(reliabilityDelta(byId.get(r.id), r));
       tx.update('installments', r.id, { ...ROW_FIELDS(r), ...stamp(adapter, actor) });
     }
@@ -113,6 +130,32 @@ export async function voidPayment(adapter, actor, paymentId, reason) {
       summary: `Voided payment ${p.id} (${formatMoney(p.amountC)}) on ${sale.id}: ${why}`,
     });
     return { balanceC: sale.totalC - paidC };
+  });
+}
+
+/**
+ * D-068/D-069: add a promised date to an open row by hand (e.g. after a missed promise). The row's due date and the
+ * other rows are unchanged. input: { rowId, date }. Returns { date, amountC }.
+ */
+export async function addPromise(adapter, actor, saleId, input, today = todayIn()) {
+  assertOnline();
+  checkPromiseDate(input.date, today);
+  return adapter.runTransaction(async (tx) => {
+    const sale = await readSale(tx, saleId);
+    if (sale.status !== 'ACTIVE') throw new DomainError('SALE_CANCELLED', 'This sale is cancelled.');
+    const rows = await readRows(tx, sale);
+    const row = rows.find((r) => r.id === input.rowId);
+    if (!row) throw new DomainError('ROW_MISSING', 'This installment is not on the sale.');
+    if (row.status !== STATUS.PENDING && row.status !== STATUS.PARTIAL) throw new DomainError('NOT_OPEN', `Installment ${row.no} is ${row.status === STATUS.PAID ? 'already paid' : 'cancelled'}.`);
+    const next = withPromise(row, { date: input.date, madeOn: today, paymentId: null, by: actor.uid, at: new Date().toISOString() });
+    tx.update('installments', row.id, { promises: next.promises, ...stamp(adapter, actor) });
+    const p = next.promises[next.promises.length - 1];
+    logWrite(tx, adapter, actor, {
+      action: 'PROMISE_ADD', entityType: 'sale', entityId: saleId,
+      summary: `${sale.customerName} promised to pay ${formatMoney(p.amountC)} of ${saleId} #${row.no} on ${formatDate(p.date)}`,
+      changes: { no: row.no, date: p.date, amountC: p.amountC },
+    });
+    return { date: p.date, amountC: p.amountC };
   });
 }
 

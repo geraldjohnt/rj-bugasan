@@ -141,3 +141,11 @@ at, by, byName, action (e.g. `SALE_CREATE`, `SALE_CANCEL`, `PAYMENT_VOID`, `ITEM
 - **sales/{id}.lines[].batches** — `[{ batchId, qtyH, date, unitCostC, priceC, source, supplierId, supplierName, restockId, receivedQtyH }]`; `lines[].costC` (exact cost), `lines[].batchPicked` (batch id chosen by the owner or null). `unitCostC` = weighted average.
 - **sales/{id}.charges** — `[{ name, amountC }]`; **sales/{id}.chargesC** — Σ amounts. `totalC = subtotalC − discountC + chargesC`.
 - **inventoryMovements/{id}.batches** — `[{ batchId, qtyH, unitCostC }]` the batch quantities moved (optional).
+
+## Phase 15 additions (2026-11-28)
+- **items/{id}.sku** — now always set: `RJ-<CODE>-NNN` or a typed value (upper-case, ≤ 30). **counters/sku-<CODE>** `{ next }`.
+- **sales/{id}.lines[].sku** — SKU at the time of sale (new sales only; older lines look it up from the item).
+- **restocks/{id}.receipts[].lines[].expenseC / expenseId** — the line's own expense and its linked expense document (D-065).
+- **expenses/{id}.itemId** — on Restock expenses made for one item of a delivery (note = item name).
+- **installments/{id}.promises** — `[{ date, amountC, madeOn, paymentId|null, by, at }]`, oldest first, ≤ 30 (D-068). Status (open/kept/missed/replaced) is derived, never stored.
+- activityLogs actions added: `ITEM_SKUS`, `PROMISE_ADD`; PAYMENT_RECORD summary mentions the promised date; RESTOCK_RECEIVE / RESTOCK_RECEIPT_EDIT mention item expenses and credit price changes.

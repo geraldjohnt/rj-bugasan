@@ -80,7 +80,7 @@
 <h2 id="sale">3. Recording a sale</h2>
 <ol>
   <li>Click <strong>New sale</strong>. Choose the customer (or <em>Walk-in</em> for a paid counter sale; type part of the name or phone number to search).</li>
-  <li>Add items and quantities. The screen shows stock on hand and stops you from selling more than you have. Stock is taken from the <strong>oldest batch first</strong>; the line shows which batches it uses. The price comes from those batches: when a line takes from two batches with different prices, it uses the <strong>average</strong> (for example 2 sacks at ₱1,500 and 3 at ₱1,550 → ₱1,530 each). You may change the unit price on a line; the batch or payday price stays visible with <em>use it</em> to go back.</li>
+  <li>Add items and quantities. The screen shows stock on hand and stops you from selling more than you have. Stock is taken from the <strong>oldest batch first</strong>; the line shows which batches it uses. The price comes from those batches: when a line takes from two batches with different prices, it uses the <strong>average</strong> (for example 2 sacks at ₱1,500 and 3 at ₱1,550 → ₱1,530 each). You may change the unit price on a line; the batch or credit price stays visible (pay-later terms use the item's credit price) with <em>use it</em> to go back.</li>
   <li>To sell from a particular batch (for example a damaged sack), choose it in the <strong>Batch</strong> list under the line.</li>
   <li>Optional discount in % or ₱ (on the items only).</li>
   <li>Optional <strong>Other charges</strong>: click <em>Add charge</em> and type a name and amount, for example <em>Delivery fee ₱50</em>. Names you used before are suggested with their last amount. Charges are added after the discount and are part of any balance or installments.</li>
@@ -101,8 +101,9 @@
 <h2 id="payments">5. Payments and collections</h2>
 <ul>
   <li><strong>Record payment</strong> on the sale page, the customer page or the Collections screen. The amount goes to the oldest unpaid installment first. If the customer pays more than the balance, the system tells you how much change to give.</li>
-  <li>A wrong payment is <strong>voided</strong> with a reason (never deleted). It stays visible, crossed out.</li>
-  <li><strong>Collections</strong> lists everything still owed: Overdue first, then Due today, Next 7 days, Later and No due date. Use <em>Copy reminder</em> to paste a friendly message into SMS or Messenger.</li>
+  <li><strong>Partial payment and promised date:</strong> if a payment leaves part of an installment that is due (or overdue) unpaid, enter the date the customer <em>promised</em> to pay the rest. The promise is added on top: the installment's due date and the next installments stay as they are. It appears on the Calendar as its own entry (so a promise on the same day as the next due date shows two entries), in Collections → <em>Promised</em>, in the sale's schedule and on the customer statement. A promise is <em>kept</em> when the rest is paid by that date (it then counts as paid on time), <em>missed</em> otherwise — the installment stays overdue from its original due date and you can add a new promise with <em>Add promise</em> in the sale's schedule.</li>
+  <li>A wrong payment is <strong>voided</strong> with a reason (never deleted). It stays visible, crossed out. A promise made with that payment is removed with it.</li>
+  <li><strong>Collections</strong> lists everything still owed: Overdue first, then Due today, Next 7 days, Later, No due date and Promised. Use <em>Copy reminder</em> to paste a friendly message into SMS or Messenger.</li>
 </ul>
 
 <h2 id="customers">6. Customers</h2>
@@ -110,6 +111,8 @@
 
 <h2 id="stock">7. Items and stock</h2>
 <ul>
+  <li><strong>SKU:</strong> every item gets a code like <em>RJ-DIN-001</em> — RJ, the first 3 letters of the variety (or of the name when there is no variety) and a number. Leave the SKU blank when adding an item and the app gives one; you can type your own (it must be unique). The SKU is shown wherever items are picked or listed, on receipts and reports, and you can search by it.</li>
+  <li>Each item has a <strong>cash price</strong> and a <strong>credit price</strong> (pay later / installments; empty = same as cash). A new sale on Open balance or Installment fills in the credit price; you can still change it on the line.</li>
   <li>Every stock change is recorded as a movement (Stock → Movements): opening stock, sales, cancellations, restocks, adjustments, counts and opened sacks.</li>
   <li><strong>Batches:</strong> each restock delivery becomes a batch with its own number (for example <em>RJ-RS-SUP001-0004</em>: supplier SUP001, its 4th delivery), cost and cash price. The item page lists the batches in stock, oldest first; the oldest is sold first. Use <em>Edit</em> on a batch to change its cost or cash price (later sales only). Stock you had before batches existed was put into a first batch (<em>RJ-RS-OLD-…</em>) at the item's cost and price.</li>
   <li>The <strong>Cash price</strong> shown for an item is the price of its oldest batch; <em>next</em> shows the next batch's price when it differs. Changing the item's cash price asks whether to apply it to the batches in stock too.</li>
@@ -121,17 +124,17 @@
 
 <h2 id="restocks">8. Restocks, suppliers and expenses</h2>
 <ul>
-  <li>Create a <strong>restock</strong> order for a supplier. Stock increases only when you <strong>Receive</strong> it (all or part). On receiving, enter the <strong>cost</strong> and the <strong>cash selling price</strong> of each item; the delivery becomes one batch. Tick <em>Make these the item's default cost and price</em> if new batches should start from these values.</li>
+  <li>Create a <strong>restock</strong> order for a supplier. Stock increases only when you <strong>Receive</strong> it (all or part). On receiving, enter for each item the quantity <strong>received</strong>, the <strong>unit cost</strong>, its own <strong>expense</strong> (total for that line, e.g. unloading; optional), the <strong>cash price</strong> and the <strong>credit price</strong>; the delivery becomes one batch. A changed credit price becomes the item's credit price. Tick <em>Make these the item's default cost and price</em> if new batches should start from these values.</li>
   <li><strong>New item</strong> on the restock order form opens the same form as Items → Add item, so you can order an item you have never sold without leaving the restock.</li>
-  <li><strong>Restock expenses:</strong> in the Receive dialog, add the delivery's expenses (Trucking, Fuel, Labor … type any name; names used before are suggested). The total is split over the items by value, and each item shows its <em>cost incl. expenses</em> per unit and the <em>profit</em> per unit at the cash price you type (example: 150 sacks at ₱2,500 with ₱6,000 expenses → ₱40 per sack → ₱2,540). This only helps you set the price; the batch cost stays ₱2,500. Each expense is saved on the Expenses page as category <em>Restock</em>, linked to the restock.</li>
-  <li><strong>Edit a delivery:</strong> on the restock page, <em>Edit</em> next to a delivery changes its unit cost, cash price and expenses, even after the order is complete. A new cost also changes the profit of sales already made from that batch. Quantities cannot be changed there (use a stock adjustment).</li>
+  <li><strong>Restock expenses:</strong> an item's own <em>Expense</em> stays on that item; below the items, add the delivery's other expenses (Trucking, Fuel, Labor … type any name; names used before are suggested). The total is split over the items by value, and each item shows its <em>cost incl. expenses</em> per unit and the <em>profit</em> per unit at the cash price you type (example: 150 sacks at ₱2,500 with ₱6,000 expenses → ₱40 per sack → ₱2,540). This only helps you set the price; the batch cost stays ₱2,500. Each expense (the items' own ones too) is saved on the Expenses page as category <em>Restock</em>, linked to the restock.</li>
+  <li><strong>Edit a delivery:</strong> on the restock page, <em>Edit</em> next to a delivery changes its unit cost, expense, cash price, credit price and other expenses, even after the order is complete. A new cost also changes the profit of sales already made from that batch. Quantities cannot be changed there (use a stock adjustment).</li>
   <li>Every supplier has a code (SUP001, SUP002 …) used in its batch numbers.</li>
   <li>Cancel an order if nothing arrived; <em>Close</em> it if the rest will not come.</li>
   <li><strong>Expenses</strong> (rent, wages, fuel …) reduce net profit. Wrong entries are voided, not deleted. Restock expenses are changed on their restock, not on the Expenses page.</li>
 </ul>
 
 <h2 id="calendar">9. Calendar</h2>
-<p>Shows sales, payment due dates, overdue installments, deliveries and expected restocks, plus your own reminders. Use the filters at the top. Click an entry to see its details in a pop-up (customer, amounts, items, dates); use <em>Open sale</em> or <em>Open restock</em> there only if you want the full record. Your own reminders have an <em>Edit</em> button in the pop-up.</p>
+<p>Shows sales, payment due dates, overdue installments, promised payment dates, deliveries and expected restocks, plus your own reminders. Use the filters at the top. Click an entry to see its details in a pop-up (customer, amounts, items, dates); use <em>Open sale</em> or <em>Open restock</em> there only if you want the full record. Your own reminders have an <em>Edit</em> button in the pop-up.</p>
 
 <h2 id="reports">10. Dashboard and reports</h2>
 <ul>

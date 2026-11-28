@@ -154,7 +154,7 @@ export function NewSalePage({ adapter }) {
 
   const itemOptions = (items || []).filter((i) => i.status === 'ACTIVE').map((i) => ({
     value: i.id, label: i.name, disabled: i.qtyH <= 0,
-    detail: `${formatQty(i.qtyH, i.unit)} in stock · cash ${formatMoney(displayPriceC(i))}${Number.isInteger(i.installmentPriceC) ? ` · payday ${formatMoney(i.installmentPriceC)}` : ''} /${i.unit === UNITS.SACK ? 'sack' : 'kg'}`,
+    detail: `${i.sku ? `${i.sku} · ` : ''}${formatQty(i.qtyH, i.unit)} in stock · cash ${formatMoney(displayPriceC(i))}${Number.isInteger(i.installmentPriceC) ? ` · credit ${formatMoney(i.installmentPriceC)}` : ''} /${i.unit === UNITS.SACK ? 'sack' : 'kg'}`,
   }));
   const customerOptions = [
     { value: WALK_IN_ID, label: 'Walk-in', detail: 'Paid in full at the counter' },
@@ -202,12 +202,13 @@ export function NewSalePage({ adapter }) {
                     <TextField label={idx === 0 ? 'Unit price' : undefined} aria-label={`Unit price ${idx + 1}`} className="sale-line-price" value={shown} onChange={(e) => setLine(l.key, { price: e.target.value, auto: false })}
                       inputMode="decimal" prefix="₱" inputClassName="num" error={l.priceErr} disabled={!it}
                       help={it && l.priceC !== null && l.priceC !== undefined ? (planned && l.priceC < planned.unitCostC ? <span className="delta-out">Below cost ({formatMoney(planned.unitCostC)})</span>
-                        : !l.auto && listC !== undefined && l.priceC !== listC ? <>{terms === TERMS.FULL ? 'Cash' : 'Payday'} price {formatMoney(listC)} · <button type="button" className="link-button" onClick={() => setLine(l.key, { auto: true, price: '' })}>use it</button></> : null) : null} />
+                        : !l.auto && listC !== undefined && l.priceC !== listC ? <>{terms === TERMS.FULL ? 'Cash' : 'Credit'} price {formatMoney(listC)} · <button type="button" className="link-button" onClick={() => setLine(l.key, { auto: true, price: '' })}>use it</button></> : null) : null} />
                     <div className="sale-line-total">{idx === 0 && <div className="field-label">Amount</div>}<strong className="num">{it && l.qtyH && l.priceC !== null && l.priceC !== undefined ? formatMoney(Math.round(l.qtyH * l.priceC / 100)) : '—'}</strong></div>
                     <IconButton icon="trash" label={`Remove line ${idx + 1}`} size="sm" className="sale-line-remove" onClick={() => setLines((ls) => (ls.length > 1 ? ls.filter((x) => x.key !== l.key) : [newLine()]))} />
                   </div>
                   {it && bs.length > 0 && (
                     <div className="sale-line-batch">
+                      {it.sku && <span className="sku" title="SKU">{it.sku}</span>}
                       <SelectField aria-label={`Batch ${idx + 1}`} value={l.batchId} onChange={(e) => setLine(l.key, { batchId: e.target.value })}
                         options={[{ value: '', label: 'Batch: automatic (oldest first)' }, ...bs.map((b) => ({ value: b.id, label: `${b.id} — ${formatQty(b.qtyH, it.unit)} at ${formatMoney(b.priceC)}` }))]} />
                       {planned && <span className="muted small">From {takenText(planned.batches, it.unit)}</span>}

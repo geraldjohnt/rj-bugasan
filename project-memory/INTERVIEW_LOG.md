@@ -203,3 +203,4 @@ Findings shown to the user before asking: the sale form already fills the Payday
 | R13-Q16 | Reliability ("paid on time") | **A kept promise counts as on time** | D-069 |
 | R13-Q17 | Where promises show | **Calendar** (own entry, so same date as a due date = 2 entries), **Collections**, **Sale detail** schedule, **Customer statement**. Not the Dashboard | D-069 |
 | R13-Q18 | Edit delivery (D-063) | Also edits the **per-item expense** (updates its linked expense) and **Credit price** (updates the item) | D-065, D-066 |
+| R13-Q19 | Approve the design (FQ-1)? | "Approve, build Phase 15." | D-065 … D-069 |

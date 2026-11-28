@@ -23,7 +23,7 @@ import {
   CAL, CAL_LABELS, CAL_ORDER, monthGrid, gridRange, buildEvents, eventsByDate, monthTitle, monthKey, parseMonthKey, shiftMonth, validateEventForm, eventDateLabel,
 } from '../../domain/calendar.js';
 
-const TONE = { SALE: 'info', PAYMENT_DUE: 'warning', OVERDUE: 'danger', RESTOCK: 'success', DELIVERY: 'neutral', OTHER: 'neutral' };
+const TONE = { SALE: 'info', PAYMENT_DUE: 'warning', OVERDUE: 'danger', PROMISE: 'warning', RESTOCK: 'success', DELIVERY: 'neutral', OTHER: 'neutral' };
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const ALL_ON = Object.fromEntries(Object.values(CAL).map((c) => [c, true]));
 const FILTER_KEY = 'rj-calendar-filters';
@@ -89,7 +89,8 @@ function EventDetails({ e, now }) {
       <Item label="Customer">{r.customerName}</Item>
       <Item label="Sale">{r.saleId}</Item>
       <Item label={r.kind === 'OPEN_BALANCE' ? 'Balance' : 'Installment'}>{r.kind === 'OPEN_BALANCE' ? 'Pay-later balance' : `${r.no} of ${r.count}`}</Item>
-      <Item label="Due date">{formatDate(r.dueDate)}{e.category === CAL.OVERDUE ? late(r.dueDate) : ''}</Item>
+      <Item label="Due date">{r.dueDate ? formatDate(r.dueDate) : 'No due date'}{e.category === CAL.OVERDUE ? late(r.dueDate) : ''}</Item>
+      {e.promise && <Item label="Promised to pay">{formatDate(e.promise.date)} · {formatMoney(e.promise.amountC)}{e.promise.status === 'MISSED' ? ' · missed' : ''}<span className="muted"> (promised {formatDate(e.promise.madeOn)})</span></Item>}
       <Item label="Amount due">{formatMoney(r.amountC)}</Item>
       <Item label="Paid so far">{formatMoney(r.paidC || 0)}</Item>
       <Item label="Still to pay"><strong>{formatMoney(remainingOf(r))}</strong></Item>
@@ -170,7 +171,9 @@ export function CalendarPage({ adapter, view: viewParam, monthParam }) {
   const error = [sales, deliveries, rows, restocks, custom].map((q) => q.error).find(Boolean);
 
   const saleMap = new Map([...(sales.rows || []), ...(deliveries.rows || [])].map((s) => [s.id, s]));
-  const events = buildEvents({ sales: [...saleMap.values()], rows: rows.rows || [], restocks: restocks.rows || [], custom: custom.rows || [] }, now)
+  // D-069: promised dates can fall in another month than the due date, so every open row is included (by id).
+  const rowMap = new Map([...(rows.rows || []), ...(overdueRows.rows || [])].map((r) => [r.id, r]));
+  const events = buildEvents({ sales: [...saleMap.values()], rows: [...rowMap.values()], restocks: restocks.rows || [], custom: custom.rows || [] }, now)
     .filter((e) => e.date >= from && e.date <= to);
   const byDate = eventsByDate(events, filters);
   const counts = Object.fromEntries(CAL_ORDER.map((c) => [c, events.filter((e) => e.category === c && e.date >= monthFrom && e.date <= monthTo).length]));

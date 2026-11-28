@@ -6,7 +6,7 @@ import { Link, navigate } from '../../app/router.jsx';
 import { useOnline } from '../../app/useOnline.js';
 import { useQuery, errorMessage, actorOf } from '../../data/useData.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
-import { ensureBatches } from '../../data/inventoryService.js';
+import { ensureBatches, ensureSkus } from '../../data/inventoryService.js';
 import { displayPrice, uncoveredH, batchesOf } from '../../domain/batches.js';
 import { today } from '../../domain/dates.js';
 import { formatQty } from '../../domain/quantity.js';
@@ -24,12 +24,25 @@ export function useItems(adapter) {
   const online = useOnline();
   const { rows, error } = useQuery(adapter, 'items', { orderBy: [['nameLower', 'asc']] }, 'items-by-name');
   const tried = React.useRef(false);
+  const triedSku = React.useRef(false);
+  React.useEffect(() => {
+    // D-067: items made before automatic SKUs get one.
+    if (!rows || triedSku.current || !online || !auth || !auth.user || !rows.some((i) => !i.sku)) return;
+    triedSku.current = true;
+    ensureSkus(adapter, actorOf(auth.user)).catch(() => {});
+  }, [rows, online]);
   React.useEffect(() => {
     if (!rows || tried.current || !online || !auth || !auth.user || !rows.some((i) => uncoveredH(i) > 0)) return;
     tried.current = true;
     ensureBatches(adapter, actorOf(auth.user), today()).catch(() => {});
   }, [rows, online]);
   return { items: rows, error };
+}
+
+/** D-067: { itemId: sku } for screens that show items from stored records (sale lines, movements, reports). */
+export function useSkus(adapter) {
+  const { rows } = useQuery(adapter, 'items', { orderBy: [['nameLower', 'asc']] }, 'items-by-name');
+  return React.useMemo(() => Object.fromEntries((rows || []).filter((i) => i.sku).map((i) => [i.id, i.sku])), [rows]);
 }
 
 /** Cash price cell: the oldest batch's price, with the next batch's price when it differs (D-052). */
@@ -59,16 +72,17 @@ export function ItemsPage({ adapter }) {
   const columns = [
     { key: 'name', header: 'Item', className: 'key-col', render: (i) => (
       <><Link to={`/items/${i.id}`}>{i.name}</Link><span className="cell-sub">{[i.variety, i.category].filter(Boolean).join(' · ') || '—'}</span></>) },
+    { key: 'sku', header: 'SKU', render: (i) => (i.sku ? <span className="sku">{i.sku}</span> : '—') },
     { key: 'unit', header: 'Unit', render: (i) => (i.unit === 'SACK' ? `Sack (${i.sackWeightKg} kg)` : 'Per kg') },
     { key: 'qty', header: 'In stock', align: 'right', render: (i) => formatQty(i.qtyH, i.unit) },
     { key: 'status', header: 'Status', render: (i) => <StockBadge item={i} /> },
     { key: 'min', header: 'Low-stock level', align: 'right', render: (i) => (i.minStockH ? formatQty(i.minStockH, i.unit) : '—') },
     { key: 'price', header: 'Cash price', align: 'right', render: (i) => <PriceCell item={i} /> },
-    { key: 'payday', header: 'Payday price', align: 'right', render: (i) => (Number.isInteger(i.installmentPriceC) ? formatMoney(i.installmentPriceC) : <span className="muted">Same</span>) },
+    { key: 'payday', header: 'Credit price', align: 'right', render: (i) => (Number.isInteger(i.installmentPriceC) ? formatMoney(i.installmentPriceC) : <span className="muted">Same</span>) },
     { key: 'cost', header: 'Batches', align: 'right', render: (i) => batchesOf(i).length || '—' },
     { key: 'value', header: 'Stock value', align: 'right', render: (i) => formatMoney(stockValueC(i)) },
   ];
-  const footer = ['Total', '', '', '', '', '', '', '', formatMoney(rows.reduce((s, i) => s + stockValueC(i), 0))];
+  const footer = ['Total', '', '', '', '', '', '', '', '', formatMoney(rows.reduce((s, i) => s + stockValueC(i), 0))];
 
   return (
     <div className="page stack">
