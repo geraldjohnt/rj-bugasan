@@ -118,3 +118,11 @@ See root CLAUDE.md "Release procedure".
 - `ensureBatches` (Items list hook) and `ensureSupplierCodes` (Suppliers page) are one-off fixes for old data, like `ensureWalkIn`.
 - E2E: `tests/e2e/batches.e2e.js`; the shared sample data now adds a newer NFA batch (`RJ-RS-SUP002-…`) and a walk-in sale with a Delivery fee, so sales lists show 7 active sample sales and restocks 6.
 - D-057: `SampleDataButton` is private to `src/features/system/SampleData.jsx` (only `SampleDataPanel` is exported, used by Settings → System). It verifies the password with `auth.service.unlock(password)` before calling `loadSampleData`. E2E files use a `loadSample()` helper (Settings → System, password `demo1234`).
+
+## Phase 15 (2026-11-28)
+- `domain/promises.js` holds all promise rules; `paidOnTime` (allocation.js) is promise-aware and `reliabilityDelta` uses it, so record/void payment keep the customer's counters right without extra code.
+- `recordPayment` judges "due" on the payment date (`rowsNeedingPromise(rows, input.date)`), not today — found when back-dated sample payments failed. Callers that pay part of a due row must pass `promiseDate` (sample data, tests).
+- The calendar now feeds `buildEvents` every open row (month rows + the `collections-open` query, merged by id) because a promised date can fall in another month than the due date.
+- `useSkus(adapter)` (ItemsPage.jsx) gives `{ itemId: sku }` for screens that show stored records (sale detail, receipts, movements, stock count). Reports look up `d.items` (items are loaded for the profit and movements reports too).
+- Item expenses live on the receipt line (`expenseC`, `expenseId`), not in `receipt.expenses`, so the shared lines keep their own editor and split; `receiptExpensesC` adds both.
+- E2E: `tests/e2e/phase15.e2e.js` (registered in `test:e2e`, `verify:release` and CLAUDE.md).

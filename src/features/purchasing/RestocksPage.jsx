@@ -109,7 +109,7 @@ export function RestockFormPage({ adapter, id, supplierId: presetSupplier }) {
   const supplierOptions = (suppliers || []).filter((s) => s.status === 'ACTIVE' || s.id === form.supplierId)
     .map((s) => ({ value: s.id, label: s.name, detail: [s.contactPerson, s.contactNumber].filter(Boolean).join(' · ') }));
   const itemOptions = (items || []).filter((i) => i.status === 'ACTIVE' || lines.some((l) => l.itemId === i.id))
-    .map((i) => ({ value: i.id, label: i.name, detail: `${formatQty(i.qtyH, i.unit)} in stock · cost ${formatMoney(i.costC)}/${unitLabel(i.unit, false)}` }));
+    .map((i) => ({ value: i.id, label: i.name, detail: `${i.sku ? `${i.sku} · ` : ''}${formatQty(i.qtyH, i.unit)} in stock · cost ${formatMoney(i.costC)}/${unitLabel(i.unit, false)}` }));
 
   async function submit(e) {
     e.preventDefault();
@@ -147,7 +147,7 @@ export function RestockFormPage({ adapter, id, supplierId: presetSupplier }) {
               const le = lineErrs[idx] || {};
               return (
                 <div key={l.key} className="sale-line">
-                  <Combobox label={idx === 0 ? 'Item' : undefined} inputLabel={`Item ${idx + 1}`} className="sale-line-item" options={itemOptions} value={l.itemId} onChange={(v) => pickItem(l.key, v)} placeholder="Search rice item" error={le.itemId} />
+                  <Combobox label={idx === 0 ? 'Item' : undefined} inputLabel={`Item ${idx + 1}`} className="sale-line-item" options={itemOptions} value={l.itemId} onChange={(v) => pickItem(l.key, v)} placeholder="Search rice item" error={le.itemId} help={it && it.sku ? <span className="sku">{it.sku}</span> : null} />
                   <TextField label={idx === 0 ? 'Quantity' : undefined} aria-label={`Quantity ${idx + 1}`} className="sale-line-qty" value={l.qty} onChange={(e) => setLine(l.key, { qty: e.target.value })}
                     inputMode="decimal" suffix={it ? unitLabel(it.unit) : ''} inputClassName="num" disabled={!it} error={le.qty} help={l.received ? `${formatQty(l.received, it ? it.unit : 'KG')} received` : null} />
                   <TextField label={idx === 0 ? 'Unit cost' : undefined} aria-label={`Unit cost ${idx + 1}`} className="sale-line-price" value={l.unitCost} onChange={(e) => setLine(l.key, { unitCost: e.target.value })}

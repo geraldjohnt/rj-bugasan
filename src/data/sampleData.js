@@ -10,7 +10,7 @@ import { createItem, adjustStock, openSack } from './inventoryService.js';
 import { validateCustomerForm, validateContactForm } from '../domain/customers.js';
 import { createCustomer, saveContact, ensureWalkIn } from './customerService.js';
 import { createSale, cancelSale, updateFulfillment } from './salesService.js';
-import { recordPayment, voidPayment } from './paymentService.js';
+import { recordPayment, voidPayment, addPromise } from './paymentService.js';
 import { DEFAULT_SALES_SETTINGS } from '../domain/sales.js';
 import { validateSupplierForm, validateRestockForm, validateExpenseForm } from '../domain/purchasing.js';
 import { validateEventForm } from '../domain/calendar.js';
@@ -117,7 +117,7 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
   const d3 = addDays(asOf, -20);
   const s3 = await sell({ saleDate: d3, customerId: cid[CUSTOMERS[2].name], lines: [await line('Jasmine 25kg Sack', 1, 'INSTALLMENT'), await line('Malagkit per KG', 2, 'INSTALLMENT')],
     terms: 'INSTALLMENT', plan: { count: 4, frequency: 'SEMI_MONTHLY', downPaymentC: 0 } });
-  await recordPayment(adapter, actor, { saleId: s3.saleId, date: addDays(asOf, -2), amountC: P(300), method: 'EWALLET', reference: 'GCash 1029384756' }, asOf);
+  await recordPayment(adapter, actor, { saleId: s3.saleId, date: addDays(asOf, -2), amountC: P(300), method: 'EWALLET', reference: 'GCash 1029384756', promiseDate: addDays(asOf, 2) }, asOf);
   sales++;
 
   // 4. Reseller, paid in full by bank transfer, discount, pending delivery.
@@ -137,10 +137,14 @@ async function loadCustomersAndSales(adapter, actor, asOf, itemIds) {
   await updateFulfillment(adapter, actor, s1.saleId, { fulfillment: 'DELIVERED', deliveryDate: addDays(d1, 1), notes: 'Deliver to the store.' });
 
   // Phase 11 — opening balances carried over from the Excel records: one in 2 installments (first overdue), one plain balance.
-  await createOpeningBalance(adapter, actor, { customerId: cid[CUSTOMERS[4].name], originalDate: addDays(asOf, -120), description: '4 sacks Sinandomeng (Excel ledger)',
+  const ob1 = await createOpeningBalance(adapter, actor, { customerId: cid[CUSTOMERS[4].name], originalDate: addDays(asOf, -120), description: '4 sacks Sinandomeng (Excel ledger)',
     rows: [{ dueDate: addDays(asOf, -15), amount: '2600' }, { dueDate: addDays(asOf, 15), amount: '2600' }] }, asOf);
+  // Phase 15 (D-068, D-069): paid part of the overdue first installment and promised the rest 5 days ago (missed),
+  // then promised again for 2 days from now — the calendar shows the new promise.
+  await recordPayment(adapter, actor, { saleId: ob1.saleId, date: addDays(asOf, -10), amountC: P(1000), method: 'CASH', promiseDate: addDays(asOf, -5) }, asOf);
+  await addPromise(adapter, actor, ob1.saleId, { rowId: `${ob1.saleId}-1`, date: addDays(asOf, 2) }, asOf);
   const ob2 = await createOpeningBalance(adapter, actor, { customerId: cid[CUSTOMERS[1].name], originalDate: addDays(asOf, -100), description: 'Old balance from notebook', rows: [{ dueDate: '', amount: '1250' }] }, asOf);
-  await recordPayment(adapter, actor, { saleId: ob2.saleId, date: addDays(asOf, -7), amountC: P(500), method: 'CASH' }, asOf);
+  await recordPayment(adapter, actor, { saleId: ob2.saleId, date: addDays(asOf, -7), amountC: P(500), method: 'CASH', promiseDate: addDays(asOf, 3) }, asOf);
   return { customers, sales, openingBalances: 2 };
 }
 
@@ -176,7 +180,7 @@ async function loadPurchasing(adapter, actor, asOf, itemIds) {
     return createRestock(adapter, actor, data);
   };
   const receive = (id, date, lines, expenses = []) => receiveRestock(adapter, actor, id, {
-    date, expenses: expenses.map(([name, amount]) => ({ name, amountC: P(amount) })), lines: lines.map(([name, qty, cost, updateCost = true, price = null]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), priceC: price === null ? null : P(price), updateCost })),
+    date, expenses: expenses.map(([name, amount]) => ({ name, amountC: P(amount) })), lines: lines.map(([name, qty, cost, updateCost = true, price = null, expense = 0, credit = null]) => ({ itemId: itemIds[name], qtyH: Math.round(qty * 100), unitCostC: P(cost), priceC: price === null ? null : P(price), updateCost, expenseC: P(expense), creditC: credit === null ? null : P(credit) })),
   });
   let restocks = 0;
 
@@ -197,7 +201,8 @@ async function loadPurchasing(adapter, actor, asOf, itemIds) {
   });
   // 3. Partly received; the rest is expected in a few days.
   const r3 = await order('Golden Grains Trading', addDays(asOf, -6), addDays(asOf, 3), [['Dinorado 50kg Sack', 12, 2900], ['Malagkit per KG', 25, 65]], 'Rest of the Dinorado follows.');
-  await receive(r3, addDays(asOf, -4), [['Dinorado 50kg Sack', 5, 2900], ['Malagkit per KG', 25, 65]]);
+  // Phase 15 (D-065, D-066): unloading the Dinorado cost ₱250 (its own expense); Malagkit's credit price goes up to ₱88.
+  await receive(r3, addDays(asOf, -4), [['Dinorado 50kg Sack', 5, 2900, true, null, 250], ['Malagkit per KG', 25, 65, true, null, 0, 88]]);
   restocks++;
   // 4. Ordered, expected next week. 5. Cancelled.
   await order('Bayanihan Farmers Coop', addDays(asOf, -1), addDays(asOf, 6), [['Brown Rice 25kg Sack', 5, 1650], ['Sinandomeng 50kg Sack', 10, 2300]]);

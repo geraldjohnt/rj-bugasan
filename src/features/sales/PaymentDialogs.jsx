@@ -7,12 +7,13 @@ import { useToast } from '../../components/Toast.jsx';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { useOnline } from '../../app/useOnline.js';
 import { useDoc, useQuery, actorOf, errorMessage } from '../../data/useData.js';
-import { recordPayment, voidPayment, reviseSchedule } from '../../data/paymentService.js';
+import { recordPayment, voidPayment, reviseSchedule, addPromise } from '../../data/paymentService.js';
 import { formatMoney, parseMoney, centavosToPlain, sum } from '../../domain/money.js';
 import { formatDate, today } from '../../domain/dates.js';
 import { allocatePayment, outstandingOf, remainingOf } from '../../domain/allocation.js';
 import { METHODS, METHOD_LABELS } from '../../domain/sales.js';
 import { byNo } from './SaleTables.jsx';
+import { rowsNeedingPromise, promiseAfterNextDue, checkPromiseDate } from '../../domain/promises.js';
 
 export const METHOD_OPTIONS = Object.keys(METHODS).map((m) => ({ value: m, label: METHOD_LABELS[m] }));
 
@@ -28,7 +29,7 @@ export function RecordPaymentDialog({ open, onClose, adapter, saleId, onRecorded
   const toast = useToast();
   const online = useOnline();
   const { sale, rows } = useSaleRows(adapter, open ? saleId : null);
-  const [form, setForm] = React.useState({ amount: '', date: today(), method: 'CASH', reference: '', note: '' });
+  const [form, setForm] = React.useState({ amount: '', date: today(), method: 'CASH', reference: '', note: '', promiseDate: '' });
   const [errors, setErrors] = React.useState({});
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState(null);
@@ -36,16 +37,19 @@ export function RecordPaymentDialog({ open, onClose, adapter, saleId, onRecorded
   const balanceC = ready ? outstandingOf(rows) : 0;
   const nextDue = ready ? rows.find((r) => remainingOf(r) > 0) : null;
 
-  React.useEffect(() => { if (open) { setForm({ amount: '', date: today(), method: 'CASH', reference: '', note: '' }); setErrors({}); setError(null); } }, [open, saleId]);
+  React.useEffect(() => { if (open) { setForm({ amount: '', date: today(), method: 'CASH', reference: '', note: '', promiseDate: '' }); setErrors({}); setError(null); } }, [open, saleId]);
   React.useEffect(() => { if (open && nextDue && form.amount === '') setForm((f) => ({ ...f, amount: centavosToPlain(remainingOf(nextDue)) })); }, [open, !!nextDue]);
   const set = (k) => (e) => { const v = e && e.target ? e.target.value : e; setForm((f) => ({ ...f, [k]: v })); setErrors((x) => ({ ...x, [k]: undefined })); };
 
-  let amountC = null, amountErr = null, preview = null, changeC = 0;
+  let amountC = null, amountErr = null, preview = null, changeC = 0, needing = [], after = null;
   try { amountC = parseMoney(form.amount); } catch (e) { amountErr = e.message; }
   if (ready && amountC > 0) {
     if (amountC > balanceC) changeC = amountC - balanceC;
-    else { try { preview = allocatePayment(rows, amountC, form.date).allocations; } catch (e) { amountErr = e.message; } }
+    else { try { const a = allocatePayment(rows, amountC, form.date); preview = a.allocations; after = a.rows; needing = form.date ? rowsNeedingPromise(a.rows, form.date) : []; } catch (e) { amountErr = e.message; } }
   }
+  // D-068: part of what is due stays unpaid → the promised date for the rest is required.
+  const restC = needing.reduce((t, r) => t + remainingOf(r), 0);
+  const laterThanNext = needing.length && form.promiseDate ? promiseAfterNextDue(after, needing, form.promiseDate) : null;
 
   async function submit(e) {
     e.preventDefault();
@@ -54,14 +58,15 @@ export function RecordPaymentDialog({ open, onClose, adapter, saleId, onRecorded
     else if (!amountC || amountC <= 0) errs.amount = 'Enter the amount received.';
     else if (changeC) errs.amount = `More than the balance of ${formatMoney(balanceC)}. Record ${formatMoney(balanceC)} and give ${formatMoney(changeC)} back as change.`;
     if (!form.date) errs.date = 'Enter a date.';
+    if (needing.length) { try { checkPromiseDate(form.promiseDate, form.date, 'Cannot be before the payment date.'); } catch (x) { errs.promiseDate = x.message; } }
     setErrors(errs); if (Object.keys(errs).length) return;
     setBusy(true); setError(null);
     try {
-      const r = await recordPayment(adapter, actorOf(auth.user), { saleId, date: form.date, amountC, method: form.method, reference: form.reference, note: form.note });
-      toast({ message: `Payment ${r.paymentId} recorded: ${formatMoney(amountC)}.` + (r.balanceC ? ` Balance ${formatMoney(r.balanceC)}.` : ' Fully paid.') });
+      const r = await recordPayment(adapter, actorOf(auth.user), { saleId, date: form.date, amountC, method: form.method, reference: form.reference, note: form.note, promiseDate: needing.length ? form.promiseDate : null });
+      toast({ message: `Payment ${r.paymentId} recorded: ${formatMoney(amountC)}.` + (r.balanceC ? ` Balance ${formatMoney(r.balanceC)}.` : ' Fully paid.') + (r.promised ? ` Promised to pay the rest on ${formatDate(r.promised)}.` : '') });
       onRecorded && onRecorded(r.paymentId);
       onClose();
-    } catch (err) { setError(errorMessage(err)); }
+    } catch (err) { if (err.details && err.details.field === 'promiseDate') setErrors({ promiseDate: err.message }); else setError(errorMessage(err)); }
     setBusy(false);
   }
 
@@ -92,6 +97,14 @@ export function RecordPaymentDialog({ open, onClose, adapter, saleId, onRecorded
               <div className="row muted"><span>Applied to (oldest first)</span></div>
               {preview.map((a) => <div className="row" key={a.installmentId}><span>{rowLabel(a.installmentId)}</span><strong>{formatMoney(a.amountC)}</strong></div>)}
               <div className="row"><span>Balance after</span><strong>{formatMoney(balanceC - amountC)}</strong></div>
+            </div>
+          )}
+          {needing.length > 0 && (
+            <div className="promise-box" aria-live="polite">
+              <p><strong>{formatMoney(restC)}</strong> of {needing.map((r) => rowLabel(r.id).toLowerCase()).join(', ')} is still unpaid. When did the customer promise to pay the rest?</p>
+              <TextField label="Promised date" type="date" required value={form.promiseDate} onChange={set('promiseDate')} error={errors.promiseDate}
+                help="Added to the calendar and Collections. The due dates do not change." />
+              {laterThanNext && <Banner tone="warning">This is after the next due date ({formatDate(laterThanNext.dueDate)}, installment {laterThanNext.no}).</Banner>}
             </div>
           )}
         </form>
@@ -194,6 +207,39 @@ export function RescheduleDialog({ open, onClose, adapter, sale, rows }) {
           <div className="row"><span>New total</span><strong className={after !== before ? 'delta-out' : ''}>{formatMoney(after)}{after !== before && ` (${after > before ? '+' : '−'}${formatMoney(Math.abs(after - before))})`}</strong></div>
         </div>
         <TextAreaField label="Reason" required value={reason} onChange={(e) => { setReason(e.target.value); setErr(null); }} rows={2} placeholder="e.g. Customer asked to move to end of month" />
+      </form>
+    </Dialog>
+  );
+}
+
+/** D-068/D-069: add a promised date to one open row by hand (e.g. after a missed promise). */
+export function AddPromiseDialog({ open, onClose, adapter, sale, row }) {
+  const auth = useAuth();
+  const toast = useToast();
+  const online = useOnline();
+  const [date, setDate] = React.useState('');
+  const [err, setErr] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+  React.useEffect(() => { if (open) { setDate(''); setErr(null); } }, [open]);
+  async function submit(e) {
+    e.preventDefault();
+    try { checkPromiseDate(date, today()); } catch (x) { setErr(x.message); return; }
+    setBusy(true); setErr(null);
+    try {
+      const r = await addPromise(adapter, actorOf(auth.user), sale.id, { rowId: row.id, date });
+      toast({ message: `Promise added: ${formatMoney(r.amountC)} on ${formatDate(r.date)}.` });
+      onClose();
+    } catch (x) { setErr(errorMessage(x)); }
+    setBusy(false);
+  }
+  if (!row) return null;
+  const label = row.kind === 'OPEN_BALANCE' ? 'the balance' : `installment ${row.no}`;
+  return (
+    <Dialog open={open} onClose={onClose} size="sm" title="Add promised date"
+      footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" type="submit" form="promise-form" loading={busy} disabled={!online}>Add promise</Button></>}>
+      <form id="promise-form" onSubmit={submit} noValidate className="form-stack">
+        <p className="muted">{sale.customerName} promises to pay the rest of {label} ({formatMoney(remainingOf(row))}){row.dueDate ? `, due ${formatDate(row.dueDate)}` : ''}. The due date does not change.</p>
+        <TextField label="Promised date" type="date" required value={date} onChange={(e) => { setDate(e.target.value); setErr(null); }} error={err} data-autofocus />
       </form>
     </Dialog>
   );

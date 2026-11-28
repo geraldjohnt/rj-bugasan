@@ -103,10 +103,10 @@ export function ItemFormDialog({ open, onClose, adapter, item, items, onSaved })
             : <SelectField label="Linked sack item" value={form.linkedSackItemId} onChange={set('linkedSackItemId')} error={errors.linkedSackItemId}
                 help="Lets you open sacks of that item into this one."
                 options={[{ value: '', label: 'Not linked' }, ...sackOptions.map((s) => ({ value: s.id, label: `${s.name} (${s.sackWeightKg} kg)` }))]} />}
-          <TextField label="SKU / code" value={form.sku} onChange={set('sku')} />
+          <TextField label="SKU" value={form.sku} onChange={set('sku')} error={errors.sku} help={item ? 'Leave blank to keep the current SKU.' : 'Leave blank for an automatic SKU (e.g. RJ-DIN-001).'} />
           <TextField label={`Cash price per ${form.unit === UNITS.SACK ? 'sack' : 'kg'} (default for new batches)`} required value={form.priceC} onChange={set('priceC')} error={errors.priceC} inputMode="decimal" prefix="₱" inputClassName="num"
             help="Pre-fills the price of new batches. Each batch keeps its own cash price (change it under Batches)." />
-          <TextField label={`Payday price per ${form.unit === UNITS.SACK ? 'sack' : 'kg'}`} value={form.installmentPriceC} onChange={set('installmentPriceC')} error={errors.installmentPriceC} inputMode="decimal" prefix="₱" inputClassName="num"
+          <TextField label={`Credit price per ${form.unit === UNITS.SACK ? 'sack' : 'kg'}`} value={form.installmentPriceC} onChange={set('installmentPriceC')} error={errors.installmentPriceC} inputMode="decimal" prefix="₱" inputClassName="num"
             help="Used for open-balance and installment sales. Leave empty to use the cash price." />
           <TextField label={`Cost per ${form.unit === UNITS.SACK ? 'sack' : 'kg'} (default for new batches)`} required value={form.costC} onChange={set('costC')} error={errors.costC} inputMode="decimal" prefix="₱" inputClassName="num"
             help="Pre-fills the cost of new batches. Profit uses each batch's own cost." />
@@ -122,7 +122,7 @@ export function ItemFormDialog({ open, onClose, adapter, item, items, onSaved })
             Also change the cash price of the {batchesOf(item).length} batch(es) in stock to {formatMoney(preview.priceC)}</label>)}
         {priceBelowCost(preview) && <Banner tone="warning">The cash price is below the cost. Every cash sale of this item would lose money.</Banner>}
         {Number.isInteger(preview.installmentPriceC) && Number.isInteger(preview.priceC) && preview.installmentPriceC < preview.priceC
-          && <Banner tone="warning">The payday price is lower than the cash price. Customers who pay later would pay less.</Banner>}
+          && <Banner tone="warning">The credit price is lower than the cash price. Customers who pay later would pay less.</Banner>}
       </form>
     </Dialog>
   );

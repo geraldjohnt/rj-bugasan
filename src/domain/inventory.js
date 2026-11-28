@@ -57,6 +57,22 @@ export function defaultKgCostC(sackCostC, sackWeightKg) {
   return mulDivRound(sackCostC, 100, sackWeightH(sackWeightKg));
 }
 
+/* ------------------------------------------------------------------ SKU (D-067) */
+
+export const SKU_PREFIX = 'RJ-';
+export const SKU_PATTERN = /^[A-Z0-9][A-Z0-9._/-]*$/;
+export const normalizeSku = (v) => String(v ?? '').trim().toUpperCase();
+/** CODE = first 3 letters (A–Z) of the variety, or of the name when there is no variety; padded with X. */
+export function skuCode(item) {
+  const letters = (s) => String(s || '').toUpperCase().normalize('NFD').replace(/[^A-Z]/g, '');
+  const src = letters(item && item.variety) || letters(item && item.name);
+  return (src + 'XXX').slice(0, 3);
+}
+export const formatSku = (code, n) => `${SKU_PREFIX}${code}-${String(n).padStart(3, '0')}`;
+export const skuCounterId = (code) => `sku-${code}`;
+/** Text to search an item by: name, variety, category and SKU. */
+export const itemSearchText = (i) => [i.name, i.variety, i.category, i.sku].filter(Boolean).join(' ');
+
 /* ------------------------------------------------------------------ item form */
 
 const trim = (v) => String(v ?? '').trim();
@@ -79,7 +95,10 @@ export function validateItemForm(form, { isNew = true, existingNames = new Set()
 
   data.variety = trim(form.variety);
   data.category = trim(form.category);
-  data.sku = trim(form.sku);
+  // D-067: blank = the app gives one (RJ-<CODE>-NNN); a typed SKU is kept (upper-case) and must be unique.
+  data.sku = normalizeSku(form.sku);
+  if (data.sku.length > 30) errors.sku = 'Use 30 characters or fewer.';
+  else if (data.sku && !SKU_PATTERN.test(data.sku)) errors.sku = 'Use letters, digits and dashes only.';
   data.description = trim(form.description);
   data.unit = unit;
 

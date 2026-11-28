@@ -1,11 +1,12 @@
 /* Shared sale / payment / schedule tables and badges (Phases 5–7). */
 import { DataTable, Badge } from '../../components/Feedback.jsx';
-import { IconButton } from '../../components/Button.jsx';
+import { IconButton, Button } from '../../components/Button.jsx';
 import { Link } from '../../app/router.jsx';
 import { formatMoney } from '../../domain/money.js';
 import { formatDate, daysBetween } from '../../domain/dates.js';
 import { isOverdue, remainingOf } from '../../domain/allocation.js';
 import { METHOD_LABELS, FULFILLMENT_LABELS, PAYMENT_STATUS_LABELS, TERMS_LABELS } from '../../domain/sales.js';
+import { promiseHistory, openPromise, promisesOf, PROMISE_LABELS } from '../../domain/promises.js';
 
 export { ReliabilityBadge } from '../customers/CustomerBadges.jsx';
 
@@ -60,7 +61,16 @@ export function PaymentsTable({ rows, showSale = true, showCustomer = false, onA
   return <DataTable caption="Payments" columns={columns} rows={rows} empty={empty} rowClassName={(p) => (p.status === 'VOIDED' ? 'is-muted' : '')} />;
 }
 
-export function ScheduleTable({ rows, today, showSale = false, showCustomer = false, empty }) {
+/** D-069: a row's promises, newest last: "Promised Nov 27 · ₱750.00", "Missed Nov 26", "Kept Nov 27". */
+export function PromiseLines({ row, today }) {
+  const list = promiseHistory(row, today);
+  if (!list.length) return null;
+  return <>{list.map((p, i) => (
+    <span key={i} className={`promise-line is-${p.status.toLowerCase()}`}>{PROMISE_LABELS[p.status]} {formatDate(p.date)}{p.status === 'OPEN' ? ` · ${formatMoney(Math.min(p.amountC, remainingOf(row)))}` : ''}</span>
+  ))}</>;
+}
+
+export function ScheduleTable({ rows, today, showSale = false, showCustomer = false, empty, onAddPromise }) {
   const columns = [
     { key: 'no', header: '#', render: (r) => (r.kind === 'OPEN_BALANCE' ? 'Balance' : `${r.no} of ${r.count}`) },
     ...(showSale ? [{ key: 'sale', header: 'Sale', render: (r) => <Link to={`/sales/${r.saleId}`}>{r.saleId}</Link> }] : []),
@@ -70,6 +80,12 @@ export function ScheduleTable({ rows, today, showSale = false, showCustomer = fa
     { key: 'paid', header: 'Paid', align: 'right', render: (r) => formatMoney(r.paidC || 0) },
     { key: 'remaining', header: 'Remaining', align: 'right', render: (r) => (r.status === 'CANCELLED' ? '—' : <strong>{formatMoney(remainingOf(r))}</strong>) },
     { key: 'status', header: 'Status', render: (r) => <><RowStatusBadge row={r} today={today} />{r.paidDate && <span className="cell-sub">Paid {formatDate(r.paidDate)}</span>}</> },
+    { key: 'promise', header: 'Promised', className: 'wrap', render: (r) => <>
+      <PromiseLines row={r} today={today} />
+      {onAddPromise && (r.status === 'PENDING' || r.status === 'PARTIAL') && !openPromise(r, today)
+        && <Button size="sm" variant="ghost" icon="calendar" onClick={() => onAddPromise(r)}>Add promise</Button>}
+      {!promisesOf(r).length && !onAddPromise && <span className="muted">—</span>}
+    </> },
   ];
   return <DataTable caption="Payment schedule" columns={columns} rows={rows} empty={empty} rowClassName={(r) => (r.status === 'CANCELLED' ? 'is-muted' : '')} />;
 }

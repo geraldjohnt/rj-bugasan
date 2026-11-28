@@ -45,7 +45,7 @@ test('owner: opening balance and a payment on it pass the rules', async () => {
   const custId = await createCustomer(a, actor, validateCustomerForm({ name: 'Aling Nena', type: 'Store', contactNumber: '0917 123 4567' }).data);
   const r = await createOpeningBalance(a, actor, ob(custId), TODAY);
   assert.equal(r.saleId, 'OB-2026-00001');
-  await recordPayment(a, actor, { saleId: r.saleId, date: TODAY, amountC: 100000, method: 'CASH' }, TODAY);
+  await recordPayment(a, actor, { saleId: r.saleId, date: TODAY, amountC: 100000, method: 'CASH', promiseDate: TODAY }, TODAY);
   const s = await a.get('sales', r.saleId);
   assert.equal(s.balanceC, 200000);
 });

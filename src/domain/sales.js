@@ -94,7 +94,7 @@ export function planSale(input, { itemsById, customer, settings = DEFAULT_SALES_
     const item = itemsById[l.itemId];
     const listPriceC = listPrices[i];
     return {
-      itemId: item.id, itemName: item.name, unit: item.unit, sackWeightKg: item.unit === UNITS.SACK ? item.sackWeightKg : null,
+      itemId: item.id, itemName: item.name, ...(item.sku ? { sku: item.sku } : {}), unit: item.unit, sackWeightKg: item.unit === UNITS.SACK ? item.sackWeightKg : null,
       qtyH: l.qtyH, listPriceC, unitPriceC: l.unitPriceC, priceOverridden: l.unitPriceC !== listPriceC,
       unitCostC: l.unitCostC, costC: l.costC, lineTotalC: l.lineTotalC,
       batches: taken[i], batchPicked: lines[i].batchId || null,

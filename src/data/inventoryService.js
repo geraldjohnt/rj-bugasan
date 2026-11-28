@@ -7,7 +7,7 @@ import { DomainError } from '../domain/errors.js';
 import { UNITS, formatQty } from '../domain/quantity.js';
 import { formatMoney } from '../domain/money.js';
 import {
-  MOVEMENT_TYPES as MT, MAX_TX_WRITES, applyDelta, validateAdjustment, planOpenSack, planCount,
+  MOVEMENT_TYPES as MT, MAX_TX_WRITES, applyDelta, validateAdjustment, planOpenSack, planCount, normalizeSku, skuCode, formatSku, skuCounterId,
 } from '../domain/inventory.js';
 import {
   BATCH_SOURCE, OLD_CODE, batchIdFor, batchCounterId, batchesOf, uncoveredH, addBatch, takeFromBatches, removeStock, addFoundStock,
@@ -57,6 +57,32 @@ export async function ensureBatches(adapter, actor, date) {
   });
 }
 
+/** D-067: give an SKU to every item that has none (oldest first). Run when item lists load online. */
+export async function ensureSkus(adapter, actor) {
+  assertOnline();
+  const all = await adapter.query('items', {});
+  const key = (i) => String(i.createdAt?.seconds ?? i.createdAt ?? '');
+  const todo = all.filter((i) => !i.sku).sort((a, b) => key(a).localeCompare(key(b)) || a.id.localeCompare(b.id));
+  if (!todo.length) return { changed: 0 };
+  const used = new Set(all.filter((i) => i.sku).map((i) => normalizeSku(i.sku)));
+  return adapter.runTransaction(async (tx) => {
+    const fresh = [];
+    for (const i of todo.slice(0, 200)) { const d = await tx.get('items', i.id); if (d.exists && !d.data.sku) fresh.push({ id: i.id, ...d.data }); }
+    if (!fresh.length) return { changed: 0 };
+    const pending = {};
+    const given = [];
+    let last = null;
+    for (const i of fresh) { last = await reserveSku(tx, i, used, pending); given.push({ item: i, sku: last.sku }); }
+    for (const c of Object.keys(pending)) tx.set('counters', c, { next: pending[c].next });
+    for (const g of given) tx.update('items', g.item.id, { sku: g.sku, ...stamp(adapter, actor) });
+    logWrite(tx, adapter, actor, {
+      action: 'ITEM_SKUS', entityType: 'item', entityId: given[0].item.id,
+      summary: `Gave SKUs to ${given.length} item(s): ${given.map((g) => `${g.item.name} ${g.sku}`).join(', ')}`,
+    });
+    return { changed: given.length };
+  });
+}
+
 /**
  * Batch id for stock that did not come with a restock receipt (D-051): from the supplier's counter when a supplier is
  * known (and has a code), otherwise from the OLD counter. Reads must run before any write of the transaction.
@@ -78,6 +104,31 @@ async function readItem(tx, id) {
   const s = await tx.get('items', id);
   if (!s.exists) throw new DomainError('ITEM_MISSING', 'This item no longer exists.');
   return { id, ...s.data };
+}
+
+/** D-067: SKUs are unique (case-insensitive). Returns the set of SKUs in use by other items. */
+async function skusInUse(adapter, selfId = null) {
+  const all = await adapter.query('items', {});
+  return new Set(all.filter((i) => i.id !== selfId && i.sku).map((i) => normalizeSku(i.sku)));
+}
+function assertSkuFree(used, sku) {
+  if (sku && used.has(normalizeSku(sku))) throw new DomainError('DUPLICATE_SKU', `Another item already has SKU ${sku}.`, { field: 'sku' });
+}
+/**
+ * Next free SKU for an item (D-067): RJ-<CODE>-NNN from counter sku-<CODE>, skipping numbers already typed on
+ * other items. Reads before writes; call commit() in the write phase. used: Set of SKUs in use (updated on commit).
+ */
+export async function reserveSku(tx, item, used, pending = {}) {
+  const code = skuCode(item);
+  const counter = skuCounterId(code);
+  if (!(counter in pending)) pending[counter] = { start: nextOf(await tx.get('counters', counter)), next: null };
+  const p = pending[counter];
+  let seq = p.next ?? p.start;
+  while (used.has(formatSku(code, seq))) seq++;
+  const sku = formatSku(code, seq);
+  used.add(sku);
+  p.next = seq + 1;
+  return { sku, commit: () => tx.set('counters', counter, { next: p.next }) };
 }
 
 async function assertNameFree(adapter, nameLower, selfId = null) {
@@ -124,17 +175,20 @@ function assertLinkableSack(sack, kgItemId) {
 export async function createItem(adapter, actor, data) {
   assertOnline();
   await assertNameFree(adapter, data.nameLower);
+  const used = await skusInUse(adapter);
+  assertSkuFree(used, data.sku);
   const id = adapter.newId();
   return adapter.runTransaction(async (tx) => {
     const sack = data.unit === UNITS.KG && data.linkedSackItemId ? await readItem(tx, data.linkedSackItemId) : null;
     if (sack) assertLinkableSack(sack, id);
     const batchNo = data.openingQtyH > 0 ? await reserveBatchId(tx) : null;
+    const skuNo = data.sku ? null : await reserveSku(tx, data, new Set(used));
     const item = {
       name: data.name, nameLower: data.nameLower, variety: data.variety, category: data.category, unit: data.unit,
       sackWeightKg: data.unit === UNITS.SACK ? data.sackWeightKg : null,
       linkedSackItemId: data.unit === UNITS.KG ? (data.linkedSackItemId || null) : null,
       linkedKgItemId: null,
-      sku: data.sku, description: data.description,
+      sku: data.sku || skuNo.sku, description: data.description,
       qtyH: 0, priceC: data.priceC, installmentPriceC: Number.isInteger(data.installmentPriceC) ? data.installmentPriceC : null, costC: data.costC, minStockH: data.minStockH,
       supplierId: null, status: 'ACTIVE', batches: [],
       createdAt: adapter.serverTime(), createdBy: actor.uid, ...stamp(adapter, actor),
@@ -147,11 +201,12 @@ export async function createItem(adapter, actor, data) {
       item.qtyH = data.openingQtyH;
       item.batches = b.batches;
     }
+    if (skuNo) skuNo.commit();
     tx.set('items', id, item);
     if (sack) tx.update('items', sack.id, { linkedKgItemId: id, ...stamp(adapter, actor) });
     logWrite(tx, adapter, actor, {
       action: 'ITEM_CREATE', entityType: 'item', entityId: id,
-      summary: `Added item ${item.name}` + (item.qtyH ? ` with opening stock ${formatQty(item.qtyH, item.unit)}` : ''),
+      summary: `Added item ${item.name} (${item.sku})` + (item.qtyH ? ` with opening stock ${formatQty(item.qtyH, item.unit)}` : ''),
     });
     return id;
   });
@@ -164,8 +219,13 @@ const EDITABLE = ['name', 'nameLower', 'variety', 'category', 'sku', 'descriptio
 export async function updateItem(adapter, actor, id, data, { applyPriceToBatches = false } = {}) {
   assertOnline();
   await assertNameFree(adapter, data.nameLower, id);
+  const used = await skusInUse(adapter, id);
+  if (data.sku !== undefined) assertSkuFree(used, data.sku);
   return adapter.runTransaction(async (tx) => {
     const item = await readItem(tx, id);
+    // D-067: a blank SKU keeps the item's SKU; an item without one gets an automatic one.
+    const skuNo = data.sku === '' && !item.sku ? await reserveSku(tx, { ...item, ...data }, new Set(used)) : null;
+    if (data.sku === '') data = { ...data, sku: skuNo ? skuNo.sku : item.sku };
     const newLink = item.unit === UNITS.KG ? (data.linkedSackItemId || null) : null;
     const oldLink = item.linkedSackItemId || null;
     const oldSack = oldLink && oldLink !== newLink ? await readItem(tx, oldLink).catch(() => null) : null;
@@ -185,6 +245,7 @@ export async function updateItem(adapter, actor, id, data, { applyPriceToBatches
     if (!Object.keys(patch).length) return { changed: false };
     const repriced = applyPriceToBatches && 'priceC' in patch ? batchesOf(item).filter((b) => b.priceC !== patch.priceC).length : 0;
     if (repriced) patch.batches = batchesOf(item).map((b) => ({ ...b, priceC: patch.priceC }));
+    if (skuNo && patch.sku === skuNo.sku) skuNo.commit();
     tx.update('items', id, { ...patch, ...stamp(adapter, actor) });
     if (oldSack) tx.update('items', oldSack.id, { linkedKgItemId: null, ...stamp(adapter, actor) });
     if (newSack) tx.update('items', newSack.id, { linkedKgItemId: id, ...stamp(adapter, actor) });
@@ -193,7 +254,7 @@ export async function updateItem(adapter, actor, id, data, { applyPriceToBatches
     const parts = [];
     const money = (c) => (c === null ? 'same as cash' : formatMoney(c));
     if ('priceC' in changes) parts.push(`price ${formatMoney(changes.priceC.from)} → ${formatMoney(changes.priceC.to)}` + (repriced ? ` (also ${repriced} batch(es) in stock)` : ''));
-    if ('installmentPriceC' in changes) parts.push(`payday price ${money(changes.installmentPriceC.from)} → ${money(changes.installmentPriceC.to)}`);
+    if ('installmentPriceC' in changes) parts.push(`credit price ${money(changes.installmentPriceC.from)} → ${money(changes.installmentPriceC.to)}`);
     if ('costC' in changes) parts.push(`cost ${formatMoney(changes.costC.from)} → ${formatMoney(changes.costC.to)}`);
     logWrite(tx, adapter, actor, {
       action: priceChanged ? 'ITEM_PRICE_CHANGE' : 'ITEM_UPDATE', entityType: 'item', entityId: id,

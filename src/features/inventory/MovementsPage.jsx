@@ -4,6 +4,7 @@ import { Button } from '../../components/Button.jsx';
 import { TextField, SelectField } from '../../components/Field.jsx';
 import { Link } from '../../app/router.jsx';
 import { useQuery, errorMessage } from '../../data/useData.js';
+import { useSkus } from './ItemsPage.jsx';
 import { formatDateTime } from '../../app/format.js';
 import { formatQty } from '../../domain/quantity.js';
 import { formatDate } from '../../domain/dates.js';
@@ -18,10 +19,10 @@ function refLink(m) {
   return null;
 }
 
-export function MovementsTable({ rows, showItem = true, empty }) {
+export function MovementsTable({ rows, showItem = true, empty, skus = {} }) {
   const columns = [
     { key: 'date', header: 'Date', render: (m) => <>{formatDate(m.businessDate)}<span className="cell-sub">Recorded {formatDateTime(m.createdAt)}</span></> },
-    ...(showItem ? [{ key: 'item', header: 'Item', className: 'key-col', render: (m) => <Link to={`/items/${m.itemId}`}>{m.itemName}</Link> }] : []),
+    ...(showItem ? [{ key: 'item', header: 'Item', className: 'key-col', render: (m) => <><Link to={`/items/${m.itemId}`}>{m.itemName}</Link>{skus[m.itemId] && <span className="cell-sub sku">{skus[m.itemId]}</span>}</> }] : []),
     { key: 'type', header: 'Type', render: (m) => <Badge tone={TYPE_TONE[m.type]}>{MOVEMENT_LABELS[m.type] || m.type}</Badge> },
     { key: 'delta', header: 'Change', align: 'right', render: (m) => (
       <span className={m.qtyDeltaH > 0 ? 'delta-in' : 'delta-out'}>{m.qtyDeltaH > 0 ? '+' : '−'}{formatQty(Math.abs(m.qtyDeltaH), m.unit)}</span>) },
@@ -41,11 +42,12 @@ export function MovementsPage({ adapter }) {
   const [from, setFrom] = React.useState('');
   const [to, setTo] = React.useState('');
   const [limit, setLimit] = React.useState(100);
+  const skus = useSkus(adapter);
   const query = { where: type ? [['type', '==', type]] : [], orderBy: [['createdAt', 'desc']], limit };
   const { rows, error } = useQuery(adapter, 'inventoryMovements', query, `movements-${type}-${limit}`);
 
   const q = search.trim().toLowerCase();
-  const shown = (rows || []).filter((m) => (!q || m.itemName.toLowerCase().includes(q))
+  const shown = (rows || []).filter((m) => (!q || m.itemName.toLowerCase().includes(q) || (skus[m.itemId] || '').toLowerCase().includes(q))
     && (!from || m.businessDate >= from) && (!to || m.businessDate <= to));
 
   return (
@@ -62,7 +64,7 @@ export function MovementsPage({ adapter }) {
           <span className="toolbar-end">{rows ? `${shown.length} shown` : ''}</span>
         </div>
         {!rows ? <LoadingRows label="Loading movements" /> : (
-          <MovementsTable rows={shown}
+          <MovementsTable rows={shown} skus={skus}
             empty={<EmptyState icon="movements" title={rows.length ? 'No matching movements' : 'No movements yet'}>
               {rows.length ? 'Change the filters.' : 'Stock changes appear here once items have opening stock or adjustments.'}</EmptyState>} />
         )}

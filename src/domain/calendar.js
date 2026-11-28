@@ -6,10 +6,11 @@ import { addDays, parseDate, toDateString, daysInMonth, compareDates, isValidDat
 import { formatMoney } from './money.js';
 import { remainingOf, isOverdue, STATUS } from './allocation.js';
 import { DomainError } from './errors.js';
+import { openPromise, missedPromise } from './promises.js';
 
-export const CAL = { SALE: 'SALE', PAYMENT_DUE: 'PAYMENT_DUE', OVERDUE: 'OVERDUE', RESTOCK: 'RESTOCK', DELIVERY: 'DELIVERY', OTHER: 'OTHER' };
-export const CAL_LABELS = { SALE: 'Sales', PAYMENT_DUE: 'Payment due', OVERDUE: 'Overdue', RESTOCK: 'Restocking', DELIVERY: 'Deliveries', OTHER: 'Other' };
-export const CAL_ORDER = [CAL.OVERDUE, CAL.PAYMENT_DUE, CAL.DELIVERY, CAL.RESTOCK, CAL.SALE, CAL.OTHER];
+export const CAL = { SALE: 'SALE', PAYMENT_DUE: 'PAYMENT_DUE', OVERDUE: 'OVERDUE', PROMISE: 'PROMISE', RESTOCK: 'RESTOCK', DELIVERY: 'DELIVERY', OTHER: 'OTHER' };
+export const CAL_LABELS = { SALE: 'Sales', PAYMENT_DUE: 'Payment due', OVERDUE: 'Overdue', PROMISE: 'Promised', RESTOCK: 'Restocking', DELIVERY: 'Deliveries', OTHER: 'Other' };
+export const CAL_ORDER = [CAL.OVERDUE, CAL.PROMISE, CAL.PAYMENT_DUE, CAL.DELIVERY, CAL.RESTOCK, CAL.SALE, CAL.OTHER];
 const RANK = Object.fromEntries(CAL_ORDER.map((c, i) => [c, i]));
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -53,7 +54,9 @@ const isOpenRow = (r) => r.status === STATUS.PENDING || r.status === STATUS.PART
 /**
  * Build calendar events. src: { sales, rows, restocks, custom } (any may be missing); today = business date.
  * Each event: { id, date, category, title, detail, to (link path) | null, custom (stored event) | null, done } plus its
- * source record for the details modal: sale (SALE, DELIVERY), row (PAYMENT_DUE, OVERDUE), restock (+ receipt) (RESTOCK).
+ * source record for the details modal: sale (SALE, DELIVERY), row (PAYMENT_DUE, OVERDUE, PROMISE + promise), restock (+ receipt) (RESTOCK).
+ * D-069: each row's open promise (or its latest missed one) is an entry of its own on the promised date, so a promise
+ * on the same day as a due date shows as two entries.
  */
 export function buildEvents({ sales = [], rows = [], restocks = [], custom = [] }, today) {
   const out = [];
@@ -78,6 +81,17 @@ export function buildEvents({ sales = [], rows = [], restocks = [], custom = [] 
       id: `due-${r.id}`, date: r.dueDate, category: overdue ? CAL.OVERDUE : CAL.PAYMENT_DUE,
       title: `${r.customerName} · ${formatMoney(remainingOf(r))}`,
       detail: `${r.saleId} · ${r.kind === 'OPEN_BALANCE' ? 'Balance' : `Installment ${r.no} of ${r.count}`}`, to: `/sales/${r.saleId}`, done: false, row: r,
+    });
+  }
+  for (const r of rows) {
+    if (!isOpenRow(r)) continue;
+    const p = openPromise(r, today) || missedPromise(r, today);
+    if (!p) continue;
+    out.push({
+      id: `promise-${r.id}-${p.at || p.date}`, date: p.date, category: CAL.PROMISE,
+      title: `Promised: ${r.customerName} · ${formatMoney(Math.min(p.amountC, remainingOf(r)))}`,
+      detail: `${r.saleId} · ${r.kind === 'OPEN_BALANCE' ? 'Balance' : `Installment ${r.no} of ${r.count}`}${p.status === 'MISSED' ? ' · missed' : ''}`,
+      to: `/sales/${r.saleId}`, done: false, late: p.status === 'MISSED', row: r, promise: p,
     });
   }
   for (const r of restocks) {

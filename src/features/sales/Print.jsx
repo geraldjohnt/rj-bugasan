@@ -55,7 +55,7 @@ function Header({ general, title, number, date }) {
   );
 }
 
-export function SaleReceipt({ sale, rows = [], payments = [], business }) {
+export function SaleReceipt({ sale, rows = [], payments = [], business, skus = {} }) {
   const { general, sales } = business;
   const active = payments.filter((p) => p.status === 'ACTIVE');
   return (
@@ -67,7 +67,7 @@ export function SaleReceipt({ sale, rows = [], payments = [], business }) {
       </div>
       <table className="doc-table">
         <thead><tr><th>Item</th><th className="num">Qty</th><th className="num">Unit price</th><th className="num">Amount</th></tr></thead>
-        <tbody>{sale.lines.map((l, i) => <tr key={i}><td>{l.itemName}</td><td className="num">{formatQty(l.qtyH, l.unit)}</td><td className="num">{formatMoney(l.unitPriceC)}</td><td className="num">{formatMoney(l.lineTotalC)}</td></tr>)}</tbody>
+        <tbody>{sale.lines.map((l, i) => <tr key={i}><td>{l.itemName}{(l.sku || skus[l.itemId]) && <span className="doc-sku"> · {l.sku || skus[l.itemId]}</span>}</td><td className="num">{formatQty(l.qtyH, l.unit)}</td><td className="num">{formatMoney(l.unitPriceC)}</td><td className="num">{formatMoney(l.lineTotalC)}</td></tr>)}</tbody>
         <tfoot>
           <tr><td colSpan="3">Subtotal</td><td className="num">{formatMoney(sale.subtotalC)}</td></tr>
           {sale.discountC > 0 && <tr><td colSpan="3">Discount{sale.discountType === 'PERCENT' ? ` (${sale.discountValue / 100}%)` : ''}</td><td className="num">−{formatMoney(sale.discountC)}</td></tr>}
@@ -114,7 +114,8 @@ export function PaymentReceipt({ payment, sale, business }) {
   );
 }
 
-export function StatementDoc({ customer, statement, business }) {
+/** promises (D-069): currentPromises() of the customer's open rows. */
+export function StatementDoc({ customer, statement, business, promises = [] }) {
   return (
     <article className="doc">
       <Header general={business.general} title="Statement of account" date={today()} />
@@ -129,6 +130,15 @@ export function StatementDoc({ customer, statement, business }) {
             <td className="num">{e.chargeC ? formatMoney(e.chargeC) : ''}</td><td className="num">{e.creditC ? formatMoney(e.creditC) : ''}</td><td className="num">{formatMoney(e.balanceC)}</td></tr>))}</tbody>
         <tfoot><tr className="doc-total"><td colSpan="3">Balance due</td><td className="num">{formatMoney(statement.totalChargesC)}</td><td className="num">{formatMoney(statement.totalCreditsC)}</td><td className="num">{formatMoney(statement.balanceC)}</td></tr></tfoot>
       </table>
+      {promises.length > 0 && <>
+        <h3 className="doc-subtitle">Promised payments</h3>
+        <table className="doc-table">
+          <thead><tr><th>Promised date</th><th>Sale</th><th>For</th><th>Status</th><th className="num">Amount</th></tr></thead>
+          <tbody>{promises.map(({ row, promise }) => (
+            <tr key={row.id}><td>{formatDate(promise.date)}</td><td>{row.saleId}</td><td>{row.kind === 'OPEN_BALANCE' ? 'Balance' : `Installment ${row.no}`}{row.dueDate ? ` (due ${formatDate(row.dueDate)})` : ''}</td>
+              <td>{promise.status === 'MISSED' ? 'Missed' : 'Promised'}</td><td className="num">{formatMoney(promise.amountC)}</td></tr>))}</tbody>
+        </table>
+      </>}
     </article>
   );
 }

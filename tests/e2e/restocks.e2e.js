@@ -134,7 +134,7 @@ await step('Receive part of it at a new cost: update-cost box is pre-checked; st
   await page.click('.dialog-footer button:has-text("Receive and add to stock")');
   await toast('The rest is still to come');
   await page.waitForSelector('.badge:text-is("Partially received")');
-  expect(await page.isVisible('td:has-text("3 sacks Dinorado 50kg Sack @ ₱3,000.00")'), 'receipt row missing');
+  expect(await page.isVisible('td:has-text("3 sacks Dinorado 50kg Sack [RJ-DIN-001] @ ₱3,000.00")'), 'receipt row missing');
   const row = await itemRow('Dinorado 50kg Sack');
   expect(sacksIn(row) === sackBefore + 3, `stock ${sacksIn(row)} vs ${sackBefore + 3}`);
   await page.click('a:text-is("Dinorado 50kg Sack")');

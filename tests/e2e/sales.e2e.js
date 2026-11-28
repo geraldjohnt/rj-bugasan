@@ -114,7 +114,7 @@ await step('Stock guard: more than available is flagged and cannot be saved', as
   expect(await page.locator('button:has-text("Save sale")').isDisabled(), 'save should be disabled');
 });
 
-await step('Line price follows the terms: cash price for Full, payday price for Installment (D-046)', async () => {
+await step('Line price follows the terms: cash price for Full, credit price for Installment (D-046, D-066)', async () => {
   await page.goto(url + '#/sales/new');
   await pick(customerBox(), 'Carmen Dela Cruz');
   await pick(page.locator('.sale-line').first().locator('input[role="combobox"]'), 'Brown Rice 25kg Sack');
@@ -243,12 +243,23 @@ await step('Collections: overdue first, contacts shown, copy reminder, record pa
   await page.locator('tr:has-text("Mang Tonyo") button:has-text("Record payment")').click();
   await page.waitForSelector('.dialog:has-text("Record payment")');
   await field('Amount received').fill('1000');
+  // D-068: part of the overdue installment stays unpaid → the promised date is required.
+  await page.waitForSelector('.promise-box:has-text("still unpaid")');
   await page.click('.dialog-footer button:has-text("Record payment")');
-  await toast('recorded');
+  await page.waitForSelector('.promise-box .field-error');
+  const promised = await page.evaluate(() => { const d = new Date(); d.setDate(d.getDate() + 2); return d.toISOString().slice(0, 10); });
+  await field('Promised date').fill(promised);
+  await page.click('.dialog-footer button:has-text("Record payment")');
+  await toast('Promised to pay the rest');
   await page.waitForFunction((b) => {
     const v = [...document.querySelectorAll('.stat')].find((s) => s.querySelector('.stat-label').textContent === 'Overdue');
     return v && Number(v.querySelector('.stat-value').textContent.replace(/[^\d.]/g, '')) === b - 1000;
   }, before);
+  // D-069: the promise is listed under Promised and on the row
+  await page.waitForSelector('tr:has-text("Mang Tonyo") .promise-line.is-open');
+  await tab('Promised');
+  await page.waitForURL(/#\/collections\/promised$/);
+  await page.waitForSelector('tr:has-text("Mang Tonyo")');
   await tab('Later');
   await page.waitForURL(/#\/collections\/later$/);
   await shot('33-collections');
@@ -258,8 +269,8 @@ await step('Customer detail: sales, payments, schedule and statement tabs filled
   await page.goto(url + '#/customers');
   await page.click(`.table a:has-text("Carmen Dela Cruz")`);
   await page.waitForSelector('h1:has-text("Carmen Dela Cruz")');
-  // ₱1,500.00 from this run + ₱5,200.00 sample opening balance (Phase 11)
-  expect(await stat('Outstanding balance') === '₱6,700.00', 'outstanding ' + await stat('Outstanding balance'));
+  // ₱1,500.00 from this run + ₱5,200.00 sample opening balance (Phase 11) − ₱1,000.00 sample payment (Phase 15)
+  expect(await stat('Outstanding balance') === '₱5,700.00', 'outstanding ' + await stat('Outstanding balance'));
   await page.waitForSelector('.list-row:has-text("' + instSale + '")');
   await tab('Sales');
   await page.waitForSelector(`.table a:has-text("${instSale}")`);
@@ -269,8 +280,11 @@ await step('Customer detail: sales, payments, schedule and statement tabs filled
   await page.waitForSelector('.table tbody tr >> nth=4', { timeout: 5000 }).catch(() => {}); // rows load after the tab opens
   const n = await page.locator('.table tbody tr').count();
   expect(n === 5, 'schedule rows (3 + 2 opening-balance rows): ' + n);
+  await page.waitForSelector('.table .promise-line:has-text("Missed")');
   await tab('Statement');
-  await page.waitForSelector('.doc-total:has-text("₱6,700.00")');
+  await page.waitForSelector('.doc-total:has-text("₱5,700.00")');
+  // D-069: open promise listed on the statement
+  await page.waitForSelector('.doc-subtitle:has-text("Promised payments")');
   await page.click('button:has-text("Print statement")');
   await page.waitForFunction(() => window.__printed.some((t) => /STATEMENT OF ACCOUNT/i.test(t)));
 });

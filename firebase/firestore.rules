@@ -2,6 +2,7 @@ rules_version = '2';
 /*
  * RJ Inventory & Sales — Firestore Security Rules.
  * These rules are the real security boundary (KI-002): the app's code is visible to anyone with the folder.
+ * Phase 15: item expenses on deliveries (expenses.itemId), automatic SKU counters, promised payment dates.
  * Scope: Phase 2 (owner bootstrap, users, usernames, settings), Phase 4 (items, inventoryMovements, stockCounts,
  * activityLogs), Phase 5 (customers), Phases 6–7 (counters, sales, installments, payments), Phase 8 (suppliers, restocks,
  * expenses), Phase 9 (calendarEvents), Phase 11 (opening balances, backup restore) and Phase 13 (batches, supplier codes,
@@ -161,7 +162,8 @@ service cloud.firestore {
     // Sequence counters (BR-030, BR-050): sale-YYYY and payment-YYYY; each write takes exactly the next number.
     // Phase 13 (D-051): `supplier` (supplier codes) and batch-<code> (batch ids) may advance by several at once
     // (codes for many old suppliers, first batches for many old items), never backwards.
-    function isBatchCounter(name) { return name == 'supplier' || name.matches('^batch-(SUP[0-9]{3,}|OLD)$'); }
+    // Phase 15 (D-067): sku-<CODE> (automatic SKUs) may also jump (back-fill, numbers already typed by hand).
+    function isBatchCounter(name) { return name == 'supplier' || name.matches('^batch-(SUP[0-9]{3,}|OLD)$') || name.matches('^sku-[A-Z]{3}$'); }
     match /counters/{name} {
       allow read: if isActive();
       allow create: if isOwner() && (name.matches('^(sale|payment|restock|ob)-[0-9]{4}$') || isBatchCounter(name))
@@ -253,8 +255,10 @@ service cloud.firestore {
         && optDate(request.resource.data.dueDate)
         && request.resource.data.revisions is list && request.resource.data.revisions.size() == 0;
       // Payments, voids, reschedules (BR-045: revisions only grow) and cancellation. Cancelled rows are final.
+      // Phase 15 (D-068): promised dates (a list; voiding a payment removes the promises it made).
       allow update: if isOwner() && resource.data.status != 'CANCELLED'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amountC', 'dueDate', 'paidC', 'status', 'paidDate', 'revisions', 'updatedAt', 'updatedBy'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['amountC', 'dueDate', 'paidC', 'status', 'paidDate', 'revisions', 'promises', 'updatedAt', 'updatedBy'])
+        && (!('promises' in request.resource.data) || (request.resource.data.promises is list && request.resource.data.promises.size() <= 30))
         && request.resource.data.amountC is int && request.resource.data.amountC > 0
         && nonNegInt(request.resource.data.paidC) && request.resource.data.paidC <= request.resource.data.amountC
         && rowStatusOk(request.resource.data)
@@ -335,15 +339,17 @@ service cloud.firestore {
     match /expenses/{id} {
       allow read: if isActive();
       allow create: if isOwner()
-        && request.resource.data.keys().hasOnly(['date', 'category', 'amountC', 'note', 'status', 'void', 'restockId', 'batchId', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
+        && request.resource.data.keys().hasOnly(['date', 'category', 'amountC', 'note', 'status', 'void', 'restockId', 'batchId', 'itemId', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy'])
         && isDate(request.resource.data.date)
         && (
           (request.resource.data.category in ['Delivery/Fuel', 'Rent', 'Wages', 'Utilities', 'Supplies', 'Other']
-            && !('restockId' in request.resource.data) && !('batchId' in request.resource.data))
+            && !('restockId' in request.resource.data) && !('batchId' in request.resource.data) && !('itemId' in request.resource.data))
           || (request.resource.data.category == 'Restock'
             && request.resource.data.restockId is string && request.resource.data.restockId.matches('^RS-[0-9]{4}-[0-9]{5}$')
             && request.resource.data.batchId is string && request.resource.data.batchId.size() > 0
-            && request.resource.data.note is string && request.resource.data.note.size() > 0 && request.resource.data.note.size() <= 60)
+            && request.resource.data.note is string && request.resource.data.note.size() > 0 && request.resource.data.note.size() <= 60
+            // Phase 15 (D-065): an item's own expense on a delivery names the item.
+            && (!('itemId' in request.resource.data) || (request.resource.data.itemId is string && request.resource.data.itemId.size() > 0)))
         )
         && request.resource.data.amountC is int && request.resource.data.amountC > 0
         && optString(request.resource.data.note)

@@ -3,7 +3,7 @@
  */
 import { addDays, compareDates, daysBetween, formatDate } from './dates.js';
 import { formatMoney } from './money.js';
-import { remainingOf, isOverdue, STATUS } from './allocation.js';
+import { remainingOf, isOverdue, STATUS, paidOnTime } from './allocation.js';
 
 export const BUCKETS = { OVERDUE: 'OVERDUE', TODAY: 'TODAY', WEEK: 'WEEK', UPCOMING: 'UPCOMING', NO_DATE: 'NO_DATE' };
 export const BUCKET_LABELS = { OVERDUE: 'Overdue', TODAY: 'Due today', WEEK: 'Next 7 days', UPCOMING: 'Later', NO_DATE: 'No due date' };
@@ -46,7 +46,8 @@ export function reminderText(template, { customer, business, amountC, saleNo, in
  * Only rows with a due date count. Returns { paidInstallments, paidOnTime } deltas.
  */
 export function reliabilityDelta(before, after) {
-  const counts = (r) => (r.status === STATUS.PAID && r.dueDate ? { p: 1, t: compareDates(r.paidDate, r.dueDate) <= 0 ? 1 : 0 } : { p: 0, t: 0 });
+  // D-069: paid by a promised date counts as on time.
+  const counts = (r) => (r.status === STATUS.PAID && r.dueDate ? { p: 1, t: paidOnTime(r) ? 1 : 0 } : { p: 0, t: 0 });
   const a = counts(before), b = counts(after);
   return { paidInstallments: b.p - a.p, paidOnTime: b.t - a.t };
 }

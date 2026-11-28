@@ -88,7 +88,7 @@ export function PricePosterDialog({ open, onClose, adapter, items }) {
       <div className="poster-layout">
         <div className="form-stack poster-options">
           {error && <Banner tone="danger">{error}</Banner>}
-          <p className="muted">Cash price and payday price come from each item. Set the payday price in the item's Edit form.</p>
+          <p className="muted">Cash price and credit price come from each item. Set the credit price in the item's Edit form.</p>
           <TextField label="Date on poster" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           <Segmented label="Items with no stock" value={hideOut} onChange={setHideOut} options={[{ value: 'STRIKE', label: 'Cross out' }, { value: 'HIDE', label: 'Leave out' }]} />
           <div className="field">
@@ -109,7 +109,7 @@ export function PricePosterDialog({ open, onClose, adapter, items }) {
             </div>
           </div>
           <TextField label="Tagline" value={text.tagline} onChange={setT('tagline')} />
-          <TextField label="Payday note" value={text.paydayTag} onChange={setT('paydayTag')} help="Small tag on the Payday option, e.g. Max 1 month." />
+          <TextField label="Credit note" value={text.paydayTag} onChange={setT('paydayTag')} help="Small tag on the Credit price panel, e.g. Max 1 month." />
           <TextField label="Contact line" value={text.contact} onChange={setT('contact')} help="Shown under “Message us now”. Leave empty to hide." />
         </div>
         <div className="poster-preview" aria-live="polite">

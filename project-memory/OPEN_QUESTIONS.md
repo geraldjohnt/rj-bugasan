@@ -34,3 +34,8 @@ Status values: Open · Answered (see INTERVIEW_LOG) · Deferred
 | ID | Subject | Why it matters | Recommended option | Status |
 |---|---|---|---|---|
 | EQ-1 | Approve restock expenses + quick item add design (D-060 … D-064) | Changes receiving, expenses, sale-line costs on edit | Approve, implement as Phase 14 | Answered 2026-11-28: approved, build Phase 14 |
+
+## Item expense, credit price, SKU, promised dates (raised 2026-11-28)
+| ID | Subject | Why it matters | Recommended option | Status |
+|---|---|---|---|---|
+| FQ-1 | Approve design D-065 … D-069 | Changes receiving, item labels, SKUs on every item, payment dialog, calendar, reliability | Approve, implement as Phase 15 | Answered 2026-11-28: "Approve, build Phase 15" |

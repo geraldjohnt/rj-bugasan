@@ -2,6 +2,7 @@
  * Collections (Phase 7, RQ-034, UI_UX_GUIDELINES §6): open receivable rows grouped as Overdue / Due today /
  * Next 7 days / Later / No due date. Each row shows the customer's contact and alternate contacts, a one-click
  * reminder message (template in Settings → Sales) and "Record payment". Overdue is derived (BR-044).
+ * Phase 15 (D-069): a "Promised" tab lists open and missed promised dates; each row shows its promises.
  */
 import { PageHeader, Panel, EmptyState, Banner, LoadingRows, Tabs, DataTable } from '../../components/Feedback.jsx';
 import { Button, IconButton } from '../../components/Button.jsx';
@@ -14,12 +15,15 @@ import { formatMoney } from '../../domain/money.js';
 import { formatDate, today } from '../../domain/dates.js';
 import { BUCKETS, BUCKET_LABELS, groupCollections, reminderText } from '../../domain/collections.js';
 import { sortContacts, matchesCustomer } from '../../domain/customers.js';
-import { RowStatusBadge } from './SaleTables.jsx';
+import { RowStatusBadge, PromiseLines } from './SaleTables.jsx';
+import { currentPromises } from '../../domain/promises.js';
+import { remainingOf } from '../../domain/allocation.js';
 import { RecordPaymentDialog } from './PaymentDialogs.jsx';
 import { useBusiness } from './Print.jsx';
 
 const ORDER = [BUCKETS.OVERDUE, BUCKETS.TODAY, BUCKETS.WEEK, BUCKETS.UPCOMING, BUCKETS.NO_DATE];
-const SLUG = { OVERDUE: 'overdue', TODAY: 'today', WEEK: 'week', UPCOMING: 'later', NO_DATE: 'no-date' };
+const PROMISED = 'PROMISED';
+const SLUG = { OVERDUE: 'overdue', TODAY: 'today', WEEK: 'week', UPCOMING: 'later', NO_DATE: 'no-date', PROMISED: 'promised' };
 const FROM_SLUG = Object.fromEntries(Object.entries(SLUG).map(([k, v]) => [v, k]));
 
 /** Copy text to the clipboard; falls back to a hidden textarea where the Clipboard API is unavailable. */
@@ -53,9 +57,12 @@ export function CollectionsPage({ adapter, tab }) {
     return r.saleId.toLowerCase().includes(search.trim().toLowerCase()) || (c ? matchesCustomer(c, search) : r.customerName.toLowerCase().includes(search.trim().toLowerCase()));
   });
   const groups = groupCollections(filtered, now);
+  const promised = currentPromises(filtered, now).map(({ row, promise }) => ({ ...row, remainingC: remainingOf(row), promise }));
+  groups[PROMISED] = { rows: promised, totalC: promised.reduce((t, r) => t + r.promise.amountC, 0) };
+  const labels = { ...BUCKET_LABELS, [PROMISED]: 'Promised' };
   const firstNonEmpty = ORDER.find((b) => groups[b].rows.length) || BUCKETS.OVERDUE;
   const current = FROM_SLUG[tab] || (tab ? BUCKETS.OVERDUE : firstNonEmpty);
-  const tabs = ORDER.map((b) => ({ value: b, label: `${BUCKET_LABELS[b]} (${groups[b].rows.length})` }));
+  const tabs = [...ORDER, PROMISED].map((b) => ({ value: b, label: `${labels[b]} (${groups[b].rows.length})` }));
 
   async function copyReminder(r) {
     const text = reminderText(business.sales.reminderTemplate, {
@@ -69,8 +76,9 @@ export function CollectionsPage({ adapter, tab }) {
   const columns = [
     { key: 'customer', header: 'Customer', className: 'key-col wrap', render: (r) => <Link to={`/customers/${r.customerId}`}>{r.customerName}</Link> },
     { key: 'sale', header: 'Sale', render: (r) => <><Link to={`/sales/${r.saleId}`}>{r.saleId}</Link><span className="cell-sub">{r.kind === 'OPEN_BALANCE' ? 'Balance' : `Installment ${r.no} of ${r.count}`}</span></> },
-    { key: 'due', header: 'Due', render: (r) => <>{r.dueDate ? formatDate(r.dueDate) : <span className="muted">No due date</span>}<span className="cell-sub"><RowStatusBadge row={r} today={now} /></span></> },
-    { key: 'remaining', header: 'To collect', align: 'right', render: (r) => <><strong>{formatMoney(r.remainingC)}</strong>{r.paidC > 0 && <span className="cell-sub">of {formatMoney(r.amountC)}</span>}</> },
+    ...(current === PROMISED ? [{ key: 'promised', header: 'Promised', render: (r) => <>{formatDate(r.promise.date)}<span className={`promise-line is-${r.promise.status.toLowerCase()}`}>{r.promise.status === 'MISSED' ? 'Missed' : `Promised on ${formatDate(r.promise.madeOn)}`}</span></> }] : []),
+    { key: 'due', header: 'Due', render: (r) => <>{r.dueDate ? formatDate(r.dueDate) : <span className="muted">No due date</span>}<span className="cell-sub"><RowStatusBadge row={r} today={now} /></span>{current !== PROMISED && <PromiseLines row={r} today={now} />}</> },
+    { key: 'remaining', header: 'To collect', align: 'right', render: (r) => <><strong>{formatMoney(current === PROMISED ? r.promise.amountC : r.remainingC)}</strong>{r.paidC > 0 && <span className="cell-sub">of {formatMoney(r.amountC)}</span>}</> },
     { key: 'contact', header: 'Contact', className: 'wrap', render: (r) => {
       const c = byId.get(r.customerId);
       const alts = c ? sortContacts(c.alternateContacts).slice(0, 2) : [];
@@ -106,8 +114,8 @@ export function CollectionsPage({ adapter, tab }) {
           <span className="toolbar-end">{rows ? `${g.rows.length} shown · ${formatMoney(g.totalC)}` : ''}</span>
         </div>
         {!rows ? <LoadingRows label="Loading collections" /> : (
-          <DataTable caption={BUCKET_LABELS[current]} columns={columns} rows={g.rows}
-            empty={<EmptyState icon="collections" title={`Nothing ${BUCKET_LABELS[current].toLowerCase()}`}>
+          <DataTable caption={labels[current]} columns={columns} rows={g.rows}
+            empty={<EmptyState icon="collections" title={current === PROMISED ? 'No promised dates' : `Nothing ${labels[current].toLowerCase()}`}>
               {rows.length ? 'Check the other tabs.' : 'Installment and unpaid sales appear here.'}</EmptyState>} />
         )}
       </Panel>

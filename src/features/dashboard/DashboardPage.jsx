@@ -178,7 +178,7 @@ export function DashboardPage({ adapter }) {
       {low.length > 0 && (
         <Panel title="Low and out of stock" actions={<Link to="/items">Items</Link>} flush>
           <DataTable caption="Low stock" rows={low.slice(0, 8)} columns={[
-            { key: 'n', header: 'Item', className: 'key-col wrap', render: (i) => <Link to={`/items/${i.id}`}>{i.name}</Link> },
+            { key: 'n', header: 'Item', className: 'key-col wrap', render: (i) => <><Link to={`/items/${i.id}`}>{i.name}</Link>{i.sku && <span className="cell-sub sku">{i.sku}</span>}</> },
             { key: 'q', header: 'In stock', align: 'right', render: (i) => formatQty(i.qtyH, i.unit) },
             { key: 'm', header: 'Minimum', align: 'right', render: (i) => formatQty(i.minStockH, i.unit) },
             { key: 's', header: '', render: (i) => <Badge tone={stockStatus(i) === 'OUT' ? 'danger' : 'warning'}>{stockStatus(i) === 'OUT' ? 'Out of stock' : 'Low'}</Badge> },

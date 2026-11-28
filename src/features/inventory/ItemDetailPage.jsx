@@ -64,7 +64,7 @@ export function ItemDetailPage({ adapter, id }) {
         <div className="stat"><div className="stat-label">In stock</div><div className="stat-value">{formatQty(item.qtyH, item.unit)}</div></div>
         <div className="stat"><div className="stat-label">Cash price</div><div className="stat-value">{formatMoney(displayPrice(item).priceC)}</div>
           {displayPrice(item).nextPriceC !== null && <div className="muted small">next batch {formatMoney(displayPrice(item).nextPriceC)}</div>}</div>
-        <div className="stat"><div className="stat-label">Payday price</div><div className="stat-value">{formatMoney(installmentPriceOf(item))}</div></div>
+        <div className="stat"><div className="stat-label">Credit price</div><div className="stat-value">{formatMoney(installmentPriceOf(item))}</div></div>
         <div className="stat"><div className="stat-label">Default cost</div><div className="stat-value">{formatMoney(item.costC)}</div></div>
         <div className="stat"><div className="stat-label">Stock value</div><div className="stat-value">{formatMoney(stockValueC(item))}</div></div>
       </div>
@@ -73,7 +73,7 @@ export function ItemDetailPage({ adapter, id }) {
           <div><dt>Low-stock level</dt><dd>{item.minStockH ? formatQty(item.minStockH, item.unit) : 'Not set'}</dd></div>
           <div><dt>{item.unit === UNITS.SACK ? 'Linked per-kg item' : 'Linked sack item'}</dt>
             <dd>{linked ? <Link to={`/items/${linked.id}`}>{linked.name}</Link> : 'Not linked'}</dd></div>
-          <div><dt>SKU / code</dt><dd>{item.sku || '—'}</dd></div>
+          <div><dt>SKU</dt><dd className="sku">{item.sku || "—"}</dd></div>
           <div><dt>Default cash price (new batches)</dt><dd>{formatMoney(item.priceC)}</dd></div>
           <div><dt>Margin per {item.unit === UNITS.SACK ? 'sack' : 'kg'} (defaults)</dt>
             <dd>{formatMoney(item.priceC - item.costC)} {item.priceC < item.costC && <Badge tone="danger">Below cost</Badge>}</dd></div>

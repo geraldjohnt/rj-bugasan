@@ -61,7 +61,7 @@ test('opening balance: receivable rows and customer balance, but no stock, no re
   assert.equal(aging.totalC, 300050);
 
   // payment, reschedule and cancel work through the normal services
-  await recordPayment(db, actor, { saleId: r.saleId, date: TODAY, amountC: 100000, method: 'CASH' }, TODAY);
+  await recordPayment(db, actor, { saleId: r.saleId, date: TODAY, amountC: 100000, method: 'CASH', promiseDate: TODAY }, TODAY);
   await reviseSchedule(db, actor, r.saleId, [{ no: 1, dueDate: '2026-11-30', amountC: 150000 }, { no: 2, dueDate: '2027-01-15', amountC: 150050 }], 'Agreed with customer');
   c = await db.get('customers', custId);
   assert.equal(c.outstandingC, 200050);

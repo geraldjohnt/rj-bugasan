@@ -80,3 +80,7 @@
 | RQ-054 | Restock expense lines are saved on the Expenses page (category Restock, linked to the restock) and changed only from the restock; direct expenses need no restock. | R12-Q4, Q6, Q11, Q12, D-062 |
 | RQ-055 | A received delivery's unit cost, cash price and expenses stay editable after receiving (incl. complete orders); a cost change updates profit of sales already made from that batch. | R12-Q1, Q5, D-063 |
 | RQ-056 | A new item can be added from the restock order form using the full item form. | R12-Q7, Q8, D-064 |
+| RQ-057 | Receiving (and editing) a delivery takes per item: Received, Unit cost, Expense (its own), Cash price, Credit price; the delivery's other expenses stay below the items. | R13-Q1…Q3, Q18, D-065, D-066 |
+| RQ-058 | The second item price is called "Credit price"; pay-later sale lines default to it and stay editable. | R13-Q4, D-066 |
+| RQ-059 | Every item has an SKU (automatic RJ-<CODE>-NNN, editable, unique), searchable in pickers and the Items list and shown wherever items are listed, on receipts and reports. | R13-Q5…Q8, D-067 |
+| RQ-060 | A partial payment that leaves a due installment unpaid records a required promised date for the rest, in addition to the due dates; promises appear on the Calendar (own entries), Collections, sale schedule and statement; kept/missed tracked; a kept promise counts as on time. | R13-Q9…Q17, D-068, D-069 |
