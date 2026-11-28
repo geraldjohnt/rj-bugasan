@@ -59,9 +59,10 @@
 - Settings → System → **Android app**: "Download Android app" (newest APK) and "Earlier versions".
 - Built `dist/apk/rj-ims-0.9.0.apk`. **Release 0.9.0** merged to main.
 
-## 2026-11-28 — Phase 14: restock expenses (not released yet)
+## 2026-11-28 — 0.10.0: Phase 14 restock expenses
 - Receive dialog: expense lines (free text, suggestions), split by value, cost incl. expenses and profit per unit shown (D-060, D-061).
 - Restock expenses saved to Expenses as category "Restock", linked to the restock; changed only from the restock (D-062).
 - Received deliveries editable: unit cost, cash price, expenses; cost changes update past sale costs from that batch (D-063).
 - "New item" (full item form) on the restock order form (D-064).
 - Rules, sample data, user guide, tests (unit 142, rules 48, new E2E `restockExpenses` 9 steps).
+- **Release 0.10.0:** `npm run release` + `npm run verify:release` passed on `/dist`; PR created and merged to main.
